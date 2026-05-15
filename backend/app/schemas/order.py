@@ -35,8 +35,16 @@ class OrderItemResponse(BaseModel):
 class OrderCreate(BaseModel):
     client_id: int | None = None
     barber_id: int | None = None
+    is_fiado: bool = False
     notes: str | None = None
     discount: float = 0
+
+
+class OrderCloseRequest(BaseModel):
+    cash_register_id: int | None = None
+    payment_amount: float | None = None
+    payment_method: str | None = None
+    note: str | None = None
 
 
 class OrderResponse(BaseModel):
@@ -44,6 +52,9 @@ class OrderResponse(BaseModel):
     client_id: int | None = None
     barber_id: int | None = None
     status: str
+    payment_status: str
+    amount_paid: float
+    is_fiado: bool
     subtotal: float
     discount: float
     total: float

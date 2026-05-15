@@ -6,6 +6,8 @@ from app.models.security import User
 from app.models.client import Client
 from app.models.barber import Barber
 from app.models.service import Service
+from app.models.inventory import InventoryMovement, Product
+from app.models.accounts_receivable import AccountsReceivable
 from app.schemas.order import OrderCreate, OrderItemCreate, OrderItemUpdate
 from app.services.security_service import create_audit_log
 
@@ -30,6 +32,9 @@ def serialize_order(order: Order):
         "client_id": order.client_id,
         "barber_id": order.barber_id,
         "status": order.status,
+        "payment_status": order.payment_status,
+        "amount_paid": float(order.amount_paid or 0),
+        "is_fiado": order.is_fiado,
         "subtotal": float(order.subtotal or 0),
         "discount": float(order.discount or 0),
         "total": float(order.total or 0),
@@ -77,6 +82,9 @@ def create_order(db: Session, payload: OrderCreate, current_user: User):
     order = Order(
         client_id=payload.client_id,
         barber_id=payload.barber_id,
+        is_fiado=payload.is_fiado,
+        payment_status="pendiente",
+        amount_paid=0,
         status="abierta",
         subtotal=0,
         discount=payload.discount,
@@ -256,6 +264,135 @@ def mark_order_pending(db: Session, order_id: int, current_user: User):
     db.refresh(order)
 
     return serialize_order(order), None
+
+
+def _reserve_inventory_for_order(db: Session, order: Order, current_user: User):
+    for item in order.items:
+        if item.item_type == "producto" and item.product_id:
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+            if not product:
+                return False, "Producto de la comanda no encontrado."
+            if product.current_stock < item.quantity:
+                return False, f"Stock insuficiente para el producto {product.name}."
+            previous_stock = product.current_stock
+            product.current_stock -= item.quantity
+            movement = InventoryMovement(
+                product_id=product.id,
+                movement_type="salida_venta",
+                quantity=-item.quantity,
+                previous_stock=previous_stock,
+                new_stock=product.current_stock,
+                reason=f"Venta de comanda {order.id}",
+                reference_type="order",
+                reference_id=order.id,
+                created_by_user_id=current_user.id
+            )
+            db.add(movement)
+
+        elif item.item_type == "servicio" and item.service_id:
+            service = db.query(Service).filter(Service.id == item.service_id).first()
+            if not service:
+                return False, "Servicio de la comanda no encontrado."
+            for consumable in service.consumables:
+                product = db.query(Product).filter(Product.id == consumable.product_id).first()
+                if not product:
+                    return False, "Producto consumible no encontrado."
+                required_quantity = consumable.quantity * item.quantity
+                if product.current_stock < required_quantity:
+                    return False, f"Stock insuficiente para el producto {product.name} usado en el servicio {service.name}."
+                previous_stock = product.current_stock
+                product.current_stock -= required_quantity
+                movement = InventoryMovement(
+                    product_id=product.id,
+                    movement_type="salida_servicio",
+                    quantity=-required_quantity,
+                    previous_stock=previous_stock,
+                    new_stock=product.current_stock,
+                    reason=f"Consumibles usados en la comanda {order.id}",
+                    reference_type="order",
+                    reference_id=order.id,
+                    created_by_user_id=current_user.id
+                )
+                db.add(movement)
+
+    return True, None
+
+
+def _sync_accounts_receivable_for_order(db: Session, order: Order, current_user: User):
+    outstanding = float(order.total or 0) - float(order.amount_paid or 0)
+    if outstanding <= 0:
+        return True, None
+
+    if not order.is_fiado:
+        return False, "La comanda debe convertirse a fiado antes de cerrarse con saldo pendiente."
+
+    if not order.client_id:
+        return False, "La comanda fiada requiere un cliente asignado."
+
+    accounts_receivable = (
+        db.query(AccountsReceivable)
+        .filter(AccountsReceivable.order_id == order.id)
+        .first()
+    )
+
+    if not accounts_receivable:
+        accounts_receivable = AccountsReceivable(
+            client_id=order.client_id,
+            order_id=order.id,
+            created_by_user_id=current_user.id,
+            total_amount=order.total,
+            paid_amount=order.amount_paid,
+            balance=outstanding,
+            status="pendiente",
+            is_active=True
+        )
+        db.add(accounts_receivable)
+    else:
+        accounts_receivable.paid_amount = order.amount_paid
+        accounts_receivable.balance = outstanding
+        accounts_receivable.status = "pagado" if outstanding <= 0 else "pendiente"
+        accounts_receivable.updated_at = datetime.utcnow()
+
+    return True, None
+
+
+def close_order(db: Session, order_id: int, current_user: User):
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if not order:
+        return None, "Comanda no encontrada."
+
+    if order.status in ["cancelada", "cerrada"]:
+        return None, "La comanda no se puede cerrar en su estado actual."
+
+    try:
+        valid, error = _reserve_inventory_for_order(db, order, current_user)
+        if not valid:
+            db.rollback()
+            return None, error
+
+        order.status = "cerrada"
+        order.closed_at = datetime.utcnow()
+        order.updated_at = datetime.utcnow()
+
+        valid, error = _sync_accounts_receivable_for_order(db, order, current_user)
+        if not valid:
+            db.rollback()
+            return None, error
+
+        create_audit_log(
+            db=db,
+            module="comandas",
+            action="cerrar_comanda",
+            detail=f"El usuario {current_user.username} cerró la comanda {order.id}.",
+            user_id=current_user.id
+        )
+
+        db.commit()
+        db.refresh(order)
+        return serialize_order(order), None
+    except Exception as e:
+        db.rollback()
+        return None, f"Error al cerrar la comanda: {str(e)}"
 
 
 def cancel_order(db: Session, order_id: int, current_user: User):

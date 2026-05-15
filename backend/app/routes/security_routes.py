@@ -18,7 +18,7 @@ from app.services.security_service import (
     list_roles,
     list_users
 )
-from app.utils.security import get_current_user, require_admin
+from app.utils.security import get_current_user, require_permission
 
 
 router = APIRouter(
@@ -64,7 +64,7 @@ def me(current_user: User = Depends(get_current_user)):
 @router.get("/roles", response_model=list[RoleResponse])
 def get_roles(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("seguridad.ver"))
 ):
     return list_roles(db)
 
@@ -72,7 +72,7 @@ def get_roles(
 @router.get("/users", response_model=list[UserResponse])
 def get_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("seguridad.ver"))
 ):
     return list_users(db)
 
@@ -81,7 +81,7 @@ def get_users(
 def post_user(
     payload: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("seguridad.crear"))
 ):
     result, error = create_user(db, payload, current_user)
 
@@ -95,7 +95,7 @@ def post_user(
 def patch_deactivate_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("seguridad.eliminar"))
 ):
     result, error = deactivate_user(db, user_id, current_user)
 

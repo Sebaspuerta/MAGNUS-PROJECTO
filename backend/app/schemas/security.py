@@ -12,6 +12,7 @@ class LoginResponse(BaseModel):
     username: str
     full_name: str
     role: str
+    must_change_password: bool = False
 
 
 class RoleResponse(BaseModel):
@@ -27,6 +28,7 @@ class RoleResponse(BaseModel):
 class UserCreate(BaseModel):
     username: str
     full_name: str
+    email: str | None = None
     password: str
     role_name: str
 
@@ -35,6 +37,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     full_name: str
+    email: str | None = None
     role: str
     is_active: bool
 

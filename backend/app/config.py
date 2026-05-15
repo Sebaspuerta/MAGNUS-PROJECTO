@@ -18,6 +18,10 @@ class Settings:
     secret_key: str = os.getenv("SECRET_KEY", "CLAVE_LOCAL_MAGNUS")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
 
+    admin_username: str = os.getenv("ADMIN_USERNAME", "admin")
+    admin_password: str | None = os.getenv("ADMIN_PASSWORD")
+    admin_full_name: str = os.getenv("ADMIN_FULL_NAME", "Administrador MAGNUS")
+
 
 settings = Settings()
 

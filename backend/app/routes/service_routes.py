@@ -11,7 +11,7 @@ from app.services.service_service import (
     list_services,
     update_service
 )
-from app.utils.security import get_current_user, require_admin
+from app.utils.security import get_current_user, require_permission
 
 
 router = APIRouter(
@@ -24,7 +24,7 @@ router = APIRouter(
 def get_services(
     include_inactive: bool = False,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("servicios.ver"))
 ):
     return list_services(db, include_inactive=include_inactive)
 
@@ -33,7 +33,7 @@ def get_services(
 def get_service(
     service_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("servicios.ver"))
 ):
     result, error = get_service_by_id(db, service_id)
 
@@ -47,7 +47,7 @@ def get_service(
 def post_service(
     payload: ServiceCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("servicios.crear"))
 ):
     result, error = create_service(db, payload, current_user)
 
@@ -62,7 +62,7 @@ def patch_service(
     service_id: int,
     payload: ServiceUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("servicios.editar"))
 ):
     result, error = update_service(db, service_id, payload, current_user)
 
@@ -76,7 +76,7 @@ def patch_service(
 def patch_deactivate_service(
     service_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("servicios.eliminar"))
 ):
     result, error = deactivate_service(db, service_id, current_user)
 

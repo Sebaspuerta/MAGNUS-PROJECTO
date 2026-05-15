@@ -13,6 +13,7 @@ from app.schemas.order import (
 from app.services.order_service import (
     add_order_item,
     cancel_order,
+    close_order,
     create_order,
     delete_order_item,
     get_order_by_id,
@@ -20,7 +21,7 @@ from app.services.order_service import (
     mark_order_pending,
     update_order_item
 )
-from app.utils.security import get_current_user
+from app.utils.security import get_current_user, require_permission
 
 
 router = APIRouter(
@@ -29,19 +30,10 @@ router = APIRouter(
 )
 
 
-def _require_order_edit_role(current_user: User) -> User:
-    if current_user.role.name not in ["Administrador", "Barbero", "Cajero"]:
-        raise HTTPException(
-            status_code=403,
-            detail="Solo Administrador, Barbero o Cajero pueden gestionar comandas."
-        )
-    return current_user
-
-
 @router.get("", response_model=list[OrderResponse])
 def get_orders(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.ver"))
 ):
     return list_orders(db)
 
@@ -50,9 +42,8 @@ def get_orders(
 def post_order(
     payload: OrderCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.crear"))
 ):
-    current_user = _require_order_edit_role(current_user)
     result, error = create_order(db, payload, current_user)
 
     if error:
@@ -65,7 +56,7 @@ def post_order(
 def get_order(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.ver"))
 ):
     result, error = get_order_by_id(db, order_id)
 
@@ -80,9 +71,8 @@ def post_order_item(
     order_id: int,
     payload: OrderItemCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.editar"))
 ):
-    current_user = _require_order_edit_role(current_user)
     result, error = add_order_item(db, order_id, payload, current_user)
 
     if error:
@@ -97,9 +87,8 @@ def patch_order_item(
     item_id: int,
     payload: OrderItemUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.editar"))
 ):
-    current_user = _require_order_edit_role(current_user)
     result, error = update_order_item(db, order_id, item_id, payload, current_user)
 
     if error:
@@ -113,9 +102,8 @@ def delete_order_item_route(
     order_id: int,
     item_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.editar"))
 ):
-    current_user = _require_order_edit_role(current_user)
     result, error = delete_order_item(db, order_id, item_id, current_user)
 
     if error:
@@ -128,9 +116,8 @@ def delete_order_item_route(
 def patch_order_pending(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.editar"))
 ):
-    current_user = _require_order_edit_role(current_user)
     result, error = mark_order_pending(db, order_id, current_user)
 
     if error:
@@ -139,13 +126,26 @@ def patch_order_pending(
     return result
 
 
+@router.patch("/{order_id}/close", response_model=OrderResponse)
+def patch_order_close(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("comandas.cerrar"))
+):
+    result, error = close_order(db, order_id, current_user)
+
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    return result
+
+
 @router.patch("/{order_id}/cancel", response_model=OrderResponse)
 def patch_order_cancel(
     order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("comandas.editar"))
 ):
-    current_user = _require_order_edit_role(current_user)
     result, error = cancel_order(db, order_id, current_user)
 
     if error:

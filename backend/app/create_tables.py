@@ -5,6 +5,13 @@ from app.models.client import Client
 from app.models.service import Service
 from app.models.order import Order, OrderItem
 from app.models.inventory import InventoryMovement, Product
+from app.models.payment import Payment
+from app.models.cash_register import CashRegister
+from app.models.cash_movement import CashMovement
+from app.models.accounts_receivable import AccountsReceivable, AccountsReceivablePayment
+from app.models.alerts import Alert
+from app.models.system_config import SystemConfig
+from app.models.service_consumable import ServiceConsumable
 
 
 def create_tables():

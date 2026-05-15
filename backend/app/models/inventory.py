@@ -24,6 +24,7 @@ class Product(Base):
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     movements = relationship("InventoryMovement", back_populates="product", cascade="all, delete-orphan")
+    service_consumables = relationship("ServiceConsumable", back_populates="product")
 
 
 class InventoryMovement(Base):
@@ -42,3 +43,4 @@ class InventoryMovement(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     product = relationship("Product", back_populates="movements")
+    user = relationship("User")

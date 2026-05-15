@@ -9,6 +9,13 @@ from app.routes.client_routes import router as client_router
 from app.routes.service_routes import router as service_router
 from app.routes.order_routes import router as order_router
 from app.routes.inventory_routes import router as inventory_router
+from app.routes.payment_routes import router as payment_router
+from app.routes.cash_register_routes import router as cash_register_router
+from app.routes.cash_movement_routes import router as cash_movement_router
+from app.routes.accounts_receivable_routes import router as accounts_receivable_router
+from app.routes.alerts_routes import router as alerts_router
+from app.routes.system_config_routes import router as system_config_router
+from app.routes.service_consumable_routes import router as service_consumable_router
 
 
 app = FastAPI(
@@ -41,6 +48,13 @@ app.include_router(client_router)
 app.include_router(service_router)
 app.include_router(order_router)
 app.include_router(inventory_router)
+app.include_router(payment_router)
+app.include_router(cash_register_router)
+app.include_router(cash_movement_router)
+app.include_router(accounts_receivable_router)
+app.include_router(alerts_router)
+app.include_router(system_config_router)
+app.include_router(service_consumable_router)
 
 
 app.mount(

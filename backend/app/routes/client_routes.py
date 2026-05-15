@@ -11,7 +11,7 @@ from app.services.client_service import (
     list_clients,
     update_client
 )
-from app.utils.security import get_current_user, require_admin
+from app.utils.security import get_current_user, require_permission
 
 
 router = APIRouter(
@@ -24,7 +24,7 @@ router = APIRouter(
 def get_clients(
     include_inactive: bool = False,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("clientes.ver"))
 ):
     return list_clients(db, include_inactive=include_inactive)
 
@@ -33,7 +33,7 @@ def get_clients(
 def get_client(
     client_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("clientes.ver"))
 ):
     result, error = get_client_by_id(db, client_id)
 
@@ -47,7 +47,7 @@ def get_client(
 def post_client(
     payload: ClientCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("clientes.crear"))
 ):
     result, error = create_client(db, payload, current_user)
 
@@ -62,7 +62,7 @@ def patch_client(
     client_id: int,
     payload: ClientUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("clientes.editar"))
 ):
     result, error = update_client(db, client_id, payload, current_user)
 
@@ -76,7 +76,7 @@ def patch_client(
 def patch_deactivate_client(
     client_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("clientes.eliminar"))
 ):
     result, error = deactivate_client(db, client_id, current_user)
 

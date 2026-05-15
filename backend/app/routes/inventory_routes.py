@@ -21,7 +21,7 @@ from app.services.inventory_service import (
     list_products,
     update_product
 )
-from app.utils.security import get_current_user, require_admin
+from app.utils.security import get_current_user, require_permission
 
 
 router = APIRouter(
@@ -34,7 +34,7 @@ router = APIRouter(
 def get_products(
     include_inactive: bool = False,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("inventario.ver"))
 ):
     return list_products(db, include_inactive=include_inactive)
 
@@ -43,7 +43,7 @@ def get_products(
 def post_product(
     payload: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("inventario.crear"))
 ):
     result, error = create_product(db, payload, current_user)
 
@@ -72,7 +72,7 @@ def patch_product(
     product_id: int,
     payload: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("inventario.editar"))
 ):
     result, error = update_product(db, product_id, payload, current_user)
 
@@ -86,7 +86,7 @@ def patch_product(
 def patch_deactivate_product(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("inventario.eliminar"))
 ):
     result, error = deactivate_product(db, product_id, current_user)
 
@@ -101,7 +101,7 @@ def post_inventory_entry(
     product_id: int,
     payload: InventoryEntryCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("inventario.ajustar"))
 ):
     result, error = create_inventory_entry(db, product_id, payload, current_user)
 
@@ -116,7 +116,7 @@ def post_inventory_adjustment(
     product_id: int,
     payload: InventoryAdjustmentCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_permission("inventario.ajustar"))
 ):
     result, error = create_inventory_adjustment(db, product_id, payload, current_user)
 
@@ -130,7 +130,7 @@ def post_inventory_adjustment(
 def get_product_movements(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("inventario.ver"))
 ):
     result, error = list_product_movements(db, product_id)
 

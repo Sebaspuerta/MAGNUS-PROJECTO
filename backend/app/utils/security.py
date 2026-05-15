@@ -7,7 +7,7 @@ import bcrypt
 
 from app.config import settings
 from app.database import get_db
-from app.models.security import User
+from app.models.security import Permission, Role, RolePermission, User
 
 
 ALGORITHM = "HS256"
@@ -72,6 +72,21 @@ def get_current_user(
             detail="Usuario inactivo."
         )
 
+    now = datetime.utcnow()
+    if user.locked_until and user.locked_until > now:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario bloqueado temporalmente por intentos fallidos."
+        )
+
+    role = db.query(Role).filter(Role.id == user.role_id).first()
+    if not role or not role.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Rol del usuario inactivo o inexistente."
+        )
+
+    user.role = role
     return user
 
 
@@ -83,3 +98,29 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
         )
 
     return current_user
+
+
+def require_permission(permission_code: str):
+    def dependency(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+    ) -> User:
+        permission_exists = (
+            db.query(RolePermission)
+            .join(Permission, RolePermission.permission_id == Permission.id)
+            .filter(
+                RolePermission.role_id == current_user.role_id,
+                Permission.code == permission_code
+            )
+            .first()
+        )
+
+        if not permission_exists:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Permiso denegado."
+            )
+
+        return current_user
+
+    return dependency
