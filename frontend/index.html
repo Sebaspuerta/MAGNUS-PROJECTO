@@ -767,6 +767,199 @@ MODULES
 }
 
 /* =========================
+ORDER BADGES
+========================= */
+
+.order-badge{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 10px;
+  border-radius:8px;
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.4px;
+}
+
+.badge-abierta{background:#11331d;color:#5eff8f}
+.badge-pendiente{background:#3b2708;color:#ffc861}
+.badge-cerrada{background:#10203f;color:#7cb0ff}
+.badge-cancelada{background:#4b0d16;color:#ff7c90}
+.badge-pagado{background:#11331d;color:#5eff8f}
+.badge-fiado{background:#3b2708;color:#ffc861}
+.badge-parcial{background:#31154e;color:#d8a5ff}
+
+/* =========================
+ACTION BUTTONS
+========================= */
+
+.btn-action{
+  padding:10px 20px;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+  transition:.2s;
+  font-family:'Poppins',sans-serif;
+}
+
+.btn-action:hover{opacity:.85;transform:translateY(-1px)}
+
+.btn-success{
+  background:linear-gradient(180deg,#16803c,#0e5a29);
+  color:#fff;
+}
+
+.btn-cancel{
+  background:linear-gradient(180deg,#b91c1c,#7f1212);
+  color:#fff;
+}
+
+.btn-ghost{
+  background:#101923;
+  border:1px solid #1f2d3a;
+  color:#c7d0db;
+}
+
+/* =========================
+ORDER DETAIL
+========================= */
+
+.order-detail-header{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(170px,1fr));
+  gap:12px;
+  padding:16px;
+  background:#080d13;
+  border:1px solid #1a2633;
+  border-radius:14px;
+  margin-bottom:18px;
+}
+
+.order-detail-field label{
+  font-size:11px;
+  color:#8f9baa;
+  letter-spacing:.5px;
+  text-transform:uppercase;
+  display:block;
+  margin-bottom:4px;
+}
+
+.order-detail-field span{
+  font-size:15px;
+  font-weight:600;
+  color:#f0f4f8;
+}
+
+.order-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:18px;
+}
+
+/* =========================
+ADD ITEM FORM
+========================= */
+
+.add-item-section{
+  margin-top:20px;
+  padding:16px;
+  background:#080d13;
+  border:1px solid #1a2633;
+  border-radius:14px;
+}
+
+.add-item-section h4{
+  margin-bottom:14px;
+  color:#d9a441;
+  font-size:15px;
+}
+
+.form-row{
+  display:flex;
+  gap:12px;
+  align-items:flex-end;
+  flex-wrap:wrap;
+}
+
+.form-group{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  flex:1;
+  min-width:140px;
+}
+
+.form-group label{
+  font-size:13px;
+  color:#9aa6b4;
+}
+
+.form-group select,
+.form-group input[type="number"],
+.form-group input[type="text"]{
+  background:#0b111b;
+  border:1px solid #1f2c39;
+  color:#eef2ff;
+  border-radius:10px;
+  padding:10px 12px;
+  font-family:'Poppins',sans-serif;
+  font-size:14px;
+  width:100%;
+}
+
+.form-group select option{background:#0b111b}
+
+/* =========================
+GENERIC MODAL OVERLAY
+========================= */
+
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(5,8,13,.88);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:8000;
+}
+
+.modal-title-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:18px;
+}
+
+.modal-title-row h2{font-size:22px}
+
+.modal-close-x{
+  background:none;
+  border:none;
+  color:#8f9baa;
+  font-size:20px;
+  cursor:pointer;
+  line-height:1;
+  padding:0;
+}
+
+.modal-close-x:hover{color:#ef4444}
+
+.modal-field select{
+  background:#0b111b;
+  border:1px solid #1f2c39;
+  color:#eef2ff;
+  border-radius:12px;
+  padding:14px 16px;
+  font-family:'Poppins',sans-serif;
+  font-size:14px;
+  width:100%;
+}
+
+.modal-field select option{background:#0b111b}
+
+/* =========================
 RESPONSIVE
 ========================= */
 

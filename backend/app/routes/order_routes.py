@@ -5,6 +5,7 @@ from app.database import get_db
 from app.models.security import User
 from app.schemas.order import (
     OrderCreate,
+    OrderCloseRequest,
     OrderItemCreate,
     OrderItemResponse,
     OrderResponse,
@@ -129,10 +130,11 @@ def patch_order_pending(
 @router.patch("/{order_id}/close", response_model=OrderResponse)
 def patch_order_close(
     order_id: int,
+    payload: OrderCloseRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("comandas.cerrar"))
 ):
-    result, error = close_order(db, order_id, current_user)
+    result, error = close_order(db, order_id, payload, current_user)
 
     if error:
         raise HTTPException(status_code=400, detail=error)

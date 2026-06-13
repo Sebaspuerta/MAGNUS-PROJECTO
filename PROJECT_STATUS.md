@@ -404,7 +404,7 @@ Módulo 01 — Seguridad y Control de Acceso: implementado base funcional.
 Módulo 02 — Gestión de Barberos: implementado base funcional.
 Módulo 03 — Gestión de Clientes: implementado base funcional.
 Módulo 04 — Catálogo de Servicios: implementado base funcional.
-Módulo 05 — Comanda Digital por Cliente: implementado base inicial, incompleto.
+Módulo 05 — Comanda Digital por Cliente: implementado completo — cierre atómico funcional (barbero + inventario + caja + CxC) y UI de comanda construida.
 Módulo 06 — Inventario de Productos: implementado base funcional y probado.
 Módulo 07 — Cuentas por Cobrar: pendiente.
 Módulo 08 — Recordatorios y Alertas: pendiente.
@@ -690,9 +690,8 @@ Todavía no se debe cerrar la lógica completa de servicios sin esa información
 
 ## Estado
 
-Implementado como base inicial, pero no completo.
-
-La comanda es el módulo central del sistema, pero depende de otros módulos pendientes como Caja, Cuentas por Cobrar e Inventario conectado al cierre.
+Implementado completo. El cierre close_order es una transacción atómica real.
+La UI de comanda en el frontend también está construida y conectada a los endpoints.
 
 ## Archivos
 
@@ -700,6 +699,7 @@ backend/app/models/order.py
 backend/app/schemas/order.py
 backend/app/services/order_service.py
 backend/app/routes/order_routes.py
+frontend/js/orders.js
 
 ## Modelos creados
 
@@ -708,7 +708,10 @@ orders:
 - id
 - client_id
 - barber_id
-- status
+- payment_status   ← pendiente / pagado / parcial / fiado
+- amount_paid
+- is_fiado
+- status           ← abierta / pendiente / cerrada / cancelada
 - subtotal
 - discount
 - total
@@ -732,67 +735,45 @@ order_items:
 
 ## Funcionalidades implementadas
 
-- Crear comanda.
+- Crear comanda (cliente opcional, barbero opcional, toggle fiado, notas).
 - Listar comandas.
 - Consultar comanda por ID.
-- Agregar ítems.
+- Agregar ítems (servicio o producto).
 - Editar cantidad de ítems.
 - Eliminar ítems antes del cierre.
-- Calcular subtotal.
-- Calcular descuento.
-- Calcular total.
+- Calcular subtotal, descuento y total en tiempo real.
 - Marcar comanda como pendiente.
 - Cancelar comanda.
-- Auditoría base.
+- Cerrar comanda — transacción atómica completa:
+  1. Valida que exista, no esté cancelada/cerrada y tenga ítems.
+  2. Barbero obligatorio: valida activo y lo asigna si viene en el payload.
+  3. Descuenta inventario (salida_venta por producto; salida_servicio por consumibles).
+  4. Si NO es fiado y hay saldo: exige payment_method, crea Payment y CashMovement
+     tipo ingreso_venta en la caja abierta, actualiza amount_paid.
+  5. Marca status="cerrada" y payment_status: pagado / parcial / fiado.
+  6. Si es fiado con saldo: crea o actualiza AccountsReceivable.
+  7. Auditoría del cierre. Un solo db.commit().
+- Auditoría en todas las mutaciones.
 
 ## Endpoints
 
-GET /api/orders
-POST /api/orders
-GET /api/orders/{order_id}
-POST /api/orders/{order_id}/items
-PATCH /api/orders/{order_id}/items/{item_id}
+GET    /api/orders
+POST   /api/orders
+GET    /api/orders/{order_id}
+POST   /api/orders/{order_id}/items
+PATCH  /api/orders/{order_id}/items/{item_id}
 DELETE /api/orders/{order_id}/items/{item_id}
-PATCH /api/orders/{order_id}/pending
-PATCH /api/orders/{order_id}/cancel
+PATCH  /api/orders/{order_id}/pending
+PATCH  /api/orders/{order_id}/cancel
+PATCH  /api/orders/{order_id}/close   ← OrderCloseRequest { barber_id?, cash_register_id?, payment_amount?, payment_method?, note? }
 
-## Pendiente crítico
+## Pendiente
 
-Este módulo NO tiene aún cierre completo.
-
-Falta:
-
-- Cerrar comanda como pagada.
-- Cerrar comanda como fiado.
-- Selección obligatoria del barbero responsable.
-- Selección obligatoria del método de pago.
-- Pago dividido.
-- Abonos parciales.
-- Descuento autorizado por rol.
-- Descuento de inventario al cerrar.
-- Registro automático en caja.
-- Registro automático en cuentas por cobrar si queda fiado.
-- Actualización del historial del cliente.
-- Actualización de rendimiento del barbero.
-- Transacción atómica:
-  - Comanda
-  - Inventario
-  - Caja
-  - Barbero
-  - Cliente
-  - Auditoría
-
-## Importante
-
-No completar cierre de comanda sin antes diseñar bien:
-
-- Caja.
-- Métodos de pago.
-- Cuentas por cobrar.
-- Flujo de fiado.
-- Descuentos.
-- Cómo se manejará el recibo.
-- Cómo se descontará inventario.
+- Pago dividido (un método por cierre en esta versión).
+- Descuento autorizado por rol (campo discount existe pero no hay restricción de permiso).
+- Actualización de rendimiento/comisión del barbero al cerrar.
+- Actualización del historial del cliente al cerrar.
+- Recibo o comprobante imprimible.
 
 ---
 
@@ -1005,8 +986,14 @@ Responsabilidades:
 
 Responsabilidades:
 
-- Consumir GET /api/orders.
-- Renderizar tabla simple de comandas.
+- Lista de comandas con botón "+ Nueva Comanda".
+- Modal nueva comanda: cliente (opcional), barbero (opcional), toggle fiado, notas.
+- Vista detalle inline: info grid, tabla de ítems, formulario agregar servicio/producto,
+  botones Cerrar y Cancelar.
+- Modal de cierre: resumen financiero, barbero obligatorio, método de pago + monto
+  (ocultos si es fiado), llama PATCH /api/orders/{id}/close.
+- Estado del módulo en variable _currentOrder para evitar serialización en onclick.
+- Carga catálogos (clientes, barberos, servicios, productos) al entrar al módulo.
 
 ## Cambios en index.html
 
@@ -1036,17 +1023,17 @@ contraseña: admin123
 ## Pendiente frontend
 
 - Validar que después del login el botón Inventario cargue Corona.
-- Validar Clientes.
-- Validar Barberos.
-- Validar Servicios.
-- Validar Comandas.
-- Crear formularios visuales.
+- Validar Clientes, Barberos, Servicios.
+- Crear formularios CRUD para Clientes, Barberos, Servicios, Inventario.
 - Reemplazar datos quemados del dashboard.
 - Conectar tarjetas del dashboard con datos reales.
-- Crear vista real de inventario.
-- Crear vista real de clientes.
-- Crear vista real de servicios.
-- Crear vista real de comandas.
+- UI de Caja (abrir, cerrar, movimientos).
+- UI de Cuentas por Cobrar.
+- UI de Alertas.
+- UI de Reportes.
+
+Hecho:
+- Comandas: lista + detalle + agregar ítems + cerrar + cancelar (orders.js).
 
 ---
 
@@ -1508,33 +1495,26 @@ El proyecto ya pasó de maqueta visual a sistema con backend real.
 
 Estado actual:
 
-- Backend FastAPI funcionando.
+- Backend FastAPI funcionando con 13 routers cableados.
 - PostgreSQL conectado.
 - Swagger funcionando.
 - Frontend servido desde FastAPI.
-- Login frontend iniciado.
-- Modal de login visible.
-- Módulos 01 al 06 creados.
-- Seguridad funcional.
-- Barberos funcional base.
-- Clientes funcional base.
-- Servicios funcional base.
-- Comandas base.
-- Inventario funcional base.
-- Producto Corona probado con stock 84.
-- Conexión frontend-backend en proceso.
+- Login frontend funcional.
+- Módulos 01 al 06 con backend base funcional.
+- Módulo 05 — Comanda: cierre atómico completo (barbero + inventario + caja + CxC).
+- Módulo 05 — Frontend de comanda: UI completa (lista, detalle, ítems, cerrar, cancelar).
+- Inventario funcional base. Producto Corona con stock 84 probado.
+- Esqueletos de backend para Módulos 07, 08, 09 (rutas y modelos creados).
 
 Pendiente principal inmediato:
 
-1. Terminar de conectar frontend con backend.
-2. Confirmar que Inventario muestre Corona desde PostgreSQL.
-3. Crear vistas CRUD reales en frontend.
-4. Avanzar con Caja.
-5. Avanzar con Cuentas por Cobrar.
-6. Completar cierre de Comanda.
-7. Crear Alertas.
-8. Crear Reportes.
-9. Crear Dashboard real.
+1. Crear vistas CRUD reales en frontend (Clientes, Barberos, Servicios, Inventario).
+2. UI de Caja: abrir caja, ver movimientos, cerrar caja.
+3. UI de Cuentas por Cobrar: listar, abonar.
+4. Módulo 08 — Alertas automáticas (stock bajo, CxC vencida, comandas abiertas).
+5. Módulo 10 — Reportes (incluyendo Excel de ventas).
+6. Módulo 11 — Dashboard real con datos de BD.
+7. Empaquetado (PyWebView + PyInstaller + instalador).
 
 ---
 
@@ -1542,39 +1522,40 @@ Pendiente principal inmediato:
 
 Orden sugerido:
 
-1. Terminar conexión frontend:
-   - Login.
-   - Inventario.
-   - Clientes.
-   - Barberos.
-   - Servicios.
-   - Comandas.
+COMPLETADO:
+- Login frontend.
+- Módulo 05 — Comanda Digital: backend completo (close_order atómico) + UI completa.
 
-2. Módulo 09 — Caja y Métodos de Pago.
+PRÓXIMOS PASOS:
 
-3. Módulo 07 — Cuentas por Cobrar.
+1. UI de Caja (frontend/js/cash.js):
+   - Abrir caja (POST /api/cash-registers/open).
+   - Ver caja activa y movimientos.
+   - Cerrar caja (PATCH /api/cash-registers/{id}/close).
+   Sin UI de caja no se puede cerrar una comanda de pago desde el frontend.
 
-4. Completar Módulo 05 — Cierre real de Comanda.
+2. UI de Cuentas por Cobrar (frontend/js/accounts.js):
+   - Listar deudas.
+   - Registrar abono.
 
-5. Integrar Comanda con Inventario.
+3. Formularios CRUD frontend para:
+   - Clientes (crear, editar, desactivar).
+   - Barberos (crear, editar).
+   - Servicios (crear, editar).
+   - Inventario (agregar producto, registrar entrada).
 
-6. Integrar Comanda con Caja.
+4. Módulo 08 — Alertas automáticas (stock bajo, CxC vencida, comandas abiertas).
 
-7. Integrar Comanda con Cuentas por Cobrar.
+5. Módulo 10 — Reportes (reporte general de ventas, Excel semanal/mensual/quincenal).
 
-8. Módulo 08 — Alertas.
+6. Módulo 11 — Dashboard real (endpoint /api/dashboard/summary + conectar tarjetas).
 
-9. Módulo 10 — Reportes.
-
-10. Módulo 11 — Dashboard real.
-
-11. Empaquetado:
-    - PyWebView.
-    - PyInstaller.
-    - Instalador.
-    - Acceso directo.
-    - Icono.
-    - Backup automático.
+7. Empaquetado:
+   - PyWebView.
+   - PyInstaller.
+   - Instalador Inno Setup.
+   - Acceso directo con ícono.
+   - Backup automático.
 
 ---
 

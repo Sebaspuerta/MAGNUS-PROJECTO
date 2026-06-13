@@ -8,7 +8,10 @@ from app.models.barber import Barber
 from app.models.service import Service
 from app.models.inventory import InventoryMovement, Product
 from app.models.accounts_receivable import AccountsReceivable
-from app.schemas.order import OrderCreate, OrderItemCreate, OrderItemUpdate
+from app.models.cash_register import CashRegister
+from app.models.cash_movement import CashMovement
+from app.models.payment import Payment
+from app.schemas.order import OrderCreate, OrderItemCreate, OrderItemUpdate, OrderCloseRequest
 from app.services.security_service import create_audit_log
 
 
@@ -356,7 +359,7 @@ def _sync_accounts_receivable_for_order(db: Session, order: Order, current_user:
     return True, None
 
 
-def close_order(db: Session, order_id: int, current_user: User):
+def close_order(db: Session, order_id: int, payload: OrderCloseRequest, current_user: User):
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         return None, "Comanda no encontrada."
@@ -364,32 +367,127 @@ def close_order(db: Session, order_id: int, current_user: User):
     if order.status in ["cancelada", "cerrada"]:
         return None, "La comanda no se puede cerrar en su estado actual."
 
+    if not order.items:
+        return None, "La comanda no tiene ítems. Agregue al menos un ítem antes de cerrar."
+
     try:
+        # 1) Barbero obligatorio
+        if payload.barber_id:
+            barber = db.query(Barber).filter(
+                Barber.id == payload.barber_id,
+                Barber.is_active == True
+            ).first()
+            if not barber:
+                db.rollback()
+                return None, "El barbero indicado no existe o está inactivo."
+            order.barber_id = payload.barber_id
+
+        if not order.barber_id:
+            db.rollback()
+            return None, "Debe asignar un barbero responsable antes de cerrar la comanda."
+
+        # 2) Descuento de inventario
         valid, error = _reserve_inventory_for_order(db, order, current_user)
         if not valid:
             db.rollback()
             return None, error
 
+        # 3) Pago si no es fiado y hay saldo pendiente
+        outstanding = float(order.total or 0) - float(order.amount_paid or 0)
+        if not order.is_fiado and outstanding > 0:
+            if not payload.payment_method:
+                db.rollback()
+                return None, "Debe indicar el método de pago."
+
+            amount = payload.payment_amount if payload.payment_amount is not None else outstanding
+            if amount <= 0:
+                db.rollback()
+                return None, "El monto de pago debe ser mayor que cero."
+            if amount > outstanding + 0.01:
+                db.rollback()
+                return None, f"El monto ingresado supera el saldo pendiente de ${outstanding:,.0f} COP."
+
+            # Buscar caja abierta
+            if payload.cash_register_id:
+                cash_register = db.query(CashRegister).filter(
+                    CashRegister.id == payload.cash_register_id,
+                    CashRegister.is_closed == False
+                ).first()
+                if not cash_register:
+                    db.rollback()
+                    return None, "La caja indicada no existe o está cerrada."
+            else:
+                open_registers = db.query(CashRegister).filter(
+                    CashRegister.is_closed == False
+                ).all()
+                if not open_registers:
+                    db.rollback()
+                    return None, "No hay una caja abierta. Abra la caja antes de cobrar."
+                if len(open_registers) > 1:
+                    db.rollback()
+                    return None, "Hay múltiples cajas abiertas. Indique cuál utilizar en el campo cash_register_id."
+                cash_register = open_registers[0]
+
+            payment = Payment(
+                order_id=order.id,
+                user_id=current_user.id,
+                cash_register_id=cash_register.id,
+                payment_method=payload.payment_method,
+                amount=amount,
+                note=payload.note
+            )
+            db.add(payment)
+            db.flush()
+
+            movement = CashMovement(
+                cash_register_id=cash_register.id,
+                user_id=current_user.id,
+                movement_type="ingreso_venta",
+                amount=amount,
+                payment_method=payload.payment_method,
+                description=f"Pago de comanda {order.id}",
+                reference_type="order",
+                reference_id=order.id
+            )
+            db.add(movement)
+            db.flush()
+
+            order.amount_paid = float(order.amount_paid or 0) + amount
+
+        # 4) Estado de la comanda
         order.status = "cerrada"
         order.closed_at = datetime.utcnow()
         order.updated_at = datetime.utcnow()
 
-        valid, error = _sync_accounts_receivable_for_order(db, order, current_user)
-        if not valid:
-            db.rollback()
-            return None, error
+        paid = float(order.amount_paid or 0)
+        total = float(order.total or 0)
+        if order.is_fiado:
+            order.payment_status = "fiado"
+        elif paid >= total:
+            order.payment_status = "pagado"
+        else:
+            order.payment_status = "parcial"
 
+        # 5) Cuentas por cobrar si es fiado con saldo
+        if order.is_fiado:
+            valid, error = _sync_accounts_receivable_for_order(db, order, current_user)
+            if not valid:
+                db.rollback()
+                return None, error
+
+        # 6) Auditoría y commit único
         create_audit_log(
             db=db,
             module="comandas",
             action="cerrar_comanda",
-            detail=f"El usuario {current_user.username} cerró la comanda {order.id}.",
+            detail=f"El usuario {current_user.username} cerró la comanda {order.id}. Estado de pago: {order.payment_status}.",
             user_id=current_user.id
         )
 
         db.commit()
         db.refresh(order)
         return serialize_order(order), None
+
     except Exception as e:
         db.rollback()
         return None, f"Error al cerrar la comanda: {str(e)}"

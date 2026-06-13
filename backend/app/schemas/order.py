@@ -41,6 +41,7 @@ class OrderCreate(BaseModel):
 
 
 class OrderCloseRequest(BaseModel):
+    barber_id: int | None = None
     cash_register_id: int | None = None
     payment_amount: float | None = None
     payment_method: str | None = None
