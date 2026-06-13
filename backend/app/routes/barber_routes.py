@@ -1,4 +1,5 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+﻿from datetime import date
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -8,6 +9,7 @@ from app.services.barber_service import (
     create_barber,
     deactivate_barber,
     get_barber_by_id,
+    get_barber_performance,
     list_barbers,
     update_barber
 )
@@ -36,6 +38,22 @@ def get_barber(
     current_user: User = Depends(require_permission("barberos.ver"))
 ):
     result, error = get_barber_by_id(db, barber_id)
+
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    return result
+
+
+@router.get("/{barber_id}/performance")
+def get_barber_performance_route(
+    barber_id: int,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("barberos.ver"))
+):
+    result, error = get_barber_performance(db, barber_id, start_date, end_date)
 
     if error:
         raise HTTPException(status_code=404, detail=error)

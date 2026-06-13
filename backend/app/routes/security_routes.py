@@ -7,12 +7,14 @@ from app.schemas.security import (
     CurrentUserResponse,
     LoginRequest,
     LoginResponse,
+    PasswordChangeRequest,
     RoleResponse,
     UserCreate,
     UserResponse
 )
 from app.services.security_service import (
     authenticate_user,
+    change_password,
     create_user,
     deactivate_user,
     list_roles,
@@ -59,6 +61,22 @@ def me(current_user: User = Depends(get_current_user)):
         "role": current_user.role.name,
         "is_active": current_user.is_active
     }
+
+
+@router.post("/change-password")
+def post_change_password(
+    payload: PasswordChangeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result, error = change_password(
+        db, current_user, payload.current_password, payload.new_password
+    )
+
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    return result
 
 
 @router.get("/roles", response_model=list[RoleResponse])

@@ -130,3 +130,63 @@ def deactivate_client(db: Session, client_id: int, admin_user: User):
     db.refresh(client)
 
     return serialize_client(client), None
+
+
+def get_client_profile(db: Session, client_id: int):
+    from datetime import datetime, timedelta
+    from sqlalchemy import func
+    from app.models.order import Order
+    from app.models.accounts_receivable import AccountsReceivable
+
+    client = db.query(Client).filter(Client.id == client_id).first()
+    if not client:
+        return None, "Cliente no encontrado."
+
+    closed = (
+        db.query(Order)
+        .filter(Order.client_id == client.id, Order.status == "cerrada")
+    )
+    visits_count = closed.count()
+    total_spent = float(
+        closed.with_entities(func.coalesce(func.sum(Order.total), 0)).scalar() or 0
+    )
+    last_order = (
+        closed.order_by(Order.closed_at.desc()).first()
+    )
+    last_visit = last_order.closed_at if last_order else None
+
+    outstanding = float(
+        db.query(func.coalesce(func.sum(AccountsReceivable.balance), 0))
+        .filter(
+            AccountsReceivable.client_id == client.id,
+            AccountsReceivable.is_active == True,  # noqa: E712
+            AccountsReceivable.balance > 0
+        )
+        .scalar() or 0
+    )
+
+    # Estado derivado (sin columnas nuevas): se calcula a partir del historial.
+    if outstanding > 0:
+        state = "Deudor"
+    elif visits_count == 0:
+        state = "Nuevo"
+    elif total_spent >= 200000 or visits_count >= 10:
+        state = "VIP"
+    elif visits_count >= 3:
+        state = "Frecuente"
+    else:
+        state = "Nuevo"
+
+    if last_visit and last_visit < datetime.utcnow() - timedelta(days=90):
+        state = "Inactivo" if outstanding <= 0 else state
+
+    profile = serialize_client(client)
+    profile.update({
+        "state": state,
+        "visits_count": visits_count,
+        "total_spent": round(total_spent, 2),
+        "last_visit": last_visit,
+        "outstanding_balance": round(outstanding, 2),
+        "has_debt": outstanding > 0
+    })
+    return profile, None

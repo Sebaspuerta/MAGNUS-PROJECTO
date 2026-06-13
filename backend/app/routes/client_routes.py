@@ -8,6 +8,7 @@ from app.services.client_service import (
     create_client,
     deactivate_client,
     get_client_by_id,
+    get_client_profile,
     list_clients,
     update_client
 )
@@ -36,6 +37,20 @@ def get_client(
     current_user: User = Depends(require_permission("clientes.ver"))
 ):
     result, error = get_client_by_id(db, client_id)
+
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    return result
+
+
+@router.get("/{client_id}/profile")
+def get_client_profile_route(
+    client_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("clientes.ver"))
+):
+    result, error = get_client_profile(db, client_id)
 
     if error:
         raise HTTPException(status_code=404, detail=error)

@@ -12,6 +12,7 @@ from app.services.accounts_receivable_service import (
     add_accounts_receivable_payment,
     create_accounts_receivable,
     get_accounts_receivable_by_id,
+    get_accounts_receivable_summary,
     list_accounts_receivable
 )
 from app.utils.security import require_permission
@@ -30,6 +31,14 @@ def get_accounts_receivable(
     current_user: User = Depends(require_permission("cuentas_por_cobrar.ver"))
 ):
     return list_accounts_receivable(db, client_id=client_id)
+
+
+@router.get("/summary")
+def get_accounts_receivable_summary_route(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("cuentas_por_cobrar.ver"))
+):
+    return get_accounts_receivable_summary(db)
 
 
 @router.get("/{ar_id}", response_model=AccountsReceivableResponse)

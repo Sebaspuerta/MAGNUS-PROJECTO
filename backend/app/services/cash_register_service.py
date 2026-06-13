@@ -59,12 +59,24 @@ def open_cash_register(db: Session, payload: CashRegisterOpenRequest, current_us
 
 
 def close_cash_register(db: Session, register_id: int, payload: CashRegisterCloseRequest, current_user: User):
+    from sqlalchemy import func
+    from app.models.payment import Payment
+
     register = db.query(CashRegister).filter(CashRegister.id == register_id).first()
     if not register:
         return None, "Caja no encontrada."
 
     if register.is_closed:
         return None, "La caja ya está cerrada."
+
+    # Arqueo: efectivo esperado = apertura + pagos registrados en la caja.
+    received = (
+        db.query(func.coalesce(func.sum(Payment.amount), 0))
+        .filter(Payment.cash_register_id == register.id)
+        .scalar()
+    )
+    expected_amount = float(register.opening_amount or 0) + float(received or 0)
+    difference = float(payload.closing_amount) - expected_amount
 
     register.closing_amount = payload.closing_amount
     register.closed_by_user_id = current_user.id
@@ -76,10 +88,18 @@ def close_cash_register(db: Session, register_id: int, payload: CashRegisterClos
         db=db,
         module="caja",
         action="cerrar_caja",
-        detail=f"El usuario {current_user.username} cerró la caja {register.id} con {payload.closing_amount}.",
+        detail=(
+            f"El usuario {current_user.username} cerró la caja {register.id}. "
+            f"Esperado: {expected_amount}, contado: {payload.closing_amount}, "
+            f"diferencia: {round(difference, 2)}."
+        ),
         user_id=current_user.id
     )
 
     db.commit()
     db.refresh(register)
-    return serialize_cash_register(register), None
+
+    result = serialize_cash_register(register)
+    result["expected_amount"] = round(expected_amount, 2)
+    result["difference"] = round(difference, 2)
+    return result, None

@@ -16,6 +16,8 @@ from app.routes.accounts_receivable_routes import router as accounts_receivable_
 from app.routes.alerts_routes import router as alerts_router
 from app.routes.system_config_routes import router as system_config_router
 from app.routes.service_consumable_routes import router as service_consumable_router
+from app.routes.dashboard_routes import router as dashboard_router
+from app.routes.reports_routes import router as reports_router
 
 
 app = FastAPI(
@@ -55,6 +57,8 @@ app.include_router(accounts_receivable_router)
 app.include_router(alerts_router)
 app.include_router(system_config_router)
 app.include_router(service_consumable_router)
+app.include_router(dashboard_router)
+app.include_router(reports_router)
 
 
 app.mount(

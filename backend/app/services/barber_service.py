@@ -177,3 +177,59 @@ def deactivate_barber(db: Session, barber_id: int, admin_user: User):
     db.refresh(barber)
 
     return serialize_barber(barber), None
+
+
+def get_barber_performance(db: Session, barber_id: int, start_date=None, end_date=None):
+    from datetime import datetime, date, timedelta
+    from sqlalchemy import func
+    from app.models.order import Order
+
+    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    if not barber:
+        return None, "Barbero no encontrado."
+
+    if end_date is None:
+        end_date = date.today()
+    if start_date is None:
+        start_date = end_date - timedelta(days=30)
+
+    start_dt = datetime(start_date.year, start_date.month, start_date.day)
+    end_dt = datetime(end_date.year, end_date.month, end_date.day) + timedelta(days=1)
+
+    base = (
+        db.query(Order)
+        .filter(
+            Order.barber_id == barber.id,
+            Order.status == "cerrada",
+            Order.closed_at >= start_dt,
+            Order.closed_at < end_dt
+        )
+    )
+
+    orders_count = base.count()
+    sales_total = (
+        base.with_entities(func.coalesce(func.sum(Order.total), 0)).scalar()
+    )
+    sales_total = float(sales_total or 0)
+
+    # Estimación de comisión según el tipo configurado en el barbero.
+    commission_type = (barber.commission_type or "").lower()
+    commission_value = float(barber.commission_value or 0)
+    if commission_type in ("porcentaje", "percent", "%"):
+        estimated_commission = sales_total * commission_value / 100.0
+    elif commission_type in ("fijo", "fixed", "monto"):
+        estimated_commission = commission_value * orders_count
+    else:
+        estimated_commission = 0.0
+
+    return {
+        "barber_id": barber.id,
+        "full_name": barber.full_name,
+        "alias": barber.alias,
+        "period": {"start_date": start_date, "end_date": end_date},
+        "orders_count": orders_count,
+        "sales_total": sales_total,
+        "commission_type": barber.commission_type,
+        "commission_value": commission_value,
+        "estimated_commission": round(estimated_commission, 2)
+    }, None

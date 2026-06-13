@@ -22,6 +22,8 @@ class CashRegisterResponse(BaseModel):
     closing_amount: float | None = None
     is_closed: bool
     notes: str | None = None
+    expected_amount: float | None = None
+    difference: float | None = None
 
     class Config:
         from_attributes = True

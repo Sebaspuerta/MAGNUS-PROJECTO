@@ -127,3 +127,73 @@ def add_accounts_receivable_payment(db: Session, ar_id: int, payload: AccountsRe
     db.commit()
     db.refresh(ar)
     return serialize_accounts_receivable(ar), None
+
+
+def refresh_overdue_status(db: Session):
+    """Marca como 'vencido' las cuentas activas con saldo y fecha de vencimiento
+    pasada. Devuelve cuántas se actualizaron. No hace commit (lo hace quien llama)."""
+    from datetime import date
+
+    today = date.today()
+    overdue = (
+        db.query(AccountsReceivable)
+        .filter(
+            AccountsReceivable.is_active == True,  # noqa: E712
+            AccountsReceivable.balance > 0,
+            AccountsReceivable.due_date.isnot(None),
+            AccountsReceivable.due_date < today,
+            AccountsReceivable.status != "pagado"
+        )
+        .all()
+    )
+    for ar in overdue:
+        ar.status = "vencido"
+    return len(overdue)
+
+
+def get_accounts_receivable_summary(db: Session):
+    from datetime import date
+    from sqlalchemy import func
+
+    refresh_overdue_status(db)
+    db.commit()
+
+    today = date.today()
+
+    pending_count = (
+        db.query(func.count(AccountsReceivable.id))
+        .filter(AccountsReceivable.is_active == True, AccountsReceivable.balance > 0)  # noqa: E712
+        .scalar()
+    )
+    pending_balance = (
+        db.query(func.coalesce(func.sum(AccountsReceivable.balance), 0))
+        .filter(AccountsReceivable.is_active == True, AccountsReceivable.balance > 0)  # noqa: E712
+        .scalar()
+    )
+    overdue_count = (
+        db.query(func.count(AccountsReceivable.id))
+        .filter(
+            AccountsReceivable.is_active == True,  # noqa: E712
+            AccountsReceivable.balance > 0,
+            AccountsReceivable.due_date.isnot(None),
+            AccountsReceivable.due_date < today
+        )
+        .scalar()
+    )
+    overdue_balance = (
+        db.query(func.coalesce(func.sum(AccountsReceivable.balance), 0))
+        .filter(
+            AccountsReceivable.is_active == True,  # noqa: E712
+            AccountsReceivable.balance > 0,
+            AccountsReceivable.due_date.isnot(None),
+            AccountsReceivable.due_date < today
+        )
+        .scalar()
+    )
+
+    return {
+        "pending_count": int(pending_count or 0),
+        "pending_balance": float(pending_balance or 0),
+        "overdue_count": int(overdue_count or 0),
+        "overdue_balance": float(overdue_balance or 0)
+    }

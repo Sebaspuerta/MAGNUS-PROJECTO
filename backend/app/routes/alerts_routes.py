@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.security import User
 from app.schemas.alert import AlertCreate, AlertResponse
-from app.services.alert_service import create_alert, list_alerts, mark_alert_as_read
+from app.services.alert_service import create_alert, generate_system_alerts, list_alerts, mark_alert_as_read
 from app.utils.security import require_permission
 
 
@@ -21,6 +21,17 @@ def get_alerts(
     current_user: User = Depends(require_permission("alertas.ver"))
 ):
     return list_alerts(db, only_active=only_active)
+
+
+@router.post("/generate")
+def post_generate_alerts(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("alertas.ver"))
+):
+    result, error = generate_system_alerts(db, current_user)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return result
 
 
 @router.post("", response_model=AlertResponse)

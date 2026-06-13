@@ -326,3 +326,32 @@ def deactivate_user(db: Session, user_id: int, admin_user: User):
         "role": user.role.name,
         "is_active": user.is_active
     }, None
+
+
+def change_password(db: Session, current_user: User, current_password: str, new_password: str):
+    if not verify_password(current_password, current_user.password_hash):
+        return None, "La contraseña actual es incorrecta."
+
+    if len(new_password) < 6:
+        return None, "La nueva contraseña debe tener al menos 6 caracteres."
+
+    if verify_password(new_password, current_user.password_hash):
+        return None, "La nueva contraseña no puede ser igual a la actual."
+
+    current_user.password_hash = hash_password(new_password)
+    current_user.password_changed_at = datetime.utcnow()
+    current_user.must_change_password = False
+    current_user.updated_at = datetime.utcnow()
+
+    create_audit_log(
+        db=db,
+        module="seguridad",
+        action="cambiar_password",
+        detail=f"El usuario {current_user.username} cambió su contraseña.",
+        user_id=current_user.id
+    )
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {"detail": "Contraseña actualizada correctamente."}, None

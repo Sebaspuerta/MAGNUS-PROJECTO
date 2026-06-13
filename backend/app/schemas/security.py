@@ -51,3 +51,8 @@ class CurrentUserResponse(BaseModel):
     full_name: str
     role: str
     is_active: bool
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: str
+    new_password: str
