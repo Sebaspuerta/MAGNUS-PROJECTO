@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventario Viking Barber</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="Inventario.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>⚔ Inventario Viking</h1>
+        <button class="primary" onclick="openModal()">+ Producto</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <div class="history">
+        <h2 style="color:var(--gold);font-family:Cinzel,serif;">Historial de Movimientos</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Motivo</th>
+                </tr>
+            </thead>
+            <tbody id="history"></tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <h2 style="color:var(--gold);font-family:Cinzel,serif;">Producto</h2>
+
+        <input id="name" placeholder="Nombre">
+
+        <select id="type">
+            <option>Venta</option>
+            <option>Consumible</option>
+            <option>Perecedero</option>
+        </select>
+
+        <input type="number" id="stock" placeholder="Stock inicial">
+        <input type="number" id="min" placeholder="Stock mínimo">
+        <input type="number" id="price" placeholder="Costo">
+
+        <input type="date" id="expiry">
+
+        <button class="primary save" onclick="save()">Guardar</button>
+        <button class="secondary save" onclick="closeModal()">Cerrar</button>
+    </div>
+</div>
+
+<script src="Inventario.js"></script>
+
+</body>
+</html>

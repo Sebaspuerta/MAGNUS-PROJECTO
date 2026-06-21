@@ -1,0 +1,167 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Poppins',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#050b14;
+    overflow:hidden;
+}
+
+.background{
+    position:absolute;
+    inset:0;
+
+    background:
+    linear-gradient(
+    rgba(0,0,0,.75),
+    rgba(0,0,0,.85)),
+    url('viking-bg.jpg');
+
+    background-size:cover;
+    background-position:center;
+}
+
+.login-container{
+    position:relative;
+    z-index:2;
+
+    width:1000px;
+    max-width:95%;
+
+    display:grid;
+    grid-template-columns:1fr 1fr;
+
+    background:rgba(8,15,25,.90);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    backdrop-filter:blur(15px);
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    box-shadow:
+    0 0 30px rgba(0,0,0,.7);
+}
+
+.logo-section{
+    padding:60px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+
+.logo-placeholder img{
+    width:180px;
+    height:auto;
+    display:block;
+
+    filter:
+    drop-shadow(0 0 15px rgba(200,155,60,.4));
+
+    transition:.3s;
+}
+
+.logo-container img:hover{
+    transform:scale(1.05);
+}
+
+.logo-section h1{
+    font-family:'Cinzel',serif;
+    color:white;
+    font-size:4rem;
+}
+
+.logo-section h2{
+    color:#d32f2f;
+    letter-spacing:5px;
+}
+
+.logo-section p{
+    margin-top:20px;
+    color:#cfcfcf;
+    font-size:1.1rem;
+}
+
+.form-section{
+    padding:60px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.form-section h3{
+    color:white;
+    font-size:2rem;
+    margin-bottom:30px;
+}
+
+.input-group{
+    margin-bottom:20px;
+}
+
+input{
+    width:100%;
+    padding:15px;
+
+    border:none;
+    outline:none;
+
+    background:#101b2d;
+
+    color:white;
+
+    border:1px solid #1f2c44;
+
+    border-radius:12px;
+}
+
+input:focus{
+    border-color:#d32f2f;
+}
+
+button{
+    width:100%;
+
+    padding:15px;
+
+    border:none;
+
+    background:#d32f2f;
+
+    color:white;
+
+    font-weight:600;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    transition:.3s;
+}
+
+button:hover{
+    background:#ff3b3b;
+}
+
+form a{
+    display:block;
+    margin-top:15px;
+    color:#c89b3c;
+    text-decoration:none;
+}
+
+span{
+    display:block;
+    margin-top:25px;
+    color:white;
+}

@@ -1,0 +1,147 @@
+body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background:#050b14;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.background{
+    position:absolute;
+    inset:0;
+
+    background:
+    linear-gradient(
+    rgba(0,0,0,.8),
+    rgba(0,0,0,.8)),
+    url('viking-bg.jpg');
+
+    background-size:cover;
+    background-position:center;
+}
+
+.register-container{
+    position:relative;
+    z-index:2;
+
+    width:1100px;
+    max-width:95%;
+
+    display:grid;
+    grid-template-columns:45% 55%;
+
+    background:rgba(7,13,22,.95);
+
+    border-radius:20px;
+
+    overflow:hidden;
+
+    box-shadow:
+    0 0 40px rgba(0,0,0,.7);
+}
+
+.left-panel{
+    padding:50px;
+
+    background:
+    linear-gradient(
+    rgba(0,0,0,.3),
+    rgba(0,0,0,.3));
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.logo-placeholder{
+    width:180px;
+    height:180px;
+
+    border:2px dashed #c89b3c;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    color:#c89b3c;
+}
+
+.logo-container{
+    margin-bottom:25px;
+}
+
+.logo-container img{
+    width:180px;
+    height:auto;
+    display:block;
+
+    filter:
+    drop-shadow(0 0 15px rgba(200,155,60,.4));
+
+    transition:.3s;
+}
+
+.logo-container img:hover{
+    transform:scale(1.05);
+}
+
+.left-panel h1{
+    margin-top:30px;
+    color:white;
+    font-family:'Cinzel',serif;
+}
+
+.left-panel p{
+    color:#d4d4d4;
+    margin-top:20px;
+}
+
+.right-panel{
+    padding:50px;
+}
+
+.right-panel h2{
+    color:white;
+    margin-bottom:25px;
+}
+
+.right-panel form{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+input{
+    padding:15px;
+    border:none;
+
+    background:#101b2d;
+
+    color:white;
+
+    border-radius:10px;
+
+    border:1px solid #1f2c44;
+}
+
+button{
+    padding:15px;
+
+    background:#d32f2f;
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    font-weight:600;
+}
+
+button:hover{
+    background:#ff3b3b;
+}

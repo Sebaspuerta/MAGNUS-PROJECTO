@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuentas por Cobrar Viking Barber</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="Cuentas.css" rel="stylesheet">
+
+<style>
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>⚔ Cuentas por Cobrar</h1>
+        <button class="btn primary" onclick="openModal()">+ Nueva Deuda</button>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+    <h2 style="margin-top:30px;color:var(--gold);font-family:Cinzel,serif;">
+        Historial de Abonos
+    </h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Abono</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody id="history"></tbody>
+    </table>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+    <div class="box">
+
+        <h2 style="color:var(--gold);font-family:Cinzel,serif;">Registrar Deuda</h2>
+
+        <input id="client" placeholder="Cliente">
+        <input id="concept" placeholder="Concepto">
+        <input id="amount" type="number" placeholder="Monto total">
+        <input id="date" type="date">
+
+        <button class="btn primary save" onclick="saveDebt()">Guardar</button>
+        <button class="btn secondary save" onclick="closeModal()">Cerrar</button>
+
+    </div>
+</div>
+
+<script src="Cuentas.js"></script>
+
+</body>
+</html>

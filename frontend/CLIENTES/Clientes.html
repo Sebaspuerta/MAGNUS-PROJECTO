@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes</title>
+
+    <link rel="stylesheet" href="Clientes.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="background"></div>
+
+<div class="container">
+
+    <header class="page-header">
+
+        <div>
+            <h1>⚔ Gestión de Clientes</h1>
+            <p>Perfiles, historial y seguimiento de clientes</p>
+        </div>
+
+        <button class="btn-primary" id="openModal">
+            + Nuevo Cliente
+        </button>
+
+    </header>
+
+    <!-- ESTADÍSTICAS -->
+
+    <section class="stats-grid">
+
+        <div class="stat-card">
+            <h3>Total Clientes</h3>
+            <span>425</span>
+        </div>
+
+        <div class="stat-card">
+            <h3>Frecuentes</h3>
+            <span>180</span>
+        </div>
+
+        <div class="stat-card">
+            <h3>VIP</h3>
+            <span>32</span>
+        </div>
+
+        <div class="stat-card">
+            <h3>Deudores</h3>
+            <span>7</span>
+        </div>
+
+    </section>
+
+    <!-- BUSCADOR -->
+
+    <section class="search-section">
+
+        <input
+                type="text"
+                id="searchInput"
+                placeholder="Buscar cliente..."
+        >
+
+    </section>
+
+    <!-- CLIENTES -->
+
+    <section class="clientes-grid" id="clientesGrid">
+
+        <div class="cliente-card">
+
+            <div class="cliente-header">
+
+                <div class="avatar">
+                    JM
+                </div>
+
+                <div>
+
+                    <h3>Juan Medina</h3>
+
+                    <span class="badge frecuente">
+                        Frecuente
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="cliente-info">
+
+                <p><strong>Apodo:</strong> Juancho</p>
+                <p><strong>Celular:</strong> 3001234567</p>
+                <p><strong>Barbero:</strong> Andrés Medina</p>
+                <p><strong>Estilo:</strong> Fade + Barba</p>
+
+            </div>
+
+            <div class="acciones">
+
+                <button class="btn-info">
+                    Perfil
+                </button>
+
+                <button class="btn-secondary">
+                    Editar
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="cliente-card deuda">
+
+            <div class="cliente-header">
+
+                <div class="avatar">
+                    CR
+                </div>
+
+                <div>
+
+                    <h3>Carlos Rojas</h3>
+
+                    <span class="badge deudor">
+                        Deudor
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="cliente-info">
+
+                <p><strong>Deuda:</strong> $45.000</p>
+
+                <p><strong>Barbero:</strong> Juan Rojas</p>
+
+            </div>
+
+            <div class="alerta">
+
+                ⚠ Cliente con deuda pendiente
+
+            </div>
+
+            <div class="acciones">
+
+                <button class="btn-info">
+                    Perfil
+                </button>
+
+                <button class="btn-secondary">
+                    Editar
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- HISTORIAL -->
+
+    <section class="history-section">
+
+        <h2>Historial General</h2>
+
+        <table>
+
+            <thead>
+
+            <tr>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th>Visitas</th>
+                <th>Compras</th>
+                <th>Deuda</th>
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            <tr>
+                <td>Juan Medina</td>
+                <td>Frecuente</td>
+                <td>15</td>
+                <td>8</td>
+                <td>$0</td>
+            </tr>
+
+            <tr>
+                <td>Carlos Rojas</td>
+                <td>Deudor</td>
+                <td>6</td>
+                <td>2</td>
+                <td>$45.000</td>
+            </tr>
+
+            </tbody>
+
+        </table>
+
+    </section>
+
+</div>
+
+<!-- MODAL -->
+
+<div class="modal" id="modal">
+
+    <div class="modal-content">
+
+        <div class="modal-header">
+
+            <h2>Nuevo Cliente</h2>
+
+            <button id="closeModal">
+                ✕
+            </button>
+
+        </div>
+
+        <form>
+
+            <div class="tipo-cliente">
+
+                <label>
+                    <input type="radio" name="tipo" checked>
+                    Registrado
+                </label>
+
+                <label>
+                    <input type="radio" name="tipo">
+                    Rápido
+                </label>
+
+            </div>
+
+            <div class="form-grid">
+
+                <input type="text" placeholder="Nombre">
+
+                <input type="text" placeholder="Apodo">
+
+                <input type="text" placeholder="Celular">
+
+                <input type="date">
+
+                <input type="text" placeholder="Barbero Preferido">
+
+                <input type="text" placeholder="Estilo de Corte">
+
+            </div>
+
+            <textarea
+                    placeholder="Observaciones y notas internas..."
+            ></textarea>
+
+            <button class="btn-primary save-btn">
+                Guardar Cliente
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script src="Clientes.js"></script>
+
+</body>
+</html>

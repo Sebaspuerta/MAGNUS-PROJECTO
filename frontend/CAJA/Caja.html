@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caja Viking Barber</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="Caja.css" rel="stylesheet">
+
+<style>
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>⚔ Caja y Métodos de Pago</h1>
+        <button class="primary" onclick="openCash()">Abrir Caja</button>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="summary">
+
+        <div class="box">
+            <h3>Ventas</h3>
+            <span id="ventas">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Egresos</h3>
+            <span id="egresos">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Balance</h3>
+            <span id="balance">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Estado</h3>
+            <span id="status" class="badge closed">CERRADA</span>
+        </div>
+
+    </div>
+
+    <div class="grid">
+
+        <!-- CAJA -->
+        <div class="card">
+
+            <h3 style="color:var(--gold);font-family:Cinzel,serif;">Movimientos</h3>
+
+            <input id="concept" placeholder="Concepto venta/egreso">
+            <input id="amount" type="number" placeholder="Monto">
+
+            <select id="method">
+                <option>Efectivo</option>
+                <option>Nequi</option>
+                <option>Daviplata</option>
+                <option>Transferencia</option>
+                <option>Tarjeta</option>
+                <option>Cortesía</option>
+                <option>Fiado</option>
+                <option>Combinado</option>
+            </select>
+
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button class="primary" onclick="addSale()">Venta</button>
+                <button class="danger" onclick="addExpense()">Gasto</button>
+            </div>
+
+            <button class="secondary" style="width:100%;margin-top:10px;" onclick="closeCash()">
+                Cerrar Caja
+            </button>
+
+        </div>
+
+        <!-- LOG -->
+        <div class="card">
+
+            <h3 style="color:var(--gold);font-family:Cinzel,serif;">Log de Auditoría</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Método</th>
+                    </tr>
+                </thead>
+                <tbody id="log"></tbody>
+            </table>
+
+        </div>
+
+    </div>
+</div>
+
+<script src="Caja.js"></script>
+
+</body>
+</html>

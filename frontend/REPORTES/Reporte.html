@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reportes Viking Barber</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="Reporte.css" rel="stylesheet">
+
+<style>
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>⚔ Reportes de Operación</h1>
+        <button class="btn primary" onclick="printReport()">Exportar / Imprimir</button>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filters">
+        <select id="range" onchange="render()">
+            <option value="day">Día</option>
+            <option value="week">Semana</option>
+            <option value="month">Mes</option>
+        </select>
+
+        <select id="barber" onchange="render()">
+            <option value="all">Todos los barberos</option>
+            <option value="Ragnar">Ragnar</option>
+            <option value="Loki">Loki</option>
+            <option value="Thor">Thor</option>
+        </select>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="summary">
+
+        <div class="box">
+            <h3>Ventas</h3>
+            <span id="sales">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Servicios</h3>
+            <span id="services">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Comisiones</h3>
+            <span id="commissions">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Deudas</h3>
+            <span id="debts">0</span>
+        </div>
+
+    </div>
+
+    <!-- TOP PRODUCTS -->
+    <div class="grid">
+
+        <div class="card">
+            <div class="title">Productos más vendidos</div>
+            <div class="meta">Cera barba, shampoo, aceite premium</div>
+        </div>
+
+        <div class="card">
+            <div class="title">Productos menos vendidos</div>
+            <div class="meta">Tinte azul vikingo, accesorios especiales</div>
+        </div>
+
+        <div class="card">
+            <div class="title">Inventario general</div>
+            <div class="meta">Stock actualizado en tiempo real</div>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <table>
+        <thead>
+            <tr>
+                <th>Barbero</th>
+                <th>Servicios</th>
+                <th>Ventas</th>
+                <th>Comisión</th>
+            </tr>
+        </thead>
+        <tbody id="table"></tbody>
+    </table>
+
+</div>
+
+<script src="Reporte.js"></script>
+
+</body>
+</html>

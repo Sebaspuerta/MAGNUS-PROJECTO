@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comanda Vikinga</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="Comandas.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <h1>⚔ Comanda Digital</h1>
+        <button class="btn primary" onclick="addItem()">+ Agregar Ítem</button>
+    </div>
+
+    <div class="grid">
+
+        <!-- LEFT -->
+        <div class="panel">
+            <h3>Cliente</h3>
+            <input id="cliente" placeholder="Nombre del cliente">
+
+            <h3 style="margin-top:15px;">Barbero responsable</h3>
+            <select id="barbero">
+                <option value="">Seleccionar</option>
+                <option>Ragnar</option>
+                <option>Loki</option>
+                <option>Thor</option>
+            </select>
+
+            <h3 style="margin-top:15px;">Comanda</h3>
+            <div id="items"></div>
+
+            <div class="actions">
+                <button class="btn secondary" onclick="applyDiscount()">Descuento 10%</button>
+                <button class="btn danger" onclick="clearOrder()">Limpiar</button>
+            </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="panel">
+
+            <h3>Resumen</h3>
+
+            <p>Subtotal: $<span id="subtotal">0</span></p>
+            <p>Descuento: $<span id="discount">0</span></p>
+
+            <hr style="margin:10px 0;border:1px solid var(--border)">
+
+            <p class="total">Total: $<span id="total">0</span></p>
+
+            <h3 style="margin-top:15px;">Pago</h3>
+
+            <select id="paymentType">
+                <option>Completo</option>
+                <option>Parcial</option>
+                <option>Dividido</option>
+                <option>Fiado</option>
+            </select>
+
+            <input id="payment" placeholder="Monto abonado">
+
+            <h3 style="margin-top:15px;">Estado</h3>
+            <span id="status" class="badge pending">Pendiente</span>
+
+            <button class="btn primary" style="width:100%;margin-top:15px;" onclick="closeOrder()">
+                Cerrar Comanda
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<script src="Comandas.js"></script>
+
+</body>
+</html>

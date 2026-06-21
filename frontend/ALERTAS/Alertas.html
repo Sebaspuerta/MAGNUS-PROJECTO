@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Alertas Viking</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="Alertas.css" rel="stylesheet">
+<style>
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div>
+            <h1>⚔ Dashboard de Alertas</h1>
+            <p class="subtitle">Estado general del clan barbería</p>
+        </div>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="summary">
+
+        <div class="box">
+            <h3>Deudas</h3>
+            <span id="deudas">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Stock Bajo</h3>
+            <span id="stockBajo">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Agotados</h3>
+            <span id="agotados">0</span>
+        </div>
+
+        <div class="box">
+            <h3>Comandas</h3>
+            <span id="comandas">0</span>
+        </div>
+
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="grid" id="grid"></div>
+
+</div>
+
+<script src="Alertas.js"></script>
+
+</body>
+</html>
