@@ -1,279 +1,147 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Clientes</title>
 
     <link rel="stylesheet" href="Clientes.css">
-
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-</head>
+    <link rel="stylesheet" href="/css/nav.css">
 
+    <style>
+        .error-inline { color:#ef9a9a; font-size:.82rem; margin-top:8px; min-height:1em; }
+        .modal-perfil { position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; justify-content:center; align-items:center; z-index:300; }
+        .modal-perfil.active { display:flex; }
+        .perfil-box { background:var(--bg-2); border:1px solid var(--border); border-radius:18px; padding:28px; width:420px; max-width:95%; }
+        .perfil-box h3 { font-family:'Cinzel',serif; color:var(--gold); margin-bottom:16px; }
+        .perfil-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:.88rem; }
+        .perfil-row:last-child { border-bottom:none; }
+        .perfil-row .lbl { color:var(--muted); }
+        .perfil-row .val { font-weight:600; }
+    </style>
+</head>
 <body>
 
 <div class="background"></div>
 
 <div class="container">
 
-    <header class="page-header">
+    <div class="nav-top">
+        <a href="/DASHBOARD/Dashboard.html" class="nav-home" title="Dashboard">🏠</a>
+        <button class="nav-back" onclick="window.history.back()">← Regresar</button>
+    </div>
 
+    <header class="page-header">
         <div>
             <h1>⚔ Gestión de Clientes</h1>
             <p>Perfiles, historial y seguimiento de clientes</p>
         </div>
-
-        <button class="btn-primary" id="openModal">
-            + Nuevo Cliente
-        </button>
-
+        <button class="btn-primary" id="openModal">+ Nuevo Cliente</button>
     </header>
 
-    <!-- ESTADÍSTICAS -->
-
     <section class="stats-grid">
-
         <div class="stat-card">
             <h3>Total Clientes</h3>
-            <span>425</span>
+            <span id="stat-total">—</span>
         </div>
-
         <div class="stat-card">
-            <h3>Frecuentes</h3>
-            <span>180</span>
+            <h3>Activos</h3>
+            <span id="stat-activos">—</span>
         </div>
-
         <div class="stat-card">
-            <h3>VIP</h3>
-            <span>32</span>
+            <h3>Inactivos</h3>
+            <span id="stat-inactivos">—</span>
         </div>
-
         <div class="stat-card">
-            <h3>Deudores</h3>
-            <span>7</span>
+            <h3>Con deuda</h3>
+            <span id="stat-deuda">—</span>
         </div>
-
     </section>
-
-    <!-- BUSCADOR -->
 
     <section class="search-section">
-
-        <input
-                type="text"
-                id="searchInput"
-                placeholder="Buscar cliente..."
-        >
-
+        <input type="text" id="searchInput" placeholder="Buscar cliente por nombre, teléfono...">
     </section>
 
-    <!-- CLIENTES -->
+    <div id="error-global" class="error-inline" style="margin-bottom:10px;"></div>
 
     <section class="clientes-grid" id="clientesGrid">
-
-        <div class="cliente-card">
-
-            <div class="cliente-header">
-
-                <div class="avatar">
-                    JM
-                </div>
-
-                <div>
-
-                    <h3>Juan Medina</h3>
-
-                    <span class="badge frecuente">
-                        Frecuente
-                    </span>
-
-                </div>
-
-            </div>
-
-            <div class="cliente-info">
-
-                <p><strong>Apodo:</strong> Juancho</p>
-                <p><strong>Celular:</strong> 3001234567</p>
-                <p><strong>Barbero:</strong> Andrés Medina</p>
-                <p><strong>Estilo:</strong> Fade + Barba</p>
-
-            </div>
-
-            <div class="acciones">
-
-                <button class="btn-info">
-                    Perfil
-                </button>
-
-                <button class="btn-secondary">
-                    Editar
-                </button>
-
-            </div>
-
-        </div>
-
-        <div class="cliente-card deuda">
-
-            <div class="cliente-header">
-
-                <div class="avatar">
-                    CR
-                </div>
-
-                <div>
-
-                    <h3>Carlos Rojas</h3>
-
-                    <span class="badge deudor">
-                        Deudor
-                    </span>
-
-                </div>
-
-            </div>
-
-            <div class="cliente-info">
-
-                <p><strong>Deuda:</strong> $45.000</p>
-
-                <p><strong>Barbero:</strong> Juan Rojas</p>
-
-            </div>
-
-            <div class="alerta">
-
-                ⚠ Cliente con deuda pendiente
-
-            </div>
-
-            <div class="acciones">
-
-                <button class="btn-info">
-                    Perfil
-                </button>
-
-                <button class="btn-secondary">
-                    Editar
-                </button>
-
-            </div>
-
-        </div>
-
+        <div style="color:var(--muted);padding:20px 0;">Cargando clientes...</div>
     </section>
-
-    <!-- HISTORIAL -->
 
     <section class="history-section">
-
-        <h2>Historial General</h2>
-
+        <h2>Listado General</h2>
         <table>
-
             <thead>
-
-            <tr>
-                <th>Cliente</th>
-                <th>Estado</th>
-                <th>Visitas</th>
-                <th>Compras</th>
-                <th>Deuda</th>
-            </tr>
-
+                <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Documento</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
             </thead>
-
-            <tbody>
-
-            <tr>
-                <td>Juan Medina</td>
-                <td>Frecuente</td>
-                <td>15</td>
-                <td>8</td>
-                <td>$0</td>
-            </tr>
-
-            <tr>
-                <td>Carlos Rojas</td>
-                <td>Deudor</td>
-                <td>6</td>
-                <td>2</td>
-                <td>$45.000</td>
-            </tr>
-
-            </tbody>
-
+            <tbody id="tabla-body"></tbody>
         </table>
-
     </section>
 
 </div>
 
-<!-- MODAL -->
-
+<!-- MODAL CREAR / EDITAR -->
 <div class="modal" id="modal">
-
     <div class="modal-content">
-
         <div class="modal-header">
-
-            <h2>Nuevo Cliente</h2>
-
-            <button id="closeModal">
-                ✕
-            </button>
-
+            <h2 id="modal-titulo">Nuevo Cliente</h2>
+            <button id="closeModal">✕</button>
         </div>
 
-        <form>
+        <input type="hidden" id="f-id">
 
-            <div class="tipo-cliente">
-
-                <label>
-                    <input type="radio" name="tipo" checked>
-                    Registrado
-                </label>
-
-                <label>
-                    <input type="radio" name="tipo">
-                    Rápido
-                </label>
-
+        <div class="form-grid">
+            <div>
+                <label style="color:var(--muted);font-size:.78rem;">Nombre completo *</label>
+                <input type="text" id="f-nombre" placeholder="Nombre">
             </div>
-
-            <div class="form-grid">
-
-                <input type="text" placeholder="Nombre">
-
-                <input type="text" placeholder="Apodo">
-
-                <input type="text" placeholder="Celular">
-
-                <input type="date">
-
-                <input type="text" placeholder="Barbero Preferido">
-
-                <input type="text" placeholder="Estilo de Corte">
-
+            <div>
+                <label style="color:var(--muted);font-size:.78rem;">Teléfono</label>
+                <input type="text" id="f-telefono" placeholder="Celular">
             </div>
+            <div>
+                <label style="color:var(--muted);font-size:.78rem;">Email</label>
+                <input type="email" id="f-email" placeholder="correo@ejemplo.com">
+            </div>
+            <div>
+                <label style="color:var(--muted);font-size:.78rem;">N° documento</label>
+                <input type="text" id="f-documento" placeholder="CC / NIT">
+            </div>
+            <div>
+                <label style="color:var(--muted);font-size:.78rem;">Fecha nacimiento</label>
+                <input type="date" id="f-nacimiento">
+            </div>
+        </div>
 
-            <textarea
-                    placeholder="Observaciones y notas internas..."
-            ></textarea>
+        <textarea id="f-notas" placeholder="Observaciones y notas internas..." style="margin-top:10px;width:100%;"></textarea>
 
-            <button class="btn-primary save-btn">
-                Guardar Cliente
-            </button>
+        <div id="error-modal" class="error-inline"></div>
 
-        </form>
-
+        <button class="btn-primary save-btn" id="btn-guardar">Guardar Cliente</button>
     </div>
-
 </div>
 
-<script src="Clientes.js"></script>
+<!-- MODAL PERFIL -->
+<div class="modal-perfil" id="modal-perfil">
+    <div class="perfil-box">
+        <h3 id="perfil-titulo">Perfil del Cliente</h3>
+        <div id="perfil-content">Cargando...</div>
+        <button class="btn-secondary" style="width:100%;margin-top:18px;" onclick="cerrarPerfil()">Cerrar</button>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/guard.js"></script>
+<script src="/CLIENTES/Clientes.js"></script>
 
 </body>
 </html>

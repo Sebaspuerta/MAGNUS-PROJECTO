@@ -32,17 +32,19 @@
 
             <h3>Iniciar Sesión</h3>
 
-            <form>
+            <form id="login-form">
 
                 <div class="input-group">
-                    <input type="text" placeholder="Usuario">
+                    <input id="username" type="text" placeholder="Usuario" autocomplete="username">
                 </div>
 
                 <div class="input-group">
-                    <input type="password" placeholder="Contraseña">
+                    <input id="password" type="password" placeholder="Contraseña" autocomplete="current-password">
                 </div>
 
-                <button type="submit">
+                <div id="error-msg" style="color:#ff5252;font-size:.85rem;margin-bottom:10px;min-height:1.2em;"></div>
+
+                <button id="btn-submit" type="submit">
                     Entrar
                 </button>
 
@@ -52,7 +54,7 @@
 
                 <span>
                     ¿No tienes cuenta?
-                    <a href="register.html">
+                    <a href="/REGISTER/Register.html">
                         Registrarse
                     </a>
                 </span>
@@ -63,7 +65,8 @@
 
 </div>
 
-<script src="login.js"></script>
+<script src="/js/api.js"></script>
+<script src="/LOGIN/login.js"></script>
 
 </body>
 </html>

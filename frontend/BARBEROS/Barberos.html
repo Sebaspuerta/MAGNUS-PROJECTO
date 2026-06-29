@@ -6,8 +6,21 @@
     <title>Gestión de Barberos</title>
 
     <link rel="stylesheet" href="Barberos.css">
-
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/nav.css">
+
+    <style>
+        select { padding:14px; border:none; border-radius:10px; background:#13233d; color:white; width:100%; }
+        .error-inline { color:#ef9a9a; font-size:.82rem; margin-top:8px; min-height:1em; }
+        .modal-rendimiento { position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; justify-content:center; align-items:center; z-index:300; }
+        .modal-rendimiento.active { display:flex; }
+        .rend-box { background:#0d1a2d; border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:28px; width:420px; max-width:95%; }
+        .rend-box h3 { font-family:'Cinzel',serif; color:#c89b3c; margin-bottom:16px; }
+        .rend-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.06); font-size:.88rem; }
+        .rend-row:last-child { border-bottom:none; }
+        .rend-row .lbl { color:#9aa4b2; }
+        .rend-row .val { font-weight:600; }
+    </style>
 </head>
 <body>
 
@@ -15,250 +28,116 @@
 
 <div class="container">
 
-    <header class="page-header">
+    <div class="nav-top">
+        <a href="/DASHBOARD/Dashboard.html" class="nav-home" title="Dashboard">🏠</a>
+        <button class="nav-back" onclick="window.history.back()">← Regresar</button>
+    </div>
 
+    <header class="page-header">
         <div>
             <h1>⚔ Gestión de Barberos</h1>
             <p>Administración completa del equipo Magnus</p>
         </div>
-
-        <button class="btn-primary" id="openModal">
-            + Nuevo Barbero
-        </button>
-
+        <button class="btn-primary" id="openModal">+ Nuevo Barbero</button>
     </header>
 
     <section class="stats-grid">
-
         <div class="stat-card">
             <h3>Activos</h3>
-            <span>12</span>
+            <span id="stat-activos">—</span>
         </div>
-
         <div class="stat-card">
             <h3>Inactivos</h3>
-            <span>3</span>
+            <span id="stat-inactivos">—</span>
         </div>
-
         <div class="stat-card">
-            <h3>Cortes Mes</h3>
-            <span>425</span>
+            <h3>Total</h3>
+            <span id="stat-total">—</span>
         </div>
-
-        <div class="stat-card">
-            <h3>Ventas Mes</h3>
-            <span>$4.200.000</span>
-        </div>
-
     </section>
 
-    <section class="barberos-grid">
-
-        <div class="barbero-card">
-
-            <div class="barbero-header">
-
-                <div class="avatar">
-                    AM
-                </div>
-
-                <div>
-                    <h3>Andrés Medina</h3>
-
-                    <span class="estado activo">
-                        Activo
-                    </span>
-                </div>
-
-            </div>
-
-            <div class="datos">
-
-                <p><strong>Usuario:</strong> amedina</p>
-                <p><strong>PIN:</strong> ••••</p>
-                <p><strong>Cortes:</strong> 120</p>
-                <p><strong>Servicios:</strong> 180</p>
-                <p><strong>Ventas:</strong> $2.400.000</p>
-                <p><strong>Comisión:</strong> 15%</p>
-
-            </div>
-
-            <div class="acciones">
-
-                <button class="btn-info">
-                    Rendimiento
-                </button>
-
-                <button class="btn-secondary">
-                    Editar
-                </button>
-
-                <button class="btn-danger">
-                    Desactivar
-                </button>
-
-            </div>
-
-        </div>
-
-        <div class="barbero-card">
-
-            <div class="barbero-header">
-
-                <div class="avatar">
-                    JR
-                </div>
-
-                <div>
-                    <h3>Juan Rojas</h3>
-
-                    <span class="estado activo">
-                        Activo
-                    </span>
-                </div>
-
-            </div>
-
-            <div class="datos">
-
-                <p><strong>Usuario:</strong> jrojas</p>
-                <p><strong>PIN:</strong> ••••</p>
-                <p><strong>Cortes:</strong> 95</p>
-                <p><strong>Servicios:</strong> 130</p>
-                <p><strong>Ventas:</strong> $1.850.000</p>
-                <p><strong>Comisión:</strong> 12%</p>
-
-            </div>
-
-            <div class="acciones">
-
-                <button class="btn-info">
-                    Rendimiento
-                </button>
-
-                <button class="btn-secondary">
-                    Editar
-                </button>
-
-                <button class="btn-danger">
-                    Desactivar
-                </button>
-
-            </div>
-
-        </div>
-
+    <section class="barberos-grid" id="barberos-grid">
+        <div style="color:#9aa4b2;padding:20px 0;">Cargando barberos...</div>
     </section>
 
     <section class="history-section">
-
         <h2>Historial de Barberos</h2>
-
+        <div id="error-global" class="error-inline"></div>
         <table>
-
             <thead>
-
-            <tr>
-                <th>Nombre</th>
-                <th>Usuario</th>
-                <th>Estado</th>
-                <th>Ingreso</th>
-                <th>Salida</th>
-            </tr>
-
+                <tr>
+                    <th>#</th>
+                    <th>Nombre</th>
+                    <th>Alias</th>
+                    <th>Teléfono</th>
+                    <th>Comisión</th>
+                    <th>Estado</th>
+                </tr>
             </thead>
-
-            <tbody>
-
-            <tr>
-                <td>Andrés Medina</td>
-                <td>amedina</td>
-                <td>Activo</td>
-                <td>2024</td>
-                <td>-</td>
-            </tr>
-
-            <tr>
-                <td>Carlos Pérez</td>
-                <td>cperez</td>
-                <td>Inactivo</td>
-                <td>2022</td>
-                <td>2025</td>
-            </tr>
-
-            </tbody>
-
+            <tbody id="tabla-body"></tbody>
         </table>
-
     </section>
 
 </div>
 
-<!-- MODAL -->
-
+<!-- MODAL CREAR / EDITAR -->
 <div class="modal" id="modal">
-
     <div class="modal-content">
-
         <div class="modal-header">
-
-            <h2>Nuevo Barbero</h2>
-
-            <button id="closeModal">
-                ✕
-            </button>
-
+            <h2 id="modal-titulo">Nuevo Barbero</h2>
+            <button id="closeModal">✕</button>
         </div>
 
-        <form>
+        <input type="hidden" id="f-id">
 
-            <div class="form-grid">
-
-                <input type="text" placeholder="Nombre completo">
-
-                <input type="text" placeholder="Teléfono">
-
-                <input type="email" placeholder="Correo">
-
-                <input type="text" placeholder="Usuario">
-
-                <input type="password" placeholder="Contraseña">
-
-                <input type="number" placeholder="PIN">
-
-                <input type="number" placeholder="Comisión Corte %">
-
-                <input type="number" placeholder="Comisión Servicio %">
-
-                <input type="number" placeholder="Comisión Producto %">
-
+        <div class="form-grid">
+            <div>
+                <label style="color:#9aa4b2;font-size:.78rem;">Nombre completo *</label>
+                <input type="text" id="f-nombre" placeholder="Nombre completo">
             </div>
-
-            <div class="estado-radio">
-
-                <label>
-                    <input type="radio" name="estado" checked>
-                    Activo
-                </label>
-
-                <label>
-                    <input type="radio" name="estado">
-                    Inactivo
-                </label>
-
+            <div>
+                <label style="color:#9aa4b2;font-size:.78rem;">Alias / Apodo</label>
+                <input type="text" id="f-alias" placeholder="Alias">
             </div>
+            <div>
+                <label style="color:#9aa4b2;font-size:.78rem;">Teléfono</label>
+                <input type="text" id="f-telefono" placeholder="Teléfono">
+            </div>
+            <div>
+                <label style="color:#9aa4b2;font-size:.78rem;">Tipo comisión</label>
+                <select id="f-comision-tipo">
+                    <option value="porcentaje">Porcentaje (%)</option>
+                    <option value="fijo">Monto fijo</option>
+                </select>
+            </div>
+            <div>
+                <label style="color:#9aa4b2;font-size:.78rem;">Valor comisión</label>
+                <input type="number" id="f-comision-valor" placeholder="0" min="0" step="any">
+            </div>
+            <div>
+                <label style="color:#9aa4b2;font-size:.78rem;">Notas</label>
+                <input type="text" id="f-notas" placeholder="Observaciones...">
+            </div>
+        </div>
 
-            <button class="btn-primary save-btn">
-                Guardar Barbero
-            </button>
+        <div id="error-modal" class="error-inline"></div>
 
-        </form>
-
+        <button class="btn-primary save-btn" id="btn-guardar">Guardar Barbero</button>
     </div>
-
 </div>
 
-<script src="Barberos.js"></script>
+<!-- MODAL RENDIMIENTO -->
+<div class="modal-rendimiento" id="modal-rendimiento">
+    <div class="rend-box">
+        <h3 id="rend-titulo">Rendimiento</h3>
+        <div id="rend-content">Cargando...</div>
+        <button class="btn-secondary" style="width:100%;margin-top:18px;" onclick="cerrarRendimiento()">Cerrar</button>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/guard.js"></script>
+<script src="/BARBEROS/Barberos.js"></script>
 
 </body>
 </html>

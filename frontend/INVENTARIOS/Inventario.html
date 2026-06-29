@@ -3,33 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventario Viking Barber</title>
+<title>Inventario - Magnus Barber</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Inventario.css" rel="stylesheet">
 
+<style>
+.lbl{display:block;color:var(--muted);font-size:.78rem;margin-top:10px;margin-bottom:2px;}
+.err{color:#ef9a9a;font-size:.82rem;margin-top:8px;min-height:1em;}
+</style>
+    <link rel="stylesheet" href="/css/nav.css">
 </head>
 
 <body>
 
 <div class="container">
 
+    <div class="nav-top">
+        <a href="/DASHBOARD/Dashboard.html" class="nav-home" title="Dashboard">🏠</a>
+        <button class="nav-back" onclick="window.history.back()">← Regresar</button>
+    </div>
+
     <div class="header">
         <h1>⚔ Inventario Viking</h1>
-        <button class="primary" onclick="openModal()">+ Producto</button>
+        <button class="primary" onclick="abrirModalNuevo()">+ Producto</button>
     </div>
+
+    <div id="error-global" class="err" style="margin-bottom:10px;"></div>
+    <div id="msg-carga" style="color:var(--muted);padding:8px 0;">Cargando inventario...</div>
 
     <div class="grid" id="grid"></div>
 
-    <div class="history">
-        <h2 style="color:var(--gold);font-family:Cinzel,serif;">Historial de Movimientos</h2>
-        <table>
+    <div class="history" style="margin-top:30px;">
+        <h2 style="color:var(--gold);font-family:Cinzel,serif;">
+            Movimientos — <span id="history-title" style="font-size:.85rem;font-weight:400;color:var(--muted);">selecciona "Ver movimientos" en un producto</span>
+        </h2>
+        <div id="msg-movs" style="color:var(--muted);font-size:.85rem;padding:8px 0;"></div>
+        <table id="tabla-movs" style="display:none;">
             <thead>
                 <tr>
-                    <th>Producto</th>
                     <th>Tipo</th>
                     <th>Cantidad</th>
+                    <th>Stock anterior</th>
+                    <th>Stock nuevo</th>
                     <th>Motivo</th>
+                    <th>Fecha</th>
                 </tr>
             </thead>
             <tbody id="history"></tbody>
@@ -38,31 +56,85 @@
 
 </div>
 
-<!-- MODAL -->
-<div class="modal" id="modal">
-    <div class="modal-box">
-        <h2 style="color:var(--gold);font-family:Cinzel,serif;">Producto</h2>
+<!-- MODAL CREAR / EDITAR PRODUCTO -->
+<div class="modal" id="modal-producto">
+    <div class="modal-box" style="max-height:90vh;overflow-y:auto;">
+        <h2 id="modal-titulo" style="color:var(--gold);font-family:Cinzel,serif;margin-bottom:14px;">Producto</h2>
 
-        <input id="name" placeholder="Nombre">
+        <input type="hidden" id="edit-id">
 
-        <select id="type">
-            <option>Venta</option>
-            <option>Consumible</option>
-            <option>Perecedero</option>
+        <span class="lbl">Nombre *</span>
+        <input id="f-name" placeholder="Nombre del producto">
+
+        <span class="lbl">Categoría</span>
+        <select id="f-category">
+            <option value="">Sin categoría</option>
+            <option value="Cuidado masculino">Cuidado masculino</option>
+            <option value="Bebida">Bebida</option>
+            <option value="Mecato">Mecato</option>
+            <option value="Herramientas">Herramientas</option>
+            <option value="Otro">Otro</option>
         </select>
 
-        <input type="number" id="stock" placeholder="Stock inicial">
-        <input type="number" id="min" placeholder="Stock mínimo">
-        <input type="number" id="price" placeholder="Costo">
+        <span class="lbl">Tipo de producto *</span>
+        <select id="f-type">
+            <option value="venta">Venta (reventa al cliente)</option>
+            <option value="consumible_interno">Consumible interno (insumo del servicio)</option>
+            <option value="perecedero">Perecedero</option>
+        </select>
 
-        <input type="date" id="expiry">
+        <span class="lbl">Descripción</span>
+        <input id="f-desc" placeholder="Descripción opcional">
 
-        <button class="primary save" onclick="save()">Guardar</button>
-        <button class="secondary save" onclick="closeModal()">Cerrar</button>
+        <span class="lbl">Precio de venta (COP) *</span>
+        <input type="number" id="f-sale-price" placeholder="0" min="0" step="any">
+
+        <span class="lbl">Costo de compra (COP)</span>
+        <input type="number" id="f-purchase-cost" placeholder="0" min="0" step="any">
+
+        <div id="stock-inicial-section">
+            <span class="lbl">Stock inicial</span>
+            <input type="number" id="f-stock" placeholder="0" min="0">
+        </div>
+
+        <span class="lbl">Stock mínimo (alerta)</span>
+        <input type="number" id="f-min-stock" placeholder="0" min="0">
+
+        <span class="lbl">Fecha de vencimiento</span>
+        <input type="date" id="f-expiry">
+
+        <div id="error-producto" class="err"></div>
+
+        <button class="primary save" id="btn-guardar" onclick="guardarProducto()">Guardar</button>
+        <button class="secondary save" onclick="cerrarModal('modal-producto')">Cancelar</button>
     </div>
 </div>
 
-<script src="Inventario.js"></script>
+<!-- MODAL ENTRADA DE STOCK -->
+<div class="modal" id="modal-entrada">
+    <div class="modal-box">
+        <h2 style="color:var(--gold);font-family:Cinzel,serif;margin-bottom:14px;">
+            Entrada de Stock — <span id="entrada-nombre" style="font-size:.85rem;"></span>
+        </h2>
+
+        <input type="hidden" id="entrada-id">
+
+        <span class="lbl">Cantidad a ingresar *</span>
+        <input type="number" id="entrada-qty" placeholder="1" min="1">
+
+        <span class="lbl">Motivo *</span>
+        <input id="entrada-reason" placeholder="Ej. Compra a proveedor">
+
+        <div id="error-entrada" class="err"></div>
+
+        <button class="primary save" id="btn-confirmar-entrada" onclick="confirmarEntrada()">Confirmar Entrada</button>
+        <button class="secondary save" onclick="cerrarModal('modal-entrada')">Cancelar</button>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/guard.js"></script>
+<script src="/INVENTARIOS/Inventario.js"></script>
 
 </body>
 </html>

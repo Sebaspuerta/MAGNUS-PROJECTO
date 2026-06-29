@@ -3,81 +3,206 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comanda Vikinga</title>
+<title>Comandas - Magnus Barber</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Comandas.css" rel="stylesheet">
 
+<style>
+/* Tabla de lista */
+.cmd-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;margin-top:8px;}
+.cmd-table th,.cmd-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:.85rem;}
+.cmd-table th{color:var(--text);background:rgba(200,155,60,.1);font-weight:600;text-align:left;}
+.cmd-table td{color:var(--muted);}
+.cmd-table tr:last-child td{border-bottom:none;}
+.cmd-table tr:hover td{background:rgba(255,255,255,.02);}
+
+/* Modales */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:300;}
+.modal-overlay.visible{display:flex;}
+.modal-box{background:#0f1a2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;width:440px;max-width:95%;max-height:90vh;overflow-y:auto;}
+.modal-box h3{font-family:'Cinzel',serif;color:var(--gold);margin-bottom:16px;font-size:1.05rem;}
+.modal-box label{display:block;color:var(--muted);font-size:.78rem;margin-top:12px;margin-bottom:3px;}
+.modal-box input[type="checkbox"]{width:auto;margin:0;vertical-align:middle;}
+.fiado-label{display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:14px;color:var(--muted);font-size:.85rem;}
+</style>
+    <link rel="stylesheet" href="/css/nav.css">
 </head>
 
 <body>
 
 <div class="container">
 
-    <div class="header">
-        <h1>⚔ Comanda Digital</h1>
-        <button class="btn primary" onclick="addItem()">+ Agregar Ítem</button>
+    <div class="nav-top">
+        <a href="/DASHBOARD/Dashboard.html" class="nav-home" title="Dashboard">🏠</a>
+        <button class="nav-back" onclick="window.history.back()">← Regresar</button>
     </div>
 
-    <div class="grid">
+    <div class="header">
+        <h1>⚔ Comandas</h1>
+        <div style="display:flex;gap:10px;align-items:center;">
+            <button id="btn-volver" class="btn secondary" style="display:none;" onclick="volverALista()">← Volver</button>
+            <button id="btn-nueva" class="btn primary" onclick="mostrarModalNueva()">+ Nueva Comanda</button>
+        </div>
+    </div>
 
-        <!-- LEFT -->
-        <div class="panel">
-            <h3>Cliente</h3>
-            <input id="cliente" placeholder="Nombre del cliente">
+    <!-- ── VISTA LISTA ───────────────────────────────────────── -->
+    <div id="vista-lista">
+        <div id="msg-lista" style="color:var(--muted);padding:16px 0;font-size:.9rem;">Cargando comandas...</div>
+        <table class="cmd-table" id="tabla-lista" style="display:none;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Cliente</th>
+                    <th>Barbero</th>
+                    <th>Estado</th>
+                    <th>Total</th>
+                    <th>Fiado</th>
+                    <th>Fecha</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="body-lista"></tbody>
+        </table>
+    </div>
 
-            <h3 style="margin-top:15px;">Barbero responsable</h3>
-            <select id="barbero">
-                <option value="">Seleccionar</option>
-                <option>Ragnar</option>
-                <option>Loki</option>
-                <option>Thor</option>
-            </select>
+    <!-- ── VISTA DETALLE ─────────────────────────────────────── -->
+    <div id="vista-detalle" style="display:none;">
+        <div class="grid">
 
-            <h3 style="margin-top:15px;">Comanda</h3>
-            <div id="items"></div>
+            <!-- LEFT -->
+            <div class="panel">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
+                    <span style="font-family:'Cinzel',serif;color:var(--gold);font-size:1.1rem;">
+                        Comanda #<span id="det-id">—</span>
+                    </span>
+                    <span id="det-fiado-badge" class="badge" style="background:#1565c0;display:none;">Fiado</span>
+                </div>
+                <div style="color:var(--muted);font-size:.76rem;margin-bottom:16px;">
+                    Creada: <span id="det-fecha">—</span>
+                </div>
 
-            <div class="actions">
-                <button class="btn secondary" onclick="applyDiscount()">Descuento 10%</button>
-                <button class="btn danger" onclick="clearOrder()">Limpiar</button>
+                <h3>Cliente</h3>
+                <div id="det-cliente" style="color:var(--muted);font-size:.88rem;margin-top:6px;padding:8px 10px;background:rgba(15,26,46,.6);border-radius:8px;border:1px solid var(--border);">—</div>
+
+                <h3 style="margin-top:15px;">Barbero</h3>
+                <div id="det-barbero" style="color:var(--muted);font-size:.88rem;margin-top:6px;padding:8px 10px;background:rgba(15,26,46,.6);border-radius:8px;border:1px solid var(--border);">—</div>
+
+                <h3 style="margin-top:15px;">Ítems</h3>
+                <div id="det-items" style="margin-top:8px;"></div>
+
+                <div id="error-detalle" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
+
+                <div id="det-acciones" class="actions" style="margin-top:14px;">
+                    <button class="btn primary" onclick="mostrarModalItem()">+ Agregar Ítem</button>
+                    <button class="btn danger" onclick="cancelarComanda()">Cancelar</button>
+                </div>
             </div>
+
+            <!-- RIGHT -->
+            <div class="panel">
+                <h3>Resumen</h3>
+                <p>Subtotal: $<span id="det-subtotal">0</span></p>
+                <p>Descuento: $<span id="det-descuento">0</span></p>
+                <hr style="margin:10px 0;border:1px solid var(--border)">
+                <p class="total">Total: $<span id="det-total">0</span></p>
+                <p style="color:var(--muted);font-size:.82rem;margin-top:4px;">Pagado: $<span id="det-pagado">0</span></p>
+
+                <h3 style="margin-top:15px;">Estado de pago</h3>
+                <span id="det-status-pago" class="badge pending" style="margin-top:6px;display:inline-block;">—</span>
+
+                <div id="panel-cerrar">
+                    <button id="btn-cerrar-comanda" class="btn primary" style="width:100%;margin-top:20px;" onclick="mostrarModalCobrar()">
+                        Cerrar y Cobrar
+                    </button>
+                </div>
+            </div>
+
         </div>
+    </div>
 
-        <!-- RIGHT -->
-        <div class="panel">
+</div><!-- /container -->
 
-            <h3>Resumen</h3>
-
-            <p>Subtotal: $<span id="subtotal">0</span></p>
-            <p>Descuento: $<span id="discount">0</span></p>
-
-            <hr style="margin:10px 0;border:1px solid var(--border)">
-
-            <p class="total">Total: $<span id="total">0</span></p>
-
-            <h3 style="margin-top:15px;">Pago</h3>
-
-            <select id="paymentType">
-                <option>Completo</option>
-                <option>Parcial</option>
-                <option>Dividido</option>
-                <option>Fiado</option>
-            </select>
-
-            <input id="payment" placeholder="Monto abonado">
-
-            <h3 style="margin-top:15px;">Estado</h3>
-            <span id="status" class="badge pending">Pendiente</span>
-
-            <button class="btn primary" style="width:100%;margin-top:15px;" onclick="closeOrder()">
-                Cerrar Comanda
-            </button>
+<!-- ── MODAL NUEVA COMANDA ────────────────────────────────────── -->
+<div id="modal-nueva" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Nueva Comanda</h3>
+        <label>Cliente (opcional)</label>
+        <select id="nueva-cliente"><option value="">Sin cliente</option></select>
+        <label>Barbero (opcional)</label>
+        <select id="nueva-barbero"><option value="">Sin asignar</option></select>
+        <label class="fiado-label">
+            <input type="checkbox" id="nueva-fiado"> Marcar como Fiado
+        </label>
+        <label>Notas (opcional)</label>
+        <input id="nueva-notas" type="text" placeholder="Observaciones...">
+        <div id="error-nueva" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+            <button id="btn-confirm-nueva" class="btn primary" onclick="confirmarNueva()">Crear Comanda</button>
+            <button class="btn secondary" onclick="cerrarModal('modal-nueva')">Cancelar</button>
         </div>
-
     </div>
 </div>
 
-<script src="Comandas.js"></script>
+<!-- ── MODAL AGREGAR ÍTEM ────────────────────────────────────── -->
+<div id="modal-item" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Agregar Ítem</h3>
+        <label>Tipo</label>
+        <select id="item-tipo" onchange="actualizarSelectItem()">
+            <option value="servicio">Servicio</option>
+            <option value="producto">Producto</option>
+        </select>
+        <label>Seleccionar</label>
+        <select id="item-select" onchange="autoFillPrecio()">
+            <option value="">— elegir —</option>
+        </select>
+        <label>Cantidad</label>
+        <input id="item-cantidad" type="number" min="1" value="1">
+        <label>Precio unitario ($)</label>
+        <input id="item-precio" type="number" min="0" step="any" placeholder="0">
+        <div id="error-item" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+            <button id="btn-confirm-item" class="btn primary" onclick="confirmarAgregarItem()">Agregar</button>
+            <button class="btn secondary" onclick="cerrarModal('modal-item')">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL CERRAR / COBRAR ─────────────────────────────────── -->
+<div id="modal-cobrar" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Cerrar y Cobrar</h3>
+        <div id="cobrar-info" style="color:var(--muted);font-size:.85rem;margin-bottom:10px;padding:8px 10px;background:rgba(200,155,60,.06);border-radius:8px;border:1px solid rgba(200,155,60,.15);"></div>
+        <label>Barbero responsable</label>
+        <select id="cobrar-barbero"><option value="">— seleccionar —</option></select>
+        <div id="cobrar-pago-section">
+            <label>Método de pago</label>
+            <select id="cobrar-metodo">
+                <option value="efectivo">Efectivo</option>
+                <option value="nequi">Nequi</option>
+                <option value="daviplata">Daviplata</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="cortesia">Cortesía</option>
+                <option value="combinado">Combinado</option>
+            </select>
+            <label>Monto recibido (vacío = cobrar total)</label>
+            <input id="cobrar-monto" type="number" min="0" step="any" placeholder="Dejar vacío para cobrar todo">
+        </div>
+        <label>Nota (opcional)</label>
+        <input id="cobrar-nota" type="text" placeholder="Observaciones del cobro...">
+        <div id="error-cobrar" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
+        <div style="display:flex;gap:10px;margin-top:18px;">
+            <button id="btn-confirm-cobrar" class="btn primary" onclick="confirmarCobrar()">Confirmar Cobro</button>
+            <button class="btn secondary" onclick="cerrarModal('modal-cobrar')">Cancelar</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/guard.js"></script>
+<script src="/COMANDAS/Comandas.js"></script>
 
 </body>
 </html>

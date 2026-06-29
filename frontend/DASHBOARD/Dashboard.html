@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Magnus Barber</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="Dashboard.css">
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+
+    <div class="sidebar-logo">
+        <h1>MAGNUS</h1>
+        <p>Barber System</p>
+    </div>
+
+    <nav class="sidebar-nav">
+
+        <a href="/DASHBOARD/Dashboard.html" class="nav-item active">
+            <span class="icon">⚡</span> Dashboard
+        </a>
+
+        <a href="/COMANDAS/Comandas.html" class="nav-item">
+            <span class="icon">📋</span> Comandas
+        </a>
+
+        <a href="/BARBEROS/Barberos.html" class="nav-item">
+            <span class="icon">✂️</span> Barberos
+        </a>
+
+        <a href="/CLIENTES/Clientes.html" class="nav-item">
+            <span class="icon">👥</span> Clientes
+        </a>
+
+        <a href="/SERVICIOS/Servicios.html" class="nav-item">
+            <span class="icon">🛎️</span> Servicios
+        </a>
+
+        <div class="nav-divider"></div>
+
+        <a href="/INVENTARIOS/Inventario.html" class="nav-item">
+            <span class="icon">📦</span> Inventario
+        </a>
+
+        <a href="/CAJA/Caja.html" class="nav-item">
+            <span class="icon">💰</span> Caja
+        </a>
+
+        <a href="/CUENTAS/Cuentas.html" class="nav-item">
+            <span class="icon">📒</span> Cuentas
+        </a>
+
+        <div class="nav-divider"></div>
+
+        <a href="/ALERTAS/Alertas.html" class="nav-item">
+            <span class="icon">🔔</span> Alertas
+        </a>
+
+        <a href="/REPORTES/Reporte.html" class="nav-item">
+            <span class="icon">📊</span> Reportes
+        </a>
+
+    </nav>
+
+    <div class="sidebar-footer">
+        <button class="btn-logout" id="btn-logout">
+            <span>🚪</span> Cerrar sesión
+        </button>
+    </div>
+
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+    <header class="topbar">
+        <h2>Dashboard</h2>
+        <div class="topbar-user">
+            <div class="avatar" id="user-avatar">?</div>
+            <span id="user-name">Cargando...</span>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <div class="welcome">
+            <h3>Bienvenido, <span id="welcome-name">—</span></h3>
+            <p id="current-date"></p>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+
+            <div class="kpi-card">
+                <div class="kpi-icon">💵</div>
+                <div class="kpi-label">Ingresos hoy</div>
+                <div class="kpi-value" id="kpi-total">—</div>
+                <div class="kpi-sub">Total recibido</div>
+            </div>
+
+            <div class="kpi-card accent-green">
+                <div class="kpi-icon">✅</div>
+                <div class="kpi-label">Comandas cerradas</div>
+                <div class="kpi-value" id="kpi-closed">—</div>
+                <div class="kpi-sub">Hoy</div>
+            </div>
+
+            <div class="kpi-card accent-orange">
+                <div class="kpi-icon">⏳</div>
+                <div class="kpi-label">Comandas abiertas</div>
+                <div class="kpi-value" id="kpi-open">—</div>
+                <div class="kpi-sub">En curso</div>
+            </div>
+
+            <div class="kpi-card accent-red">
+                <div class="kpi-icon">🔔</div>
+                <div class="kpi-label">Alertas</div>
+                <div class="kpi-value" id="kpi-alerts">—</div>
+                <div class="kpi-sub">Sin leer</div>
+            </div>
+
+        </div>
+
+        <!-- ESTADO DETALLADO -->
+        <div class="status-section">
+
+            <div class="info-card">
+                <h4>Estado de Caja</h4>
+                <div class="info-row">
+                    <span class="label">Estado</span>
+                    <span class="value" id="cash-status">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Monto esperado</span>
+                    <span class="value" id="cash-amount">—</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h4>Inventario</h4>
+                <div class="info-row">
+                    <span class="label">Stock bajo</span>
+                    <span class="value" id="inv-low">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Sin stock</span>
+                    <span class="value" id="inv-out">—</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h4>Cuentas por Cobrar</h4>
+                <div class="info-row">
+                    <span class="label">Fiados pendientes</span>
+                    <span class="value" id="ar-count">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Saldo pendiente</span>
+                    <span class="value" id="ar-balance">—</span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h4>Resumen del día</h4>
+                <div class="info-row">
+                    <span class="label">Comandas cerradas</span>
+                    <span class="value" id="sum-closed">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Comandas abiertas</span>
+                    <span class="value" id="sum-open">—</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Total ingresos</span>
+                    <span class="value" id="sum-total">—</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/guard.js"></script>
+<script src="Dashboard.js"></script>
+
+</body>
+</html>

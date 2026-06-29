@@ -3,80 +3,103 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Catálogo Viking Barber</title>
+<title>Catálogo de Servicios - Magnus</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Servicios.css" rel="stylesheet">
 
+<style>
+    .error-inline { color:#ef9a9a; font-size:.82rem; margin-top:8px; min-height:1em; }
+    .consumables-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
+    .consumables-row input[type="checkbox"] { width:auto; margin:0; }
+    .consumables-row label { color:var(--muted); font-size:.88rem; cursor:pointer; }
+</style>
+    <link rel="stylesheet" href="/css/nav.css">
 </head>
 
 <body>
 
 <div class="container">
 
+    <div class="nav-top">
+        <a href="/DASHBOARD/Dashboard.html" class="nav-home" title="Dashboard">🏠</a>
+        <button class="nav-back" onclick="window.history.back()">← Regresar</button>
+    </div>
+
     <div class="header">
         <div>
             <h1>⚔ Catálogo de Servicios</h1>
-            <p>Barbería temática vikinga</p>
+            <p style="color:var(--muted);font-size:.85rem;">Servicios activos e inactivos</p>
         </div>
-        <button class="primary" onclick="openModal()">+ Nuevo</button>
+        <button class="primary" onclick="abrirModalNuevo()">+ Nuevo Servicio</button>
     </div>
 
     <div class="search">
-        <input type="text" id="search" placeholder="Buscar servicio..." oninput="render()">
+        <input type="text" id="search" placeholder="Buscar servicio..." oninput="filtrar()">
     </div>
 
+    <div id="error-global" class="error-inline" style="margin-bottom:12px;"></div>
+    <div id="msg-carga" style="color:var(--muted);padding:10px 0;">Cargando servicios...</div>
+
     <div class="grid" id="grid"></div>
+
 </div>
 
-<!-- MODAL -->
+<!-- MODAL CREAR / EDITAR -->
 <div class="modal" id="modal">
     <div class="modal-box">
-        <h2>Servicio</h2>
+        <h2 id="modal-titulo">Nuevo Servicio</h2>
 
-        <input type="hidden" id="index">
-
-        <div class="group">
-            <label>Nombre</label>
-            <input id="name">
-        </div>
+        <input type="hidden" id="edit-id">
 
         <div class="group">
-            <label>Descripción</label>
-            <textarea id="desc"></textarea>
-        </div>
-
-        <div class="group">
-            <label>Precio</label>
-            <input type="number" id="price">
-        </div>
-
-        <div class="group">
-            <label>Duración</label>
-            <input type="number" id="duration">
+            <label>Nombre *</label>
+            <input id="name" placeholder="Ej. Corte clásico">
         </div>
 
         <div class="group">
             <label>Categoría</label>
             <select id="category">
-                <option>Corte</option>
-                <option>Barba</option>
-                <option>Cejas</option>
-                <option>Tintura</option>
+                <option value="">Sin categoría</option>
+                <option value="Corte">Corte</option>
+                <option value="Barba">Barba</option>
+                <option value="Cejas">Cejas</option>
+                <option value="Tintura">Tintura</option>
+                <option value="Combo">Combo</option>
+                <option value="Otro">Otro</option>
             </select>
         </div>
 
         <div class="group">
-            <label>Consumibles</label>
-            <input id="consumables" placeholder="Cuchillas, Toallas">
+            <label>Descripción</label>
+            <textarea id="desc" placeholder="Descripción del servicio..."></textarea>
         </div>
 
-        <button class="primary save" onclick="save()">Guardar</button>
-        <button class="secondary save" onclick="closeModal()">Cerrar</button>
+        <div class="group">
+            <label>Precio (COP) *</label>
+            <input type="number" id="price" placeholder="0" min="0" step="any">
+        </div>
+
+        <div class="group">
+            <label>Duración estimada (minutos)</label>
+            <input type="number" id="duration" placeholder="30" min="1">
+        </div>
+
+        <div class="consumables-row">
+            <input type="checkbox" id="uses-consumables">
+            <label for="uses-consumables">Usa consumibles internos (cuchillas, toallas, etc.)</label>
+        </div>
+
+        <div id="error-modal" class="error-inline"></div>
+
+        <button class="primary save" id="btn-guardar" onclick="guardarServicio()">Guardar</button>
+        <button class="secondary save" onclick="cerrarModal()">Cancelar</button>
     </div>
 </div>
 
-<script src="Servicios.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/guard.js"></script>
+<script src="/SERVICIOS/Servicios.js"></script>
 
 </body>
 </html>

@@ -1,0 +1,44 @@
+.nav-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.nav-home {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: rgba(200, 155, 60, .12);
+    border: 1px solid rgba(200, 155, 60, .28);
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    transition: background .2s, border-color .2s;
+    flex-shrink: 0;
+}
+
+.nav-home:hover {
+    background: rgba(200, 155, 60, .28);
+    border-color: rgba(200, 155, 60, .55);
+}
+
+.nav-back {
+    background: rgba(255, 255, 255, .05);
+    border: 1px solid rgba(255, 255, 255, .1);
+    color: #9aa4b2;
+    padding: 7px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: .82rem;
+    font-family: 'Poppins', sans-serif;
+    transition: background .2s, color .2s;
+}
+
+.nav-back:hover {
+    background: rgba(255, 255, 255, .11);
+    color: #e6e9ef;
+}
