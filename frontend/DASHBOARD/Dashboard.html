@@ -1,193 +1,158 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Magnus Barber</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="Dashboard.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAGNUS — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="Dashboard.css">
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
 <!-- ── SIDEBAR ── -->
 <aside class="sidebar">
 
-    <div class="sidebar-logo">
-        <h1>MAGNUS</h1>
-        <p>Barber System</p>
+    <div class="brand">
+        <img src="/img/logo_magnus.png" alt="Magnus Barber">
+        <div class="bt"><b>MAGNUS</b><small>BARBER SYSTEM</small></div>
     </div>
 
-    <nav class="sidebar-nav">
+    <div class="nlabel">Principal</div>
+    <a href="/DASHBOARD/Dashboard.html" class="nav active">
+        <i data-lucide="layout-dashboard"></i> Inicio
+    </a>
 
-        <a href="/DASHBOARD/Dashboard.html" class="nav-item active">
-            <span class="icon">⚡</span> Dashboard
-        </a>
+    <div class="nlabel">Operación</div>
+    <a href="/COMANDAS/Comandas.html" class="nav">
+        <i data-lucide="receipt-text"></i> Comandas
+    </a>
+    <a href="/CAJA/Caja.html" class="nav">
+        <i data-lucide="wallet"></i> Caja
+    </a>
+    <a href="/CUENTAS/Cuentas.html" class="nav">
+        <i data-lucide="hand-coins"></i> Fiados
+    </a>
 
-        <a href="/COMANDAS/Comandas.html" class="nav-item">
-            <span class="icon">📋</span> Comandas
-        </a>
+    <div class="nlabel">Catálogos</div>
+    <a href="/SERVICIOS/Servicios.html" class="nav">
+        <i data-lucide="scissors"></i> Servicios
+    </a>
+    <a href="/INVENTARIOS/Inventario.html" class="nav">
+        <i data-lucide="package"></i> Inventario
+    </a>
+    <a href="/BARBEROS/Barberos.html" class="nav">
+        <i data-lucide="users"></i> Barberos
+    </a>
+    <a href="/CLIENTES/Clientes.html" class="nav">
+        <i data-lucide="user-round"></i> Clientes
+    </a>
 
-        <a href="/BARBEROS/Barberos.html" class="nav-item">
-            <span class="icon">✂️</span> Barberos
-        </a>
+    <div class="nlabel">Gestión</div>
+    <a href="/ALERTAS/Alertas.html" class="nav">
+        <i data-lucide="bell"></i> Alertas
+    </a>
+    <a href="/REPORTES/Reporte.html" class="nav">
+        <i data-lucide="bar-chart-3"></i> Reportes
+    </a>
 
-        <a href="/CLIENTES/Clientes.html" class="nav-item">
-            <span class="icon">👥</span> Clientes
-        </a>
-
-        <a href="/SERVICIOS/Servicios.html" class="nav-item">
-            <span class="icon">🛎️</span> Servicios
-        </a>
-
-        <div class="nav-divider"></div>
-
-        <a href="/INVENTARIOS/Inventario.html" class="nav-item">
-            <span class="icon">📦</span> Inventario
-        </a>
-
-        <a href="/CAJA/Caja.html" class="nav-item">
-            <span class="icon">💰</span> Caja
-        </a>
-
-        <a href="/CUENTAS/Cuentas.html" class="nav-item">
-            <span class="icon">📒</span> Cuentas
-        </a>
-
-        <div class="nav-divider"></div>
-
-        <a href="/ALERTAS/Alertas.html" class="nav-item">
-            <span class="icon">🔔</span> Alertas
-        </a>
-
-        <a href="/REPORTES/Reporte.html" class="nav-item">
-            <span class="icon">📊</span> Reportes
-        </a>
-
-    </nav>
-
-    <div class="sidebar-footer">
-        <button class="btn-logout" id="btn-logout">
-            <span>🚪</span> Cerrar sesión
-        </button>
-    </div>
+    <button class="logout" id="btn-logout">
+        <i data-lucide="log-out"></i> Cerrar sesión
+    </button>
 
 </aside>
 
 <!-- ── MAIN ── -->
-<div class="main">
+<main class="main">
 
-    <header class="topbar">
-        <h2>Dashboard</h2>
-        <div class="topbar-user">
-            <div class="avatar" id="user-avatar">?</div>
-            <span id="user-name">Cargando...</span>
+    <div class="topbar">
+        <div class="pg">Inicio</div>
+        <div class="user">
+            <div class="t">
+                <b id="user-name">Cargando...</b>
+                <small>Administrador</small>
+            </div>
+            <div class="av" id="user-avatar">?</div>
         </div>
-    </header>
-
-    <div class="content">
-
-        <div class="welcome">
-            <h3>Bienvenido, <span id="welcome-name">—</span></h3>
-            <p id="current-date"></p>
-        </div>
-
-        <!-- KPI CARDS -->
-        <div class="kpi-grid">
-
-            <div class="kpi-card">
-                <div class="kpi-icon">💵</div>
-                <div class="kpi-label">Ingresos hoy</div>
-                <div class="kpi-value" id="kpi-total">—</div>
-                <div class="kpi-sub">Total recibido</div>
-            </div>
-
-            <div class="kpi-card accent-green">
-                <div class="kpi-icon">✅</div>
-                <div class="kpi-label">Comandas cerradas</div>
-                <div class="kpi-value" id="kpi-closed">—</div>
-                <div class="kpi-sub">Hoy</div>
-            </div>
-
-            <div class="kpi-card accent-orange">
-                <div class="kpi-icon">⏳</div>
-                <div class="kpi-label">Comandas abiertas</div>
-                <div class="kpi-value" id="kpi-open">—</div>
-                <div class="kpi-sub">En curso</div>
-            </div>
-
-            <div class="kpi-card accent-red">
-                <div class="kpi-icon">🔔</div>
-                <div class="kpi-label">Alertas</div>
-                <div class="kpi-value" id="kpi-alerts">—</div>
-                <div class="kpi-sub">Sin leer</div>
-            </div>
-
-        </div>
-
-        <!-- ESTADO DETALLADO -->
-        <div class="status-section">
-
-            <div class="info-card">
-                <h4>Estado de Caja</h4>
-                <div class="info-row">
-                    <span class="label">Estado</span>
-                    <span class="value" id="cash-status">—</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Monto esperado</span>
-                    <span class="value" id="cash-amount">—</span>
-                </div>
-            </div>
-
-            <div class="info-card">
-                <h4>Inventario</h4>
-                <div class="info-row">
-                    <span class="label">Stock bajo</span>
-                    <span class="value" id="inv-low">—</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Sin stock</span>
-                    <span class="value" id="inv-out">—</span>
-                </div>
-            </div>
-
-            <div class="info-card">
-                <h4>Cuentas por Cobrar</h4>
-                <div class="info-row">
-                    <span class="label">Fiados pendientes</span>
-                    <span class="value" id="ar-count">—</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Saldo pendiente</span>
-                    <span class="value" id="ar-balance">—</span>
-                </div>
-            </div>
-
-            <div class="info-card">
-                <h4>Resumen del día</h4>
-                <div class="info-row">
-                    <span class="label">Comandas cerradas</span>
-                    <span class="value" id="sum-closed">—</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Comandas abiertas</span>
-                    <span class="value" id="sum-open">—</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Total ingresos</span>
-                    <span class="value" id="sum-total">—</span>
-                </div>
-            </div>
-
-        </div>
-
     </div>
-</div>
+
+    <!-- HERO CON VIKINGO -->
+    <section class="hero">
+        <div class="vk" style="background-image:url('/img/viking.png')"></div>
+        <div class="ht">
+            <span class="k">Magnus Barber Shop</span>
+            <h2>Bienvenido, <span id="welcome-name">—</span></h2>
+            <p id="current-date">Cargando fecha...</p>
+            <div class="slogan">"No es un corte, es una experiencia."</div>
+        </div>
+    </section>
+
+    <!-- KPIs -->
+    <div class="kpis">
+        <div class="kpi g">
+            <div class="ic"><i data-lucide="trending-up"></i></div>
+            <div class="l">Ingresos hoy</div>
+            <div class="v" id="kpi-total">—</div>
+            <div class="s">Total recibido</div>
+        </div>
+        <div class="kpi b">
+            <div class="ic"><i data-lucide="check-check"></i></div>
+            <div class="l">Comandas cerradas</div>
+            <div class="v" id="kpi-closed">—</div>
+            <div class="s">Hoy</div>
+        </div>
+        <div class="kpi a">
+            <div class="ic"><i data-lucide="hourglass"></i></div>
+            <div class="l">Comandas abiertas</div>
+            <div class="v" id="kpi-open">—</div>
+            <div class="s">En curso</div>
+        </div>
+        <div class="kpi r">
+            <div class="ic"><i data-lucide="bell-ring"></i></div>
+            <div class="l">Alertas</div>
+            <div class="v" id="kpi-alerts">—</div>
+            <div class="s">Sin leer</div>
+        </div>
+    </div>
+
+    <!-- PANELES FILA 1 -->
+    <div class="grid2">
+        <div class="panel">
+            <h3><i data-lucide="wallet"></i> Estado de caja</h3>
+            <div class="row"><span>Estado</span><span id="cash-status">—</span></div>
+            <div class="row"><span>Monto esperado</span><b id="cash-amount">—</b></div>
+        </div>
+        <div class="panel">
+            <h3><i data-lucide="package"></i> Inventario</h3>
+            <div class="row"><span>Stock bajo</span><span id="inv-low">—</span></div>
+            <div class="row"><span>Sin stock</span><span id="inv-out">—</span></div>
+        </div>
+    </div>
+
+    <!-- PANELES FILA 2 -->
+    <div class="grid2">
+        <div class="panel">
+            <h3><i data-lucide="hand-coins"></i> Cuentas por cobrar</h3>
+            <div class="row"><span>Fiados pendientes</span><b id="ar-count">—</b></div>
+            <div class="row"><span>Saldo pendiente</span><b id="ar-balance">—</b></div>
+        </div>
+        <div class="panel">
+            <h3><i data-lucide="clipboard-list"></i> Resumen del día</h3>
+            <div class="row"><span>Comandas cerradas</span><b id="sum-closed">—</b></div>
+            <div class="row"><span>Comandas abiertas</span><b id="sum-open">—</b></div>
+            <div class="row"><span>Total ingresos</span><b id="sum-total">—</b></div>
+        </div>
+    </div>
+
+    <div class="foot">Desarrollado por <b>AVANZATECH S.A.S</b> · Soluciones Tecnológicas que Impulsan tu Negocio</div>
+
+</main>
 
 <script src="/js/api.js"></script>
 <script src="/js/guard.js"></script>
 <script src="/js/idle.js"></script>
 <script src="Dashboard.js"></script>
+<script>lucide.createIcons();</script>
 
 </body>
 </html>
