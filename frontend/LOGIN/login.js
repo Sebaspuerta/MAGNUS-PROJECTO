@@ -15,6 +15,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "1") {
+        document.getElementById("error-msg").textContent =
+            "Tu sesión se cerró por inactividad. Inicia sesión de nuevo.";
+    }
+
     const form = document.getElementById("login-form");
     const errorMsg = document.getElementById("error-msg");
     const btnSubmit = document.getElementById("btn-submit");

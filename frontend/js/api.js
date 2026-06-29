@@ -88,7 +88,11 @@ async function apiRequest(endpoint, options = {}) {
       message = "Solicitud inválida.";
     }
 
-    if (response.status === 401 || response.status === 403) {
+    if (response.status === 401) {
+      clearAuthToken();
+      window.location.replace("/LOGIN/login.html");
+    }
+    if (response.status === 403) {
       clearAuthToken();
       if (window.onAuthError) {
         window.onAuthError(message);
