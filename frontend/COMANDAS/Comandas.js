@@ -223,8 +223,14 @@ function renderItems(items) {
 }
 
 // ── MODAL NUEVA COMANDA ───────────────────────────────────────────────────────
-function mostrarModalNueva() {
-    const el = id => document.getElementById(id);
+async function mostrarModalNueva() {
+    const el      = id => document.getElementById(id);
+    const btnNueva = document.getElementById("btn-nueva");
+
+    if (btnNueva) { btnNueva.disabled = true; btnNueva.textContent = "Cargando..."; }
+    await cargarCatalogos();
+    if (btnNueva) { btnNueva.disabled = false; btnNueva.textContent = "+ Nueva Comanda"; }
+
     el("nueva-cliente").value = "";
     el("nueva-barbero").value = "";
     el("nueva-fiado").checked  = false;
@@ -260,14 +266,21 @@ async function confirmarNueva() {
 }
 
 // ── MODAL AGREGAR ÍTEM ────────────────────────────────────────────────────────
-function mostrarModalItem() {
+async function mostrarModalItem() {
     document.getElementById("item-tipo").value     = "servicio";
     document.getElementById("item-cantidad").value = "1";
     document.getElementById("item-precio").value   = "";
-    setError("error-item", "");
+    // Abrir el modal de inmediato con estado de carga; el confirm queda bloqueado
+    setError("error-item", "Cargando catálogos...");
+    setDisabled("btn-confirm-item", true, "Cargando...");
     actualizarSelectItem();
-    setDisabled("btn-confirm-item", false, "Agregar");
     abrirModal("modal-item");
+
+    await cargarCatalogos();          // Promise.allSettled interno: nunca lanza
+
+    actualizarSelectItem();           // repobla el select con datos frescos
+    setError("error-item", "");
+    setDisabled("btn-confirm-item", false, "Agregar");
 }
 
 async function confirmarAgregarItem() {

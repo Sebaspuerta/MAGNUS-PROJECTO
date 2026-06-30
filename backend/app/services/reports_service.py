@@ -1,7 +1,9 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
+from zoneinfo import ZoneInfo
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.order import Order, OrderItem
 from app.models.payment import Payment
 from app.models.barber import Barber
@@ -10,14 +12,20 @@ from app.models.accounts_receivable import AccountsReceivable
 from app.models.cash_register import CashRegister
 from app.models.client import Client
 
+_BUSINESS_TZ = ZoneInfo(settings.business_tz)
+
 
 def _resolve_range(start_date, end_date):
+    # Fechas de parámetro representan días en hora Colombia.
+    # Las convertimos a UTC naivo para comparar con los timestamps de la BD.
+    today_col = datetime.now(_BUSINESS_TZ).date()
     if end_date is None:
-        end_date = date.today()
+        end_date = today_col
     if start_date is None:
         start_date = end_date - timedelta(days=30)
-    start_dt = datetime(start_date.year, start_date.month, start_date.day)
-    end_dt = datetime(end_date.year, end_date.month, end_date.day) + timedelta(days=1)
+    start_dt = datetime(start_date.year, start_date.month, start_date.day, tzinfo=_BUSINESS_TZ).astimezone(timezone.utc).replace(tzinfo=None)
+    end_midnight_col = datetime(end_date.year, end_date.month, end_date.day, tzinfo=_BUSINESS_TZ)
+    end_dt = (end_midnight_col + timedelta(days=1)).astimezone(timezone.utc).replace(tzinfo=None)
     return start_date, end_date, start_dt, end_dt
 
 
@@ -135,7 +143,7 @@ def top_products(db: Session, start_date=None, end_date=None, limit: int = 10):
 
 
 def accounts_receivable_report(db: Session):
-    today = date.today()
+    today = datetime.now(_BUSINESS_TZ).date()
     rows = (
         db.query(AccountsReceivable)
         .filter(AccountsReceivable.is_active == True, AccountsReceivable.balance > 0)  # noqa: E712
@@ -163,7 +171,7 @@ def accounts_receivable_report(db: Session):
     overdue_balance = sum(i["balance"] for i in items if i["is_overdue"])
 
     return {
-        "generated_at": date.today(),
+        "generated_at": datetime.now(_BUSINESS_TZ).date(),
         "count": len(items),
         "total_balance": round(total_balance, 2),
         "overdue_balance": round(overdue_balance, 2),

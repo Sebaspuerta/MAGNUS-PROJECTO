@@ -22,6 +22,8 @@ class Settings:
     admin_password: str | None = os.getenv("ADMIN_PASSWORD")
     admin_full_name: str = os.getenv("ADMIN_FULL_NAME", "Administrador MAGNUS")
 
+    business_tz: str = os.getenv("BUSINESS_TZ", "America/Bogota")
+
 
 settings = Settings()
 

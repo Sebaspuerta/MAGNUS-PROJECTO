@@ -1,7 +1,9 @@
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
+from zoneinfo import ZoneInfo
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.order import Order
 from app.models.payment import Payment
 from app.models.cash_register import CashRegister
@@ -9,10 +11,15 @@ from app.models.inventory import Product
 from app.models.accounts_receivable import AccountsReceivable
 from app.models.alerts import Alert
 
+_BUSINESS_TZ = ZoneInfo(settings.business_tz)
+
 
 def _today_bounds():
-    today = date.today()
-    start = datetime(today.year, today.month, today.day)
+    # "Hoy" = día calendario en hora Colombia. Los timestamps en BD son UTC naivo,
+    # por lo que convertimos medianoche Colombia → UTC para la comparación.
+    today_col = datetime.now(_BUSINESS_TZ).date()
+    midnight_col = datetime(today_col.year, today_col.month, today_col.day, tzinfo=_BUSINESS_TZ)
+    start = midnight_col.astimezone(timezone.utc).replace(tzinfo=None)
     end = start + timedelta(days=1)
     return start, end
 
@@ -88,7 +95,7 @@ def get_dashboard_summary(db: Session):
         )
         .scalar()
     )
-    expiring_limit = date.today() + timedelta(days=30)
+    expiring_limit = datetime.now(_BUSINESS_TZ).date() + timedelta(days=30)
     expiring_soon = (
         db.query(func.count(Product.id))
         .filter(
