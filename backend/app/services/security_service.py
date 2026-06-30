@@ -1,4 +1,5 @@
-﻿from datetime import datetime, timedelta
+﻿import math
+from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -180,7 +181,11 @@ def authenticate_user(db: Session, username: str, password: str, ip_address: str
     now = datetime.utcnow()
 
     if user.locked_until and user.locked_until > now:
-        return None, "Usuario bloqueado temporalmente por intentos fallidos."
+        remaining_secs = (user.locked_until - now).total_seconds()
+        return None, {
+            "code": "account_locked",
+            "minutes_remaining": math.ceil(remaining_secs / 60)
+        }
 
     if not verify_password(password, user.password_hash):
         user.failed_login_attempts += 1

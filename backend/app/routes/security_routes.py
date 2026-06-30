@@ -41,6 +41,8 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
     )
 
     if error:
+        if isinstance(error, dict) and error.get("code") == "account_locked":
+            raise HTTPException(status_code=423, detail=error)
         raise HTTPException(status_code=401, detail=error)
 
     return {

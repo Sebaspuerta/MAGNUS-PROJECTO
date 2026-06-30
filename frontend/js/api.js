@@ -77,7 +77,8 @@ async function apiRequest(endpoint, options = {}) {
   if (!response.ok) {
     let message = "Ocurrió un error en el servidor.";
     if (data && data.detail) {
-      message = data.detail;
+      // detail puede ser objeto estructurado (ej. account_locked) — no usarlo como texto
+      message = typeof data.detail === "string" ? data.detail : "Error en el servidor.";
     } else if (data && data.message) {
       message = data.message;
     } else if (response.status === 401) {
@@ -90,7 +91,10 @@ async function apiRequest(endpoint, options = {}) {
 
     if (response.status === 401) {
       clearAuthToken();
-      window.location.replace("/LOGIN/login.html");
+      // No redirigir si ya estamos en la página de login (evita recargar y borrar el mensaje)
+      if (!window.location.pathname.includes("/LOGIN/")) {
+        window.location.replace("/LOGIN/login.html");
+      }
     }
     if (response.status === 403) {
       clearAuthToken();
@@ -99,7 +103,9 @@ async function apiRequest(endpoint, options = {}) {
       }
     }
 
-    throw new Error(message);
+    const err = new Error(message);
+    err.responseData = data;  // datos crudos para que el llamador pueda inspeccionarlos
+    throw err;
   }
 
   return data;

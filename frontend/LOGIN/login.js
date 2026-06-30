@@ -56,7 +56,22 @@ document.addEventListener("DOMContentLoaded", () => {
             window.location.href = "/DASHBOARD/Dashboard.html";
 
         } catch (err) {
-            errorMsg.textContent = err.message || "Error al iniciar sesión.";
+            const detail = err.responseData && err.responseData.detail;
+            if (detail && typeof detail === "object" && detail.code === "account_locked") {
+                const min = detail.minutes_remaining;
+                const mensajes = [
+                    "¡Uy! Demasiados intentos. Tómate un café y vuelve en {min} minutos.",
+                    "Calma, vaquero. La cuenta está bloqueada. Inténtalo de nuevo en {min} minutos.",
+                    "5 intentos fallidos... ¿seguro que es tu clave? Vuelve en {min} minutos.",
+                    "Sistema bloqueado por seguridad. Respira hondo y regresa en {min} minutos.",
+                    "Demasiados intentos. El sistema necesita un respiro. Vuelve en {min} minutos.",
+                    "¡Alto ahí! Por seguridad, espera {min} minutos antes de volver a intentar."
+                ];
+                const elegido = mensajes[Math.floor(Math.random() * mensajes.length)];
+                errorMsg.textContent = elegido.replace("{min}", min);
+            } else {
+                errorMsg.textContent = err.message || "Error al iniciar sesión.";
+            }
             btnSubmit.disabled = false;
             btnSubmit.textContent = "Entrar";
         }
