@@ -1,69 +1,66 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magnus Barber - Login</title>
+    <title>MAGNUS — Acceso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="login.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="background"></div>
-    <div class="login-container">
+<!-- Fondo: imagen vikingo + overlay -->
+<div class="bg">
+    <img class="vk" src="/img/viking_login.png" alt="">
+    <div class="ov"></div>
+</div>
 
-        <div class="logo-section">
-            <!-- TU LOGO -->
-            <div class="logo-placeholder">
-                <img src="logo.jpeg" alt="Magnus Barber Logo" id="logo">
+<!-- Logo fijo arriba-izquierda -->
+<div class="brandtop">
+    <img src="/img/logo_magnus_transparente.png" alt="Magnus Barber">
+    <div class="tg">Barber System</div>
+</div>
+
+<!-- Slogan fijo abajo-izquierda -->
+<div class="sloganbox">
+    <div class="q">"No es un corte, es una experiencia."</div>
+    <div class="loc">Cartagena &middot; Colombia</div>
+</div>
+
+<!-- Tarjeta glassmorphism alineada a la derecha -->
+<div class="wrap">
+    <div class="card">
+        <h1>Bienvenido</h1>
+        <div class="sub">Ingresa tus credenciales para continuar</div>
+
+        <form id="login-form">
+
+            <div class="field">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" placeholder="Tu usuario" autocomplete="username">
             </div>
 
-            <h1>MAGNUS</h1>
-            <h2>BARBER SYSTEM</h2>
+            <div class="field">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" placeholder="Tu contraseña" autocomplete="current-password">
+            </div>
 
-            <p>
-                No es un corte,
-                es una experiencia.
-            </p>
+            <button class="btn" id="btn-submit" type="submit">Entrar</button>
 
-        </div>
+            <!-- Mensajes: error normal, bloqueo c&oacute;mico (423), inactividad (?expired=1) -->
+            <div id="error-msg"></div>
 
-        <div class="form-section">
+            <div class="links">
+                <a href="#">&iquest;Olvidaste tu contrase&ntilde;a?</a>
+                <span class="reg">&iquest;No tienes cuenta? <a href="/REGISTER/Register.html">Registrarse</a></span>
+            </div>
 
-            <h3>Iniciar Sesión</h3>
-
-            <form id="login-form">
-
-                <div class="input-group">
-                    <input id="username" type="text" placeholder="Usuario" autocomplete="username">
-                </div>
-
-                <div class="input-group">
-                    <input id="password" type="password" placeholder="Contraseña" autocomplete="current-password">
-                </div>
-
-                <div id="error-msg" style="color:#ff5252;font-size:.85rem;margin-bottom:10px;min-height:1.2em;"></div>
-
-                <button id="btn-submit" type="submit">
-                    Entrar
-                </button>
-
-                <a href="#">
-                    ¿Olvidaste tu contraseña?
-                </a>
-
-                <span>
-                    ¿No tienes cuenta?
-                    <a href="/REGISTER/Register.html">
-                        Registrarse
-                    </a>
-                </span>
-
-            </form>
-
-        </div>
-
+        </form>
+    </div>
 </div>
+
+<!-- Pie de p&aacute;gina -->
+<div class="foot">Desarrollado por <b>AVANZATECH S.A.S</b> &middot; Soluciones Tecnol&oacute;gicas que Impulsan tu Negocio</div>
 
 <script src="/js/api.js"></script>
 <script src="/LOGIN/login.js"></script>
