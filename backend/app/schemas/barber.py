@@ -29,7 +29,9 @@ class BarberResponse(BaseModel):
     full_name: str
     alias: str | None = None
     phone: str | None = None
+    has_user: bool = False
     user_username: str | None = None
+    user_is_active: bool | None = None
     commission_type: str
     commission_value: float
     notes: str | None = None
@@ -37,3 +39,7 @@ class BarberResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class BarberUserPasswordRequest(BaseModel):
+    password: str

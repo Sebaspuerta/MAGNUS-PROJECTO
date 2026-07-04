@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -68,9 +68,12 @@
     <div class="topbar">
         <div class="pg">Inicio</div>
         <div class="user">
+            <button id="btn-admin-gear" class="gear-btn" title="Gestión de Administrador" style="display:none">
+                <i data-lucide="settings"></i>
+            </button>
             <div class="t">
                 <b id="user-name">Cargando...</b>
-                <small>Administrador</small>
+                <small id="user-role">—</small>
             </div>
             <div class="av" id="user-avatar">?</div>
         </div>
@@ -144,9 +147,25 @@
         </div>
     </div>
 
-    <div class="foot">Desarrollado por <b>AVANZATECH S.A.S</b> · Soluciones Tecnológicas que Impulsan tu Negocio</div>
+    <div class="foot">Desarrollado por <b>AVANZATECH S.A.S</b> &middot; Soluciones Tecnol&oacute;gicas que Impulsan tu Negocio</div>
 
 </main>
+
+<!-- ── MODAL: GESTIÓN DE ADMINISTRADOR (solo admin) ── -->
+<div id="modal-admin" class="adm-overlay" aria-hidden="true">
+    <div class="adm-box">
+        <div class="adm-header">
+            <div class="adm-htitle">
+                <i data-lucide="settings"></i>
+                <span>Gesti&oacute;n de Administrador</span>
+            </div>
+            <button id="btn-close-admin" class="adm-close" title="Cerrar">&times;</button>
+        </div>
+        <div class="adm-body">
+            <div id="admin-barber-list" class="adm-list"></div>
+        </div>
+    </div>
+</div>
 
 <script src="/js/api.js"></script>
 <script src="/js/guard.js"></script>

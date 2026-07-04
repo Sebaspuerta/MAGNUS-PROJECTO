@@ -1,4 +1,4 @@
-/* ──────────────────────────────────────────
+﻿/* ──────────────────────────────────────────
    MAGNUS Dashboard — Dark Viking Theme
    ────────────────────────────────────────── */
 
@@ -414,3 +414,318 @@ body {
   color: var(--muted);
   font-size: 11px;
 }
+
+/* ── BOTÓN ENGRANAJE (solo admin) ────────── */
+
+.gear-btn {
+  background: transparent;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  transition: .18s;
+}
+
+.gear-btn:hover {
+  background: var(--panel);
+  color: var(--white);
+  border-color: rgba(43,91,255,.45);
+}
+
+.gear-btn i { width: 18px; height: 18px; }
+
+/* ── MODAL ADMIN: OVERLAY ────────────────── */
+
+.adm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.72);
+  z-index: 900;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 20px 30px;
+  overflow-y: auto;
+}
+
+/* ── MODAL ADMIN: CAJA ───────────────────── */
+
+.adm-box {
+  background: rgba(10,14,26,.97);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid var(--line-2);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.75);
+}
+
+.adm-box::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--grad);
+}
+
+/* ── MODAL ADMIN: CABECERA ───────────────── */
+
+.adm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.adm-htitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.adm-htitle i { width: 20px; height: 20px; color: var(--blue-2); }
+
+.adm-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  padding: 4px 9px;
+  border-radius: 8px;
+  transition: .15s;
+}
+
+.adm-close:hover { background: rgba(225,29,46,.15); color: var(--red-2); }
+
+/* ── MODAL ADMIN: CUERPO ─────────────────── */
+
+.adm-body {
+  padding: 18px 24px 26px;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+
+.adm-loading, .adm-empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.adm-error {
+  text-align: center;
+  padding: 32px;
+  color: var(--red-2);
+  font-size: 14px;
+}
+
+/* ── FILA DE BARBERO ─────────────────────── */
+
+.ab-row {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px 10px;
+  margin-bottom: 10px;
+  background: rgba(6,8,18,.55);
+  transition: border-color .18s;
+}
+
+.ab-row:hover { border-color: var(--line-2); }
+
+.ab-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.ab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ab-active   { background: var(--green); }
+.ab-inactive { background: var(--red-2); }
+
+.ab-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--white);
+}
+
+.ab-username {
+  font-size: 12.5px;
+  color: var(--blue-2);
+  background: rgba(43,91,255,.10);
+  padding: 2px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(43,91,255,.2);
+}
+
+.ab-no-user {
+  font-size: 12px;
+  color: var(--muted-2);
+  font-style: italic;
+}
+
+/* ── ACCIONES ────────────────────────────── */
+
+.ab-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  transition: .15s;
+}
+
+.ab-btn i { width: 14px; height: 14px; }
+
+.ab-btn-primary {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(225,29,46,.2);
+}
+
+.ab-btn-primary:hover { filter: brightness(1.12); }
+
+.ab-btn-secondary {
+  background: rgba(43,91,255,.14);
+  color: var(--blue-2);
+  border: 1px solid rgba(43,91,255,.25);
+}
+
+.ab-btn-secondary:hover { background: rgba(43,91,255,.24); }
+
+.ab-btn-cancel {
+  background: rgba(255,255,255,.06);
+  color: var(--muted);
+}
+
+.ab-btn-cancel:hover { background: rgba(255,255,255,.11); color: var(--white); }
+
+/* ── TOGGLE ACCESO ───────────────────────── */
+
+.ab-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 13px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid;
+  transition: .15s;
+}
+
+.ab-toggle i { width: 16px; height: 16px; }
+
+.ab-toggle.active {
+  background: rgba(43,194,129,.12);
+  color: var(--green);
+  border-color: rgba(43,194,129,.3);
+}
+
+.ab-toggle.active:hover { background: rgba(43,194,129,.22); }
+
+.ab-toggle.inactive {
+  background: rgba(225,29,46,.10);
+  color: var(--red-2);
+  border-color: rgba(225,29,46,.25);
+}
+
+.ab-toggle.inactive:hover { background: rgba(225,29,46,.20); }
+
+/* ── SUB-FORMULARIO CONTRASEÑA ───────────── */
+
+.ab-subform {
+  margin-top: 12px;
+  padding: 14px;
+  background: rgba(4,6,14,.75);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.ab-pw-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.ab-pw-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ab-pw-fields input {
+  width: 100%;
+  padding: 10px 13px;
+  background: rgba(6,9,15,.9);
+  border: 1px solid var(--line-2);
+  border-radius: 9px;
+  color: var(--white);
+  font-size: 14px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.ab-pw-fields input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(43,91,255,.18);
+}
+
+.ab-pw-btns { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ── MENSAJES ────────────────────────────── */
+
+.ab-form-msg {
+  font-size: 12.5px;
+  min-height: 16px;
+  margin-top: 4px;
+}
+
+.ab-form-msg-error { color: var(--red-2); }
+
+.ab-msg {
+  font-size: 12.5px;
+  min-height: 14px;
+  margin-top: 6px;
+}
+
+.ab-msg-error   { color: var(--red-2); }
+.ab-msg-success { color: var(--green); }
+.ab-msg-warn    { color: var(--amber); }

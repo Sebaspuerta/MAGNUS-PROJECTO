@@ -6,21 +6,7 @@
     <title>Gestión de Barberos</title>
 
     <link rel="stylesheet" href="Barberos.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/nav.css">
-
-    <style>
-        select { padding:14px; border:none; border-radius:10px; background:#13233d; color:white; width:100%; }
-        .error-inline { color:#ef9a9a; font-size:.82rem; margin-top:8px; min-height:1em; }
-        .modal-rendimiento { position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; justify-content:center; align-items:center; z-index:300; }
-        .modal-rendimiento.active { display:flex; }
-        .rend-box { background:#0d1a2d; border:1px solid rgba(255,255,255,.1); border-radius:18px; padding:28px; width:420px; max-width:95%; }
-        .rend-box h3 { font-family:'Cinzel',serif; color:#c89b3c; margin-bottom:16px; }
-        .rend-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.06); font-size:.88rem; }
-        .rend-row:last-child { border-bottom:none; }
-        .rend-row .lbl { color:#9aa4b2; }
-        .rend-row .val { font-weight:600; }
-    </style>
 </head>
 <body>
 
@@ -29,16 +15,16 @@
 <div class="container">
 
     <div class="nav-top">
-        <a href="/DASHBOARD/Dashboard.html" class="nav-home" title="Dashboard">🏠</a>
-        <button class="nav-back" onclick="window.history.back()">← Regresar</button>
+        <a href="/DASHBOARD/Dashboard.html" class="nav-home" title="Dashboard"><i data-lucide="home"></i></a>
+        <button class="nav-back" onclick="window.history.back()"><i data-lucide="arrow-left"></i> Regresar</button>
     </div>
 
     <header class="page-header">
         <div>
-            <h1>⚔ Gestión de Barberos</h1>
+            <h1><i data-lucide="users"></i> Gestión de Barberos</h1>
             <p>Administración completa del equipo Magnus</p>
         </div>
-        <button class="btn-primary" id="openModal">+ Nuevo Barbero</button>
+        <button class="btn-primary" id="openModal"><i data-lucide="user-plus"></i> Nuevo Barbero</button>
     </header>
 
     <section class="stats-grid">
@@ -61,7 +47,7 @@
     </section>
 
     <section class="history-section">
-        <h2>Historial de Barberos</h2>
+        <h2><i data-lucide="list"></i> Historial de Barberos</h2>
         <div id="error-global" class="error-inline"></div>
         <table>
             <thead>
@@ -92,30 +78,30 @@
 
         <div class="form-grid">
             <div>
-                <label style="color:#9aa4b2;font-size:.78rem;">Nombre completo *</label>
+                <label>Nombre completo *</label>
                 <input type="text" id="f-nombre" placeholder="Nombre completo">
             </div>
             <div>
-                <label style="color:#9aa4b2;font-size:.78rem;">Alias / Apodo</label>
+                <label>Alias / Apodo</label>
                 <input type="text" id="f-alias" placeholder="Alias">
             </div>
             <div>
-                <label style="color:#9aa4b2;font-size:.78rem;">Teléfono</label>
+                <label>Teléfono</label>
                 <input type="text" id="f-telefono" placeholder="Teléfono">
             </div>
             <div>
-                <label style="color:#9aa4b2;font-size:.78rem;">Tipo comisión</label>
+                <label>Tipo comisión</label>
                 <select id="f-comision-tipo">
                     <option value="porcentaje">Porcentaje (%)</option>
                     <option value="fijo">Monto fijo</option>
                 </select>
             </div>
             <div>
-                <label style="color:#9aa4b2;font-size:.78rem;">Valor comisión</label>
+                <label>Valor comisión</label>
                 <input type="number" id="f-comision-valor" placeholder="0" min="0" step="any">
             </div>
             <div>
-                <label style="color:#9aa4b2;font-size:.78rem;">Notas</label>
+                <label>Notas</label>
                 <input type="text" id="f-notas" placeholder="Observaciones...">
             </div>
         </div>
@@ -138,7 +124,9 @@
 <script src="/js/api.js"></script>
 <script src="/js/guard.js"></script>
 <script src="/js/idle.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="/BARBEROS/Barberos.js"></script>
+<script>lucide.createIcons();</script>
 
 </body>
 </html>

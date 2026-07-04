@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", async () => {
+﻿document.addEventListener("DOMContentLoaded", async () => {
 
     const user = window.api.getAuthUser();
 
@@ -11,6 +11,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (nameEl)    nameEl.textContent    = displayName;
     if (welcomeEl) welcomeEl.textContent = displayName;
     if (avatarEl)  avatarEl.textContent  = displayName.charAt(0).toUpperCase();
+
+    const roleEl = document.getElementById("user-role");
+    if (roleEl) roleEl.textContent = user.role || "—";
+
+    // Engranaje: solo visible para Administrador
+    const gearBtn = document.getElementById("btn-admin-gear");
+    if (gearBtn && user.role === "Administrador") {
+        gearBtn.style.display = "";
+        gearBtn.addEventListener("click", openAdminModal);
+    }
+
+    document.getElementById("btn-close-admin").addEventListener("click", closeAdminModal);
+    document.getElementById("modal-admin").addEventListener("click", function (e) {
+        if (e.target === this) closeAdminModal();
+    });
 
     if (dateEl) {
         const now = new Date();
@@ -93,4 +108,189 @@ async function loadSummary() {
 function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
+}
+
+// ── GESTIÓN DE ADMINISTRADOR ─────────────────────────────────────────────────
+
+let _adminBarbers  = [];
+let _activeSubForm = null; // { barberId, type: 'create' | 'reset' }
+
+function openAdminModal() {
+    document.getElementById("modal-admin").style.display = "flex";
+    _activeSubForm = null;
+    loadAdminBarbers();
+}
+
+function closeAdminModal() {
+    document.getElementById("modal-admin").style.display = "none";
+    _activeSubForm = null;
+}
+
+async function loadAdminBarbers() {
+    const list = document.getElementById("admin-barber-list");
+    list.innerHTML = '<div class="adm-loading">Cargando barberos...</div>';
+    try {
+        _adminBarbers = await window.api.apiRequest("/api/barbers?include_inactive=true");
+        renderAdminBarbers();
+    } catch (err) {
+        const detail = (err.responseData && err.responseData.detail) || err.message;
+        list.innerHTML = `<div class="adm-error">${typeof detail === "string" ? detail : "Error al cargar."}</div>`;
+    }
+}
+
+function renderAdminBarbers() {
+    const list = document.getElementById("admin-barber-list");
+    if (!_adminBarbers.length) {
+        list.innerHTML = '<div class="adm-empty">No hay barberos registrados.</div>';
+        return;
+    }
+    list.innerHTML = _adminBarbers.map(renderBarberRow).join("");
+    lucide.createIcons();
+}
+
+function renderBarberRow(b) {
+    const dot = b.has_user
+        ? `<span class="ab-dot ${b.user_is_active ? "ab-active" : "ab-inactive"}"></span>`
+        : "";
+
+    const userBadge = b.has_user
+        ? `<span class="ab-username">@${b.user_username}</span>`
+        : `<span class="ab-no-user">Sin usuario</span>`;
+
+    const actions = b.has_user
+        ? `<button class="ab-btn ab-btn-secondary" onclick="showSubForm(${b.id},'reset')">
+               <i data-lucide="key"></i> Cambiar contrase&ntilde;a
+           </button>
+           <button class="ab-toggle ${b.user_is_active ? "active" : "inactive"}"
+                   onclick="toggleBarberAccess(${b.id})"
+                   title="${b.user_is_active ? "Desactivar acceso" : "Activar acceso"}">
+               <i data-lucide="${b.user_is_active ? "toggle-right" : "toggle-left"}"></i>
+               ${b.user_is_active ? "Activo" : "Inactivo"}
+           </button>`
+        : `<button class="ab-btn ab-btn-primary" onclick="showSubForm(${b.id},'create')">
+               <i data-lucide="user-plus"></i> Crear usuario
+           </button>`;
+
+    const subForm = (_activeSubForm && _activeSubForm.barberId === b.id)
+        ? `<div class="ab-subform">${renderSubForm(b.id, _activeSubForm.type)}</div>`
+        : "";
+
+    return `
+        <div class="ab-row" id="ab-row-${b.id}">
+            <div class="ab-info">
+                ${dot}
+                <span class="ab-name">${b.full_name}</span>
+                ${userBadge}
+            </div>
+            <div class="ab-actions">${actions}</div>
+            ${subForm}
+            <div class="ab-msg" id="ab-msg-${b.id}"></div>
+        </div>`;
+}
+
+function renderSubForm(barberId, type) {
+    const isCreate = type === "create";
+    return `
+        <form class="ab-pw-form" onsubmit="submitPasswordForm(event,${barberId},'${type}')">
+            <p class="ab-pw-hint">
+                M&iacute;nimo 8 caracteres, al menos una letra y un n&uacute;mero.
+            </p>
+            <div class="ab-pw-fields">
+                <input type="password" id="ab-pw-${barberId}"
+                       placeholder="${isCreate ? "Nueva contrase&ntilde;a" : "Nueva contrase&ntilde;a"}"
+                       autocomplete="new-password" required>
+                <input type="password" id="ab-pw2-${barberId}"
+                       placeholder="Confirmar contrase&ntilde;a"
+                       autocomplete="new-password" required>
+            </div>
+            <div id="ab-form-msg-${barberId}" class="ab-form-msg"></div>
+            <div class="ab-pw-btns">
+                <button type="submit" class="ab-btn ab-btn-primary">
+                    <i data-lucide="${isCreate ? "user-plus" : "key"}"></i>
+                    ${isCreate ? "Crear" : "Actualizar"}
+                </button>
+                <button type="button" class="ab-btn ab-btn-cancel"
+                        onclick="cancelSubForm(${barberId})">Cancelar</button>
+            </div>
+        </form>`;
+}
+
+function showSubForm(barberId, type) {
+    _activeSubForm = { barberId, type };
+    renderAdminBarbers();
+    setTimeout(() => {
+        const el = document.getElementById(`ab-pw-${barberId}`);
+        if (el) el.focus();
+    }, 40);
+}
+
+function cancelSubForm(barberId) {
+    _activeSubForm = null;
+    renderAdminBarbers();
+}
+
+async function submitPasswordForm(event, barberId, type) {
+    event.preventDefault();
+    const pw1   = document.getElementById(`ab-pw-${barberId}`).value;
+    const pw2   = document.getElementById(`ab-pw2-${barberId}`).value;
+    const msgEl = document.getElementById(`ab-form-msg-${barberId}`);
+
+    if (pw1 !== pw2) {
+        msgEl.textContent = "Las contraseñas no coinciden.";
+        msgEl.className = "ab-form-msg ab-form-msg-error";
+        return;
+    }
+
+    msgEl.textContent = "Procesando...";
+    msgEl.className = "ab-form-msg";
+
+    const url    = type === "create"
+        ? `/api/barbers/${barberId}/create-user`
+        : `/api/barbers/${barberId}/reset-password`;
+    const method = type === "create" ? "POST" : "PUT";
+
+    try {
+        const result = await window.api.apiRequest(url, { method, body: { password: pw1 } });
+        const ok = type === "create"
+            ? `Usuario creado: @${result.username}`
+            : (result.detail || "Contraseña actualizada.");
+
+        _activeSubForm = null;
+        await loadAdminBarbers();
+
+        const rowMsg = document.getElementById(`ab-msg-${barberId}`);
+        if (rowMsg) {
+            rowMsg.textContent = ok;
+            rowMsg.className = "ab-msg ab-msg-success";
+            setTimeout(() => { const el = document.getElementById(`ab-msg-${barberId}`); if (el) el.textContent = ""; }, 4500);
+        }
+    } catch (err) {
+        const detail = (err.responseData && err.responseData.detail) || err.message;
+        if (msgEl) {
+            msgEl.textContent = typeof detail === "string" ? detail : "Error al procesar.";
+            msgEl.className = "ab-form-msg ab-form-msg-error";
+        }
+    }
+}
+
+async function toggleBarberAccess(barberId) {
+    try {
+        const result = await window.api.apiRequest(
+            `/api/barbers/${barberId}/toggle-access`, { method: "PUT" }
+        );
+        await loadAdminBarbers();
+        const msgEl = document.getElementById(`ab-msg-${barberId}`);
+        if (msgEl) {
+            msgEl.textContent = result.user_is_active ? "Acceso activado." : "Acceso desactivado.";
+            msgEl.className   = `ab-msg ${result.user_is_active ? "ab-msg-success" : "ab-msg-warn"}`;
+            setTimeout(() => { const el = document.getElementById(`ab-msg-${barberId}`); if (el) el.textContent = ""; }, 3500);
+        }
+    } catch (err) {
+        const detail = (err.responseData && err.responseData.detail) || err.message;
+        const msgEl  = document.getElementById(`ab-msg-${barberId}`);
+        if (msgEl) {
+            msgEl.textContent = typeof detail === "string" ? detail : "Error.";
+            msgEl.className   = "ab-msg ab-msg-error";
+        }
+    }
 }

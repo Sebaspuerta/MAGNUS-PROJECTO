@@ -4,16 +4,20 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.security import User
-from app.schemas.barber import BarberCreate, BarberResponse, BarberUpdate
+from app.schemas.barber import BarberCreate, BarberResponse, BarberUpdate, BarberUserPasswordRequest
 from app.services.barber_service import (
     create_barber,
+    create_barber_user,
     deactivate_barber,
     get_barber_by_id,
     get_barber_performance,
+    get_barber_user_info,
     list_barbers,
+    reset_barber_password,
+    toggle_barber_access,
     update_barber
 )
-from app.utils.security import get_current_user, require_permission
+from app.utils.security import get_current_user, require_admin, require_permission
 
 
 router = APIRouter(
@@ -101,4 +105,56 @@ def patch_deactivate_barber(
     if error:
         raise HTTPException(status_code=404, detail=error)
 
+    return result
+
+
+# ── Gestión de usuarios de barbero (solo Administrador) ──────────────────────
+
+@router.get("/{barber_id}/user-info")
+def get_barber_user_info_route(
+    barber_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    result, error = get_barber_user_info(db, barber_id)
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+    return result
+
+
+@router.post("/{barber_id}/create-user")
+def post_create_barber_user(
+    barber_id: int,
+    payload: BarberUserPasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    result, error = create_barber_user(db, barber_id, payload.password, current_user)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return result
+
+
+@router.put("/{barber_id}/reset-password")
+def put_reset_barber_password(
+    barber_id: int,
+    payload: BarberUserPasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    result, error = reset_barber_password(db, barber_id, payload.password, current_user)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return result
+
+
+@router.put("/{barber_id}/toggle-access")
+def put_toggle_barber_access(
+    barber_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    result, error = toggle_barber_access(db, barber_id, current_user)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
     return result
