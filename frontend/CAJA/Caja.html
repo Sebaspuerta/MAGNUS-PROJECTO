@@ -5,24 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Caja - Magnus Barber</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Caja.css" rel="stylesheet">
 
-<style>
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:200;}
-.modal-overlay.visible{display:flex;}
-.modal-box{background:#0f1a2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;width:420px;max-width:95%;}
-.modal-box h3{font-family:'Cinzel',serif;color:var(--gold);margin-bottom:18px;font-size:1.1rem;}
-.modal-box label{display:block;color:var(--muted);font-size:.8rem;margin-bottom:4px;margin-top:12px;}
-.arqueo-section{background:rgba(200,155,60,.07);border:1px solid rgba(200,155,60,.2);border-radius:10px;padding:14px;margin-top:14px;}
-.arqueo-section h4{font-family:'Cinzel',serif;color:var(--gold);font-size:.85rem;margin-bottom:10px;}
-.arqueo-row{display:flex;justify-content:space-between;padding:4px 0;font-size:.85rem;}
-.arqueo-row .lbl{color:var(--muted);}
-.info-fila{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:.85rem;}
-.info-fila:last-child{border-bottom:none;}
-.info-fila .lbl{color:var(--muted);}
-.info-fila .val{font-weight:600;}
-</style>
     <link rel="stylesheet" href="/css/nav.css">
 </head>
 
@@ -36,7 +20,7 @@
     </div>
 
     <div class="header">
-        <h1>⚔ Caja y Métodos de Pago</h1>
+        <h1><i data-lucide="wallet"></i> Caja y Métodos de Pago</h1>
         <button id="btn-abrir" class="primary" onclick="mostrarModalAbrir()">Abrir Caja</button>
     </div>
 
@@ -70,9 +54,9 @@
         <!-- INFO CAJA -->
         <div class="card">
 
-            <h3 style="color:var(--gold);font-family:Cinzel,serif;">Registro de Caja</h3>
+            <h3>Registro de Caja</h3>
 
-            <div id="info-sin-caja" style="color:var(--muted);margin-top:14px;font-size:.85rem;line-height:1.6;">
+            <div id="info-sin-caja">
                 No hay caja abierta.<br>Usa el botón "Abrir Caja" para comenzar operaciones.
             </div>
 
@@ -95,7 +79,7 @@
                 </div>
             </div>
 
-            <div id="error-caja" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;"></div>
+            <div id="error-caja"></div>
 
             <button id="btn-cerrar" class="secondary" style="width:100%;margin-top:18px;display:none;" onclick="mostrarModalCerrar()">
                 Cerrar Caja
@@ -106,9 +90,9 @@
         <!-- MOVIMIENTOS -->
         <div class="card">
 
-            <h3 style="color:var(--gold);font-family:Cinzel,serif;">Movimientos</h3>
+            <h3>Movimientos</h3>
 
-            <div id="msg-movimientos" style="color:var(--muted);font-size:.82rem;margin-top:10px;">
+            <div id="msg-movimientos">
                 Abre la caja para ver movimientos.
             </div>
 
@@ -137,8 +121,8 @@
         <input id="input-apertura" type="number" min="0" step="any" placeholder="0">
         <label>Notas (opcional)</label>
         <input id="input-notas-abrir" type="text" placeholder="Observaciones...">
-        <div id="error-abrir" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1.1em;"></div>
-        <div style="display:flex;gap:10px;margin-top:18px;">
+        <div id="error-abrir"></div>
+        <div class="modal-btns">
             <button id="btn-confirm-abrir" class="primary" onclick="confirmarAbrir()">Confirmar</button>
             <button class="secondary" onclick="cerrarModal('modal-abrir')">Cancelar</button>
         </div>
@@ -153,7 +137,7 @@
         <input id="input-cierre" type="number" min="0" step="any" placeholder="0">
         <label>Notas (opcional)</label>
         <input id="input-notas-cerrar" type="text" placeholder="Observaciones...">
-        <div id="error-cerrar" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1.1em;"></div>
+        <div id="error-cerrar"></div>
 
         <div id="arqueo-result" class="arqueo-section" style="display:none;">
             <h4>Resultado del Arqueo</h4>
@@ -165,13 +149,13 @@
                 <span class="lbl">Monto contado</span>
                 <span id="arq-contado">—</span>
             </div>
-            <div class="arqueo-row" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(200,155,60,.2);font-weight:600;">
+            <div class="arqueo-row" style="margin-top:6px;padding-top:6px;border-top:1px solid var(--line-2);font-weight:600;">
                 <span class="lbl">Diferencia</span>
                 <span id="arq-diferencia">—</span>
             </div>
         </div>
 
-        <div style="display:flex;gap:10px;margin-top:18px;">
+        <div class="modal-btns">
             <button id="btn-confirm-cerrar" class="danger" onclick="confirmarCerrar()">Confirmar Cierre</button>
             <button id="btn-modal-ok" class="primary" style="display:none;" onclick="cerrarModal('modal-cerrar');location.reload()">Aceptar</button>
             <button class="secondary" onclick="cerrarModal('modal-cerrar')">Cancelar</button>

@@ -5,33 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cuentas por Cobrar - Magnus Barber</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Cuentas.css" rel="stylesheet">
 
-<style>
-/* Tarjetas de resumen */
-.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px;}
-.kpi{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;}
-.kpi::before{content:"";position:absolute;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
-.kpi.red::before{background:linear-gradient(90deg,transparent,var(--red),transparent);}
-.kpi-label{font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px;}
-.kpi-value{font-size:1.7rem;font-weight:700;}
-.kpi-sub{font-size:.78rem;color:var(--muted);margin-top:4px;}
-
-.lbl{display:block;color:var(--muted);font-size:.78rem;margin-top:10px;margin-bottom:2px;}
-.err{color:#ef9a9a;font-size:.82rem;margin-top:8px;min-height:1em;}
-
-/* Ajuste select en modal */
-.box select{
-    width:100%;
-    padding:10px;
-    margin-top:8px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    background:rgba(15,26,46,.7);
-    color:white;
-}
-</style>
     <link rel="stylesheet" href="/css/nav.css">
 </head>
 
@@ -45,7 +20,7 @@
     </div>
 
     <div class="header">
-        <h1>⚔ Cuentas por Cobrar</h1>
+        <h1><i data-lucide="landmark"></i> Cuentas por Cobrar</h1>
         <button class="btn primary" onclick="recargar()">↻ Actualizar</button>
     </div>
 
@@ -63,26 +38,24 @@
         </div>
         <div class="kpi red">
             <div class="kpi-label">Cuentas vencidas</div>
-            <div class="kpi-value" id="kpi-overdue-count" style="color:#ef9a9a;">—</div>
+            <div class="kpi-value" id="kpi-overdue-count">—</div>
             <div class="kpi-sub">con fecha vencida</div>
         </div>
         <div class="kpi red">
             <div class="kpi-label">Saldo vencido</div>
-            <div class="kpi-value" id="kpi-overdue-balance" style="color:#ef9a9a;">—</div>
+            <div class="kpi-value" id="kpi-overdue-balance">—</div>
             <div class="kpi-sub">requieren cobro urgente</div>
         </div>
     </div>
 
-    <div id="error-global" class="err" style="margin-bottom:10px;"></div>
-    <div id="msg-carga" style="color:var(--muted);padding:8px 0;">Cargando cuentas...</div>
+    <div id="error-global" class="err"></div>
+    <div id="msg-carga">Cargando cuentas...</div>
 
     <div class="grid" id="grid"></div>
 
-    <h2 style="margin-top:30px;color:var(--gold);font-family:Cinzel,serif;">
-        Historial de Abonos
-    </h2>
+    <h2>Historial de Abonos</h2>
 
-    <div id="msg-abonos" style="color:var(--muted);font-size:.85rem;padding:8px 0;"></div>
+    <div id="msg-abonos"></div>
     <table id="tabla-abonos" style="display:none;">
         <thead>
             <tr>
@@ -101,8 +74,8 @@
 <!-- MODAL REGISTRAR ABONO -->
 <div class="modal" id="modal-abono">
     <div class="box">
-        <h2 style="color:var(--gold);font-family:Cinzel,serif;margin-bottom:4px;">Registrar Abono</h2>
-        <div id="abono-info" style="color:var(--muted);font-size:.85rem;margin-bottom:12px;"></div>
+        <h2>Registrar Abono</h2>
+        <div id="abono-info"></div>
 
         <input type="hidden" id="abono-id">
 

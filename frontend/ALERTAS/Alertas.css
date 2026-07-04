@@ -1,131 +1,227 @@
-:root{
-    --bg:#0b1220;
-    --bg2:#0f1a2e;
-    --card:rgba(19,35,61,.75);
-    --border:rgba(255,255,255,.08);
-    --gold:#c89b3c;
-    --gold-dark:#8d6721;
-    --text:#e6e9ef;
-    --muted:#9aa4b2;
+/* ══════════════════════════════════════════════════════
+   MAGNUS — Dashboard de Alertas — Dark Viking Theme
+   ══════════════════════════════════════════════════════ */
 
-    --red:#c62828;
-    --orange:#ef6c00;
-    --blue:#1565c0;
-    --green:#2e7d32;
+:root {
+  --black:   #06070B;
+  --panel:   #0E1322;
+  --line:    rgba(255,255,255,.07);
+  --line-2:  rgba(255,255,255,.13);
+  --white:   #EEF1F8;
+  --muted:   #8990A4;
+  --muted-2: #5B6178;
+  --red:     #E11D2E;
+  --red-2:   #FF3B49;
+  --blue:    #2B5BFF;
+  --blue-2:  #5E86FF;
+  --green:   #2BC281;
+  --amber:   #E7A53C;
+  --grad:    linear-gradient(135deg, var(--red), var(--blue));
+  --font:    'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 }
 
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-body{
-    background:radial-gradient(circle at top,#111c33 0%,var(--bg) 60%);
-    color:var(--text);
+body {
+  font-family: var(--font);
+  color: var(--white);
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 500px at 10% -8%, rgba(43,91,255,.14), transparent 60%),
+    radial-gradient(760px 460px at 100%  0%, rgba(225,29,46,.11), transparent 55%),
+    var(--black);
 }
 
-.container{
-    max-width:1200px;
-    margin:auto;
-    padding:30px;
+.container {
+  width: 95%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 28px 20px 52px;
 }
 
-/* HEADER */
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
+/* ── HEADER ───────────────────────────────────────── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
 }
 
-.header h1{
-    font-family:'Cinzel',serif;
-    color:var(--gold);
+.header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.subtitle{
-    color:var(--muted);
+.header h1 i { width: 22px; height: 22px; color: var(--blue-2); }
+
+.subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
 }
 
-/* GRID */
-.grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-    gap:20px;
+/* ── RESUMEN KPI BOXES ────────────────────────────── */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
-/* ALERT CARD */
-.card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:18px;
-    position:relative;
-    transition:.3s;
-    cursor:pointer;
+.box {
+  background: linear-gradient(160deg, var(--panel), #0A0E1A);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 16px 18px;
+  position: relative;
+  overflow: hidden;
 }
 
-.card:hover{
-    transform:translateY(-5px);
-    border-color:rgba(200,155,60,.4);
+.box::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--grad);
 }
 
-.card::before{
-    content:"";
-    position:absolute;
-    top:0;
-    left:0;
-    width:100%;
-    height:3px;
-    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+.box h3 {
+  font-size: 10.5px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
-.title{
-    font-family:'Cinzel',serif;
-    color:var(--gold);
-    font-size:16px;
+.box span {
+  font-size: 28px;
+  font-weight: 800;
+  display: block;
 }
 
-/* BADGES */
-.badge{
-    display:inline-block;
-    padding:4px 10px;
-    border-radius:20px;
-    font-size:12px;
-    margin-top:8px;
-    color:white;
+/* ── GRID DE ALERTAS ──────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
 }
 
-.red{background:var(--red);}
-.orange{background:var(--orange);}
-.blue{background:var(--blue);}
-.green{background:var(--green);}
+/* ── CARD ─────────────────────────────────────────── */
 
-/* DESCRIPTION */
-.meta{
-    font-size:13px;
-    color:var(--muted);
-    margin-top:6px;
+.card {
+  background: linear-gradient(160deg, var(--panel), #080C1A);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .2s, border-color .2s, box-shadow .2s;
 }
 
-/* TOP SUMMARY */
-.summary{
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-    gap:15px;
-    margin-bottom:25px;
+.card:hover {
+  transform: translateY(-4px);
+  border-color: var(--line-2);
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
 }
 
-.box{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:14px;
-    padding:15px;
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--grad);
 }
 
-.box h3{
-    color:var(--gold);
-    font-family:'Cinzel',serif;
+/* ── TITLE & META ─────────────────────────────────── */
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-.box span{
-    font-size:22px;
-    font-weight:700;
+.meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+/* ── BADGES ───────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 700;
+  margin-top: 10px;
+  letter-spacing: .5px;
+}
+
+/* badge.red muestra "Urgente" en lugar de "RED" */
+.badge.red {
+  background: rgba(225,29,46,.13);
+  color: var(--red-2);
+  border: 1px solid rgba(225,29,46,.28);
+  font-size: 0;
+}
+.badge.red::after {
+  content: "Urgente";
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+/* badge.orange muestra "Atención" en lugar de "ORANGE" */
+.badge.orange {
+  background: rgba(231,165,60,.14);
+  color: var(--amber);
+  border: 1px solid rgba(231,165,60,.3);
+  font-size: 0;
+}
+.badge.orange::after {
+  content: "Atención";
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+/* badge.blue muestra "Info" en lugar de "BLUE" */
+.badge.blue {
+  background: rgba(43,91,255,.14);
+  color: var(--blue-2);
+  border: 1px solid rgba(43,91,255,.3);
+  font-size: 0;
+}
+.badge.blue::after {
+  content: "Info";
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+/* ── RESPONSIVE ───────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .summary { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 12px; }
+  .summary { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .summary { grid-template-columns: 1fr; }
 }

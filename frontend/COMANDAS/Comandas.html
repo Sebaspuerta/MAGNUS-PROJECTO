@@ -5,27 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comandas - Magnus Barber</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Comandas.css" rel="stylesheet">
 
-<style>
-/* Tabla de lista */
-.cmd-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;margin-top:8px;}
-.cmd-table th,.cmd-table td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:.85rem;}
-.cmd-table th{color:var(--text);background:rgba(200,155,60,.1);font-weight:600;text-align:left;}
-.cmd-table td{color:var(--muted);}
-.cmd-table tr:last-child td{border-bottom:none;}
-.cmd-table tr:hover td{background:rgba(255,255,255,.02);}
-
-/* Modales */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:300;}
-.modal-overlay.visible{display:flex;}
-.modal-box{background:#0f1a2e;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px;width:440px;max-width:95%;max-height:90vh;overflow-y:auto;}
-.modal-box h3{font-family:'Cinzel',serif;color:var(--gold);margin-bottom:16px;font-size:1.05rem;}
-.modal-box label{display:block;color:var(--muted);font-size:.78rem;margin-top:12px;margin-bottom:3px;}
-.modal-box input[type="checkbox"]{width:auto;margin:0;vertical-align:middle;}
-.fiado-label{display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:14px;color:var(--muted);font-size:.85rem;}
-</style>
     <link rel="stylesheet" href="/css/nav.css">
 </head>
 
@@ -39,8 +20,8 @@
     </div>
 
     <div class="header">
-        <h1>⚔ Comandas</h1>
-        <div style="display:flex;gap:10px;align-items:center;">
+        <h1><i data-lucide="receipt-text"></i> Comandas</h1>
+        <div class="header-actions">
             <button id="btn-volver" class="btn secondary" style="display:none;" onclick="volverALista()">← Volver</button>
             <button id="btn-nueva" class="btn primary" onclick="mostrarModalNueva()">+ Nueva Comanda</button>
         </div>
@@ -48,7 +29,7 @@
 
     <!-- ── VISTA LISTA ───────────────────────────────────────── -->
     <div id="vista-lista">
-        <div id="msg-lista" style="color:var(--muted);padding:16px 0;font-size:.9rem;">Cargando comandas...</div>
+        <div id="msg-lista">Cargando comandas...</div>
         <table class="cmd-table" id="tabla-lista" style="display:none;">
             <thead>
                 <tr>
@@ -72,28 +53,28 @@
 
             <!-- LEFT -->
             <div class="panel">
-                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:4px;">
-                    <span style="font-family:'Cinzel',serif;color:var(--gold);font-size:1.1rem;">
+                <div class="det-header-row">
+                    <span class="comanda-num">
                         Comanda #<span id="det-id">—</span>
                     </span>
-                    <span id="det-fiado-badge" class="badge" style="background:#1565c0;display:none;">Fiado</span>
+                    <span id="det-fiado-badge" class="badge" style="display:none;">Fiado</span>
                 </div>
-                <div style="color:var(--muted);font-size:.76rem;margin-bottom:16px;">
+                <div class="det-fecha-row">
                     Creada: <span id="det-fecha">—</span>
                 </div>
 
                 <h3>Cliente</h3>
-                <div id="det-cliente" style="color:var(--muted);font-size:.88rem;margin-top:6px;padding:8px 10px;background:rgba(15,26,46,.6);border-radius:8px;border:1px solid var(--border);">—</div>
+                <div id="det-cliente" >—</div>
 
-                <h3 style="margin-top:15px;">Barbero</h3>
-                <div id="det-barbero" style="color:var(--muted);font-size:.88rem;margin-top:6px;padding:8px 10px;background:rgba(15,26,46,.6);border-radius:8px;border:1px solid var(--border);">—</div>
+                <h3>Barbero</h3>
+                <div id="det-barbero" >—</div>
 
-                <h3 style="margin-top:15px;">Ítems</h3>
-                <div id="det-items" style="margin-top:8px;"></div>
+                <h3>Ítems</h3>
+                <div id="det-items"></div>
 
-                <div id="error-detalle" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
+                <div id="error-detalle"></div>
 
-                <div id="det-acciones" class="actions" style="margin-top:14px;">
+                <div id="det-acciones" class="actions">
                     <button class="btn primary" onclick="mostrarModalItem()">+ Agregar Ítem</button>
                     <button class="btn danger" onclick="cancelarComanda()">Cancelar</button>
                 </div>
@@ -104,15 +85,15 @@
                 <h3>Resumen</h3>
                 <p>Subtotal: $<span id="det-subtotal">0</span></p>
                 <p>Descuento: $<span id="det-descuento">0</span></p>
-                <hr style="margin:10px 0;border:1px solid var(--border)">
+                <hr>
                 <p class="total">Total: $<span id="det-total">0</span></p>
-                <p style="color:var(--muted);font-size:.82rem;margin-top:4px;">Pagado: $<span id="det-pagado">0</span></p>
+                <p class="det-pagado-row">Pagado: $<span id="det-pagado">0</span></p>
 
-                <h3 style="margin-top:15px;">Estado de pago</h3>
-                <span id="det-status-pago" class="badge pending" style="margin-top:6px;display:inline-block;">—</span>
+                <h3>Estado de pago</h3>
+                <span id="det-status-pago" class="badge pending">—</span>
 
                 <div id="panel-cerrar">
-                    <button id="btn-cerrar-comanda" class="btn primary" style="width:100%;margin-top:20px;" onclick="mostrarModalCobrar()">
+                    <button id="btn-cerrar-comanda" class="btn primary" onclick="mostrarModalCobrar()">
                         Cerrar y Cobrar
                     </button>
                 </div>
@@ -136,8 +117,8 @@
         </label>
         <label>Notas (opcional)</label>
         <input id="nueva-notas" type="text" placeholder="Observaciones...">
-        <div id="error-nueva" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
-        <div style="display:flex;gap:10px;margin-top:18px;">
+        <div id="error-nueva"></div>
+        <div class="modal-btns">
             <button id="btn-confirm-nueva" class="btn primary" onclick="confirmarNueva()">Crear Comanda</button>
             <button class="btn secondary" onclick="cerrarModal('modal-nueva')">Cancelar</button>
         </div>
@@ -161,8 +142,8 @@
         <input id="item-cantidad" type="number" min="1" value="1">
         <label>Precio unitario ($)</label>
         <input id="item-precio" type="number" min="0" step="any" placeholder="0">
-        <div id="error-item" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
-        <div style="display:flex;gap:10px;margin-top:18px;">
+        <div id="error-item"></div>
+        <div class="modal-btns">
             <button id="btn-confirm-item" class="btn primary" onclick="confirmarAgregarItem()">Agregar</button>
             <button class="btn secondary" onclick="cerrarModal('modal-item')">Cancelar</button>
         </div>
@@ -173,7 +154,7 @@
 <div id="modal-cobrar" class="modal-overlay">
     <div class="modal-box">
         <h3>Cerrar y Cobrar</h3>
-        <div id="cobrar-info" style="color:var(--muted);font-size:.85rem;margin-bottom:10px;padding:8px 10px;background:rgba(200,155,60,.06);border-radius:8px;border:1px solid rgba(200,155,60,.15);"></div>
+        <div id="cobrar-info" ></div>
         <label>Barbero responsable</label>
         <select id="cobrar-barbero"><option value="">— seleccionar —</option></select>
         <div id="cobrar-pago-section">
@@ -192,8 +173,8 @@
         </div>
         <label>Nota (opcional)</label>
         <input id="cobrar-nota" type="text" placeholder="Observaciones del cobro...">
-        <div id="error-cobrar" style="color:#ef9a9a;font-size:.82rem;margin-top:10px;min-height:1em;"></div>
-        <div style="display:flex;gap:10px;margin-top:18px;">
+        <div id="error-cobrar"></div>
+        <div class="modal-btns">
             <button id="btn-confirm-cobrar" class="btn primary" onclick="confirmarCobrar()">Confirmar Cobro</button>
             <button class="btn secondary" onclick="cerrarModal('modal-cobrar')">Cancelar</button>
         </div>

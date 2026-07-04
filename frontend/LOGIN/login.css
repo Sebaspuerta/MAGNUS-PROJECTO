@@ -1,5 +1,6 @@
-﻿/* ================================================================
+/* ================================================================
    MAGNUS BARBER SYSTEM — Login · Luxury Viking Theme
+   3-column layout: viking | card | carousel
    ================================================================ */
 
 :root {
@@ -21,52 +22,51 @@ body {
     min-height: 100vh;
     background: var(--black);
     color: var(--white);
-    display: flex;
-    align-items: center;
-    overflow: hidden;
+    overflow-x: hidden;
+}
+
+/* ── LAYOUT 3 COLUMNAS ───────────────────────────────────────── */
+
+.layout {
+    display: grid;
+    grid-template-columns: 1fr 480px 380px;
+    min-height: 100vh;
+}
+
+/* ── COLUMNA IZQUIERDA: zona vikinga ─────────────────────────── */
+
+.col-left {
     position: relative;
+    overflow: hidden;
+    background: url('/img/viking_login.png') center / cover no-repeat;
+    background-color: var(--black);
 }
 
-/* ── FONDO VIKINGO ───────────────────────────────────────────── */
-
-.bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-}
-
-.bg img.vk {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    height: 100%;
-    width: auto;
-}
-
-.bg .ov {
+/* Gradiente que funde el vikingo hacia el centro */
+.col-left::after {
+    content: "";
     position: absolute;
     inset: 0;
     background:
         linear-gradient(90deg,
-            rgba(4,5,7,0)    0%,
-            rgba(4,5,7,.08)  26%,
-            rgba(4,5,7,.62)  50%,
-            var(--black)     74%),
+            rgba(4,5,7,.05) 0%,
+            rgba(4,5,7,.45) 60%,
+            var(--black)    100%),
         linear-gradient(0deg,
-            rgba(4,5,7,.55), transparent 40%),
-        radial-gradient(700px 500px at 82% 26%,
-            rgba(43,91,255,.13), transparent 60%),
-        radial-gradient(620px 520px at 84% 84%,
-            rgba(225,29,46,.10), transparent 60%);
+            rgba(4,5,7,.55) 0%,
+            transparent     38%),
+        radial-gradient(620px 420px at 55% 28%,
+            rgba(43,91,255,.10), transparent 70%);
+    pointer-events: none;
 }
 
-/* ── LOGO FIJO ARRIBA-IZQUIERDA ──────────────────────────────── */
+/* ── LOGO ARRIBA-IZQUIERDA ───────────────────────────────────── */
 
 .brandtop {
-    position: fixed;
+    position: absolute;
     top: 38px;
-    left: 48px;
-    z-index: 3;
+    left: 40px;
+    z-index: 2;
 }
 
 .brandtop img {
@@ -84,19 +84,19 @@ body {
     margin-top: 8px;
 }
 
-/* ── SLOGAN FIJO ABAJO-IZQUIERDA ─────────────────────────────── */
+/* ── SLOGAN ABAJO-IZQUIERDA ──────────────────────────────────── */
 
 .sloganbox {
-    position: fixed;
-    left: 48px;
+    position: absolute;
+    left: 40px;
     bottom: 54px;
-    z-index: 3;
-    max-width: 340px;
+    z-index: 2;
+    max-width: 300px;
 }
 
 .sloganbox .q {
     font-family: 'Cinzel', serif;
-    font-size: 19px;
+    font-size: 18px;
     font-style: italic;
     color: var(--white);
     line-height: 1.35;
@@ -105,24 +105,23 @@ body {
 
 .sloganbox .loc {
     margin-top: 8px;
-    font-size: 12px;
+    font-size: 11.5px;
     letter-spacing: 2px;
     color: var(--muted);
     text-transform: uppercase;
     text-shadow: 0 2px 10px rgba(0,0,0,.9);
 }
 
-/* ── WRAPPER (alinea tarjeta a la derecha) ───────────────────── */
+/* ── COLUMNA CENTRAL: tarjeta login ──────────────────────────── */
 
-.wrap {
+.col-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 44px 30px;
+    background: var(--black);
     position: relative;
     z-index: 2;
-    width: 100%;
-    max-width: 1180px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 5vw;
 }
 
 /* ── TARJETA GLASSMORPHISM ───────────────────────────────────── */
@@ -271,6 +270,107 @@ body {
 
 .links .reg a { color: var(--blue); }
 
+/* ── COLUMNA DERECHA: carrusel ───────────────────────────────── */
+
+.col-right {
+    position: relative;
+    overflow: hidden;
+    background: var(--black);
+}
+
+/* ── CARRUSEL ────────────────────────────────────────────────── */
+
+.carousel {
+    position: absolute;
+    inset: 0;
+}
+
+.slide {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.2s ease;
+}
+
+.slide.active { opacity: 1; }
+
+/* Degradado oscuro en la parte inferior del slide */
+.slide-ov {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        0deg,
+        rgba(4,5,7,.88) 0%,
+        rgba(4,5,7,.30) 45%,
+        rgba(4,5,7,.08) 75%,
+        transparent     100%
+    );
+}
+
+/* ── CAPTION ─────────────────────────────────────────────────── */
+
+.caption {
+    position: absolute;
+    bottom: 68px;
+    left: 0; right: 0;
+    padding: 0 22px;
+    text-align: center;
+    z-index: 2;
+}
+
+.cap-tag {
+    display: inline-block;
+    background: rgba(225,29,46,.18);
+    border: 1px solid rgba(225,29,46,.45);
+    color: #ff8a93;
+    font-size: 9.5px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.cap-title {
+    font-family: 'Cinzel', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.38;
+    text-shadow: 0 2px 22px rgba(0,0,0,.95);
+}
+
+/* ── PUNTOS INDICADORES ──────────────────────────────────────── */
+
+.c-dots {
+    position: absolute;
+    bottom: 26px;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 9px;
+    z-index: 3;
+}
+
+.c-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.28);
+    border: 1px solid rgba(255,255,255,.18);
+    cursor: pointer;
+    transition: background .35s, transform .35s;
+}
+
+.c-dot.active {
+    background: var(--white);
+    border-color: transparent;
+    transform: scale(1.35);
+}
+
 /* ── PIE DE PÁGINA ───────────────────────────────────────────── */
 
 .foot {
@@ -278,7 +378,7 @@ body {
     bottom: 16px;
     left: 0; right: 0;
     text-align: center;
-    z-index: 2;
+    z-index: 10;
     color: var(--muted2);
     font-size: 11px;
     pointer-events: none;
@@ -288,9 +388,34 @@ body {
 
 /* ── RESPONSIVE ──────────────────────────────────────────────── */
 
+/* Tablet landscape (≤1200px): oculta el carrusel derecho */
+@media (max-width: 1200px) {
+    .layout {
+        grid-template-columns: 1fr 480px;
+    }
+    .col-right { display: none; }
+}
+
+/* Tablet portrait / móvil (≤900px): solo tarjeta de login */
 @media (max-width: 900px) {
-    .bg img.vk { opacity: .3; }
-    .brandtop, .sloganbox { display: none; }
-    .wrap { justify-content: center; }
-    .card { width: 100%; max-width: 420px; }
+    .layout {
+        grid-template-columns: 1fr;
+    }
+    .col-left  { display: none; }
+    .col-right { display: none; }
+    .col-center {
+        min-height: 100vh;
+        padding: 40px 20px;
+    }
+    .card {
+        width: 100%;
+        max-width: 420px;
+    }
+}
+
+/* Pantallas muy pequeñas */
+@media (max-width: 460px) {
+    .card {
+        padding: 36px 26px;
+    }
 }

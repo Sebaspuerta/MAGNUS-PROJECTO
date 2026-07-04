@@ -1,117 +1,453 @@
-:root{
-    --bg:#0b1220;
-    --bg2:#0f1a2e;
-    --card:rgba(19,35,61,.75);
-    --border:rgba(255,255,255,.08);
-    --gold:#c89b3c;
-    --gold-dark:#8d6721;
-    --text:#e6e9ef;
-    --muted:#9aa4b2;
-    --red:#c62828;
-    --green:#2e7d32;
-    --blue:#1565c0;
+/* ══════════════════════════════════════════════════════
+   MAGNUS — Comandas — Dark Viking Theme
+   ══════════════════════════════════════════════════════ */
+
+:root {
+  --black:   #06070B;
+  --panel:   #0E1322;
+  --line:    rgba(255,255,255,.07);
+  --line-2:  rgba(255,255,255,.13);
+  --white:   #EEF1F8;
+  --muted:   #8990A4;
+  --muted-2: #5B6178;
+  --red:     #E11D2E;
+  --red-2:   #FF3B49;
+  --blue:    #2B5BFF;
+  --blue-2:  #5E86FF;
+  --green:   #2BC281;
+  --amber:   #E7A53C;
+  --grad:    linear-gradient(135deg, var(--red), var(--blue));
+  --font:    'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  /* aliases para inline JS */
+  --gold:    #E7A53C;
+  --text:    #EEF1F8;
+  --orange:  #E7A53C;
 }
 
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-body{
-    background:radial-gradient(circle at top,#111c33 0%,var(--bg) 60%);
-    color:var(--text);
+body {
+  font-family: var(--font);
+  color: var(--white);
+  min-height: 100vh;
+  background:
+    radial-gradient(900px 500px at 10% -8%, rgba(43,91,255,.14), transparent 60%),
+    radial-gradient(760px 460px at 100%  0%, rgba(225,29,46,.11), transparent 55%),
+    var(--black);
 }
 
-.container{
-    max-width:1200px;
-    margin:auto;
-    padding:30px;
+.container {
+  width: 95%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 28px 20px 52px;
 }
 
-/* HEADER */
-.header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
+/* ── HEADER ───────────────────────────────────────── */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
 }
 
-.header h1{
-    font-family:'Cinzel',serif;
-    color:var(--gold);
+.header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.btn{
-    border:none;
-    cursor:pointer;
-    border-radius:10px;
-    padding:10px 14px;
-    transition:.3s;
+.header h1 i { width: 22px; height: 22px; color: var(--blue-2); }
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-.primary{
-    background:linear-gradient(135deg,var(--gold),var(--gold-dark));
-    font-weight:600;
+/* ── BOTONES ──────────────────────────────────────── */
+
+.btn {
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 10px 16px;
+  transition: .18s;
+  font-family: inherit;
+  font-size: 13px;
 }
 
-.secondary{background:#1a2a45;color:white;}
-.danger{background:var(--red);color:white;}
-
-/* GRID */
-.grid{
-    display:grid;
-    grid-template-columns:1.2fr .8fr;
-    gap:20px;
+.primary {
+  background: var(--grad);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(225,29,46,.22);
 }
 
-/* LEFT */
-.panel{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:20px;
+.primary:hover { filter: brightness(1.12); }
+
+.secondary {
+  background: rgba(255,255,255,.07);
+  color: var(--muted);
+  border: 1px solid var(--line-2);
+  font-weight: 600;
 }
 
-/* INPUTS */
-input,select{
-    width:100%;
-    padding:10px;
-    margin-top:8px;
-    border-radius:10px;
-    border:1px solid var(--border);
-    background:rgba(15,26,46,.7);
-    color:white;
+.secondary:hover { background: rgba(255,255,255,.13); color: var(--white); }
+
+.danger {
+  background: rgba(225,29,46,.13);
+  color: var(--red-2);
+  border: 1px solid rgba(225,29,46,.28);
+  font-weight: 600;
 }
 
-/* ITEMS */
-.item{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:10px;
-    border-bottom:1px solid var(--border);
+.danger:hover { background: rgba(225,29,46,.24); }
+
+/* ── MENSAJES ─────────────────────────────────────── */
+
+#msg-lista {
+  color: var(--muted);
+  padding: 16px 0;
+  font-size: .9rem;
 }
 
-.item small{color:var(--muted);}
+/* ── TABLA DE LISTA (cmd-table) ───────────────────── */
 
-/* RIGHT SUMMARY */
-.total{
-    font-size:22px;
-    color:var(--gold);
-    font-weight:700;
+.cmd-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  margin-top: 8px;
 }
 
-.badge{
-    display:inline-block;
-    padding:4px 10px;
-    border-radius:20px;
-    font-size:12px;
+.cmd-table th,
+.cmd-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--line);
+  font-size: .85rem;
+  text-align: left;
 }
 
-.paid{background:var(--green);}
-.pending{background:var(--red);}
-.partial{background:var(--blue);}
+.cmd-table th {
+  background: linear-gradient(160deg, var(--panel), #090D1C);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line-2);
+}
 
-/* MODAL STYLE (simple inline) */
-.actions{
-    display:flex;
-    gap:10px;
-    margin-top:10px;
+.cmd-table td { color: var(--muted); background: rgba(14,19,34,.55); }
+.cmd-table tr:last-child td { border-bottom: none; }
+.cmd-table tr:hover td { background: rgba(14,19,34,.9); }
+
+/* ── BADGES ───────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.paid    { background: rgba(43,194,129,.14); color: #52d39d;       border: 1px solid rgba(43,194,129,.3);  }
+.pending { background: rgba(231,165,60,.18); color: var(--amber);  border: 1px solid rgba(231,165,60,.3);  }
+.partial { background: rgba(43,91,255,.14);  color: var(--blue-2); border: 1px solid rgba(43,91,255,.3);  }
+
+/* badge "Fiado" inline (JS genera style="background:#1565c0") */
+#det-fiado-badge {
+  background: var(--blue) !important;
+  color: #fff;
+  font-size: .75rem;
+}
+
+/* ── GRID DETALLE ─────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 20px;
+}
+
+/* ── PANEL ────────────────────────────────────────── */
+
+.panel {
+  background: linear-gradient(160deg, var(--panel), #080C1A);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--grad);
+}
+
+.panel h3 {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+.panel h3:first-of-type { margin-top: 0; }
+
+/* ── COMANDA NUM (en el encabezado del detalle) ───── */
+
+.comanda-num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── FECHA ROW ────────────────────────────────────── */
+
+.det-fecha-row {
+  color: var(--muted);
+  font-size: .76rem;
+  margin-top: 4px;
+  margin-bottom: 16px;
+}
+
+.det-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+/* ── CAMPOS CLIENTE / BARBERO ─────────────────────── */
+
+#det-cliente,
+#det-barbero {
+  color: var(--muted);
+  font-size: .88rem;
+  margin-top: 6px;
+  padding: 9px 12px;
+  background: rgba(6,9,15,.6);
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+
+/* ── ITEMS DE COMANDA ─────────────────────────────── */
+
+#det-items { margin-top: 8px; }
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.item:last-child { border-bottom: none; }
+.item small { color: var(--muted); }
+
+/* ── ERRORES ──────────────────────────────────────── */
+
+#error-detalle,
+#error-nueva,
+#error-item,
+#error-cobrar {
+  color: var(--red-2);
+  font-size: .82rem;
+  margin-top: 10px;
+  min-height: 1.1em;
+}
+
+/* ── ACCIONES ─────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+/* ── RESUMEN / TOTAL ──────────────────────────────── */
+
+.panel > p {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.total {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--white);
+  margin-top: 4px;
+}
+
+hr {
+  margin: 12px 0;
+  border: none;
+  border-top: 1px solid var(--line);
+}
+
+.det-pagado-row {
+  color: var(--muted);
+  font-size: .82rem;
+  margin-top: 4px;
+}
+
+#det-status-pago {
+  margin-top: 8px;
+  display: inline-flex;
+}
+
+#btn-cerrar-comanda {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* ── MODALES (OVERLAY) ────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.78);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 20px;
+}
+
+.modal-overlay.visible { display: flex; }
+
+/* ── MODAL BOX ────────────────────────────────────── */
+
+.modal-box {
+  width: 440px;
+  max-width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: rgba(10,14,26,.97);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  padding: 28px;
+  position: relative;
+  box-shadow: 0 32px 80px rgba(0,0,0,.75);
+}
+
+.modal-box::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--grad);
+}
+
+.modal-box h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--white);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.modal-box label {
+  display: block;
+  color: var(--muted);
+  font-size: .78rem;
+  margin-top: 12px;
+  margin-bottom: 3px;
+  font-weight: 500;
+}
+
+/* ── CHECKBOX FIADO ───────────────────────────────── */
+
+.fiado-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.modal-box input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  vertical-align: middle;
+  accent-color: var(--blue);
+}
+
+/* ── INPUTS / SELECTS ─────────────────────────────── */
+
+input, select {
+  width: 100%;
+  padding: 11px 13px;
+  margin-top: 4px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(6,9,15,.9);
+  color: var(--white);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+input:focus, select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(43,91,255,.18);
+}
+
+input::placeholder { color: var(--muted-2); }
+select option      { background: #0d1222; }
+
+/* ── INFO COBRO ───────────────────────────────────── */
+
+#cobrar-info {
+  color: var(--muted);
+  font-size: .85rem;
+  margin-bottom: 10px;
+  padding: 9px 12px;
+  background: rgba(43,91,255,.06);
+  border-radius: 10px;
+  border: 1px solid rgba(43,91,255,.18);
+}
+
+/* ── BOTONES DE MODAL ─────────────────────────────── */
+
+.modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+/* ── RESPONSIVE ───────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 16px; align-items: flex-start; }
+  .grid   { grid-template-columns: 1fr; }
 }

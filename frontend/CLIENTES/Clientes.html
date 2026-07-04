@@ -6,20 +6,7 @@
     <title>Gestión de Clientes</title>
 
     <link rel="stylesheet" href="Clientes.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/nav.css">
-
-    <style>
-        .error-inline { color:#ef9a9a; font-size:.82rem; margin-top:8px; min-height:1em; }
-        .modal-perfil { position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; justify-content:center; align-items:center; z-index:300; }
-        .modal-perfil.active { display:flex; }
-        .perfil-box { background:var(--bg-2); border:1px solid var(--border); border-radius:18px; padding:28px; width:420px; max-width:95%; }
-        .perfil-box h3 { font-family:'Cinzel',serif; color:var(--gold); margin-bottom:16px; }
-        .perfil-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:.88rem; }
-        .perfil-row:last-child { border-bottom:none; }
-        .perfil-row .lbl { color:var(--muted); }
-        .perfil-row .val { font-weight:600; }
-    </style>
 </head>
 <body>
 
@@ -34,10 +21,10 @@
 
     <header class="page-header">
         <div>
-            <h1>⚔ Gestión de Clientes</h1>
+            <h1><i data-lucide="user-round"></i> Gestión de Clientes</h1>
             <p>Perfiles, historial y seguimiento de clientes</p>
         </div>
-        <button class="btn-primary" id="openModal">+ Nuevo Cliente</button>
+        <button class="btn-primary" id="openModal"><i data-lucide="user-plus"></i> Nuevo Cliente</button>
     </header>
 
     <section class="stats-grid">
@@ -63,14 +50,14 @@
         <input type="text" id="searchInput" placeholder="Buscar cliente por nombre, teléfono...">
     </section>
 
-    <div id="error-global" class="error-inline" style="margin-bottom:10px;"></div>
+    <div id="error-global" class="error-inline"></div>
 
     <section class="clientes-grid" id="clientesGrid">
         <div style="color:var(--muted);padding:20px 0;">Cargando clientes...</div>
     </section>
 
     <section class="history-section">
-        <h2>Listado General</h2>
+        <h2><i data-lucide="list"></i> Listado General</h2>
         <table>
             <thead>
                 <tr>
@@ -101,28 +88,28 @@
 
         <div class="form-grid">
             <div>
-                <label style="color:var(--muted);font-size:.78rem;">Nombre completo *</label>
+                <label>Nombre completo *</label>
                 <input type="text" id="f-nombre" placeholder="Nombre">
             </div>
             <div>
-                <label style="color:var(--muted);font-size:.78rem;">Teléfono</label>
+                <label>Teléfono</label>
                 <input type="text" id="f-telefono" placeholder="Celular">
             </div>
             <div>
-                <label style="color:var(--muted);font-size:.78rem;">Email</label>
+                <label>Email</label>
                 <input type="email" id="f-email" placeholder="correo@ejemplo.com">
             </div>
             <div>
-                <label style="color:var(--muted);font-size:.78rem;">N° documento</label>
+                <label>N° documento</label>
                 <input type="text" id="f-documento" placeholder="CC / NIT">
             </div>
             <div>
-                <label style="color:var(--muted);font-size:.78rem;">Fecha nacimiento</label>
+                <label>Fecha nacimiento</label>
                 <input type="date" id="f-nacimiento">
             </div>
         </div>
 
-        <textarea id="f-notas" placeholder="Observaciones y notas internas..." style="margin-top:10px;width:100%;"></textarea>
+        <textarea id="f-notas" placeholder="Observaciones y notas internas..."></textarea>
 
         <div id="error-modal" class="error-inline"></div>
 

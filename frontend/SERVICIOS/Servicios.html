@@ -5,15 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catálogo de Servicios - Magnus</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Servicios.css" rel="stylesheet">
 
-<style>
-    .error-inline { color:#ef9a9a; font-size:.82rem; margin-top:8px; min-height:1em; }
-    .consumables-row { display:flex; align-items:center; gap:10px; margin-top:8px; }
-    .consumables-row input[type="checkbox"] { width:auto; margin:0; }
-    .consumables-row label { color:var(--muted); font-size:.88rem; cursor:pointer; }
-</style>
     <link rel="stylesheet" href="/css/nav.css">
 </head>
 
@@ -28,17 +21,17 @@
 
     <div class="header">
         <div>
-            <h1>⚔ Catálogo de Servicios</h1>
-            <p style="color:var(--muted);font-size:.85rem;">Servicios activos e inactivos</p>
+            <h1><i data-lucide="scissors"></i> Catálogo de Servicios</h1>
+            <p>Servicios activos e inactivos</p>
         </div>
-        <button class="primary" onclick="abrirModalNuevo()">+ Nuevo Servicio</button>
+        <button class="primary" onclick="abrirModalNuevo()"><i data-lucide="plus"></i> Nuevo Servicio</button>
     </div>
 
     <div class="search">
         <input type="text" id="search" placeholder="Buscar servicio..." oninput="filtrar()">
     </div>
 
-    <div id="error-global" class="error-inline" style="margin-bottom:12px;"></div>
+    <div id="error-global" class="error-inline"></div>
     <div id="msg-carga" style="color:var(--muted);padding:10px 0;">Cargando servicios...</div>
 
     <div class="grid" id="grid"></div>

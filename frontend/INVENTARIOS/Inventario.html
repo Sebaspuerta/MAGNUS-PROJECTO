@@ -5,13 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventario - Magnus Barber</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link href="Inventario.css" rel="stylesheet">
 
-<style>
-.lbl{display:block;color:var(--muted);font-size:.78rem;margin-top:10px;margin-bottom:2px;}
-.err{color:#ef9a9a;font-size:.82rem;margin-top:8px;min-height:1em;}
-</style>
     <link rel="stylesheet" href="/css/nav.css">
 </head>
 
@@ -25,18 +20,17 @@
     </div>
 
     <div class="header">
-        <h1>⚔ Inventario Viking</h1>
-        <button class="primary" onclick="abrirModalNuevo()">+ Producto</button>
+        <h1><i data-lucide="package"></i> Inventario</h1>
+        <button class="primary" onclick="abrirModalNuevo()"><i data-lucide="plus"></i> Producto</button>
     </div>
 
-    <div id="error-global" class="err" style="margin-bottom:10px;"></div>
-    <div id="msg-carga" style="color:var(--muted);padding:8px 0;">Cargando inventario...</div>
+    <div id="error-global" class="err"></div>
+    <div id="msg-carga">Cargando inventario...</div>
 
     <div class="grid" id="grid"></div>
 
     <div class="history" style="margin-top:30px;">
-        <h2 style="color:var(--gold);font-family:Cinzel,serif;">
-            Movimientos — <span id="history-title" style="font-size:.85rem;font-weight:400;color:var(--muted);">selecciona "Ver movimientos" en un producto</span>
+        <h2><i data-lucide="history"></i> Movimientos — <span id="history-title">selecciona "Ver movimientos" en un producto</span>
         </h2>
         <div id="msg-movs" style="color:var(--muted);font-size:.85rem;padding:8px 0;"></div>
         <table id="tabla-movs" style="display:none;">
@@ -58,8 +52,8 @@
 
 <!-- MODAL CREAR / EDITAR PRODUCTO -->
 <div class="modal" id="modal-producto">
-    <div class="modal-box" style="max-height:90vh;overflow-y:auto;">
-        <h2 id="modal-titulo" style="color:var(--gold);font-family:Cinzel,serif;margin-bottom:14px;">Producto</h2>
+    <div class="modal-box">
+        <h2 id="modal-titulo">Producto</h2>
 
         <input type="hidden" id="edit-id">
 
@@ -113,7 +107,7 @@
 <!-- MODAL ENTRADA DE STOCK -->
 <div class="modal" id="modal-entrada">
     <div class="modal-box">
-        <h2 style="color:var(--gold);font-family:Cinzel,serif;margin-bottom:14px;">
+        <h2>
             Entrada de Stock — <span id="entrada-nombre" style="font-size:.85rem;"></span>
         </h2>
 
