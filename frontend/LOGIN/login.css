@@ -278,6 +278,31 @@ body {
     background: var(--black);
 }
 
+/* ── VIÑETA CARRUSEL ─────────────────────────────────────────── */
+
+/* Overlay encima de las fotos, debajo de captions (z:2) y dots (z:3) */
+.col-right::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        /* Borde izquierdo: fundido fuerte al negro — elimina el corte duro */
+        linear-gradient(90deg,
+            rgba(4,5,7,.88)  0%,
+            rgba(4,5,7,.42)  20%,
+            transparent      52%),
+        /* Borde superior: sutil */
+        linear-gradient(180deg,
+            rgba(4,5,7,.52)  0%,
+            transparent      28%),
+        /* Viñeta radial: oscurece bordes, centro despejado */
+        radial-gradient(ellipse 72% 78% at 60% 52%,
+            transparent      40%,
+            rgba(4,5,7,.50) 100%);
+}
+
 /* ── CARRUSEL ────────────────────────────────────────────────── */
 
 .carousel {
