@@ -119,11 +119,13 @@ function openAdminModal() {
     document.getElementById("modal-admin").style.display = "flex";
     _activeSubForm = null;
     loadAdminBarbers();
+    initMasterCodeForm();
 }
 
 function closeAdminModal() {
     document.getElementById("modal-admin").style.display = "none";
     _activeSubForm = null;
+    _mcFormBound   = false;
 }
 
 async function loadAdminBarbers() {
@@ -271,6 +273,53 @@ async function submitPasswordForm(event, barberId, type) {
             msgEl.className = "ab-form-msg ab-form-msg-error";
         }
     }
+}
+
+// ── CÓDIGO MAESTRO DE RECUPERACIÓN ──────────────────────────────
+
+let _mcFormBound = false;
+
+function initMasterCodeForm() {
+    const btn   = document.getElementById("btn-save-mc");
+    const msgEl = document.getElementById("mc-msg");
+    if (!btn || _mcFormBound) return;
+    _mcFormBound = true;
+
+    document.getElementById("mc-current-pw").value = "";
+    document.getElementById("mc-new-code").value = "";
+    if (msgEl) { msgEl.textContent = ""; msgEl.className = "ab-form-msg"; }
+
+    btn.addEventListener("click", async function () {
+        const currentPw = document.getElementById("mc-current-pw").value;
+        const newCode   = document.getElementById("mc-new-code").value;
+
+        if (!currentPw || !newCode) {
+            msgEl.textContent = "Completa ambos campos.";
+            msgEl.className   = "ab-form-msg ab-form-msg-error";
+            return;
+        }
+
+        btn.disabled      = true;
+        msgEl.textContent = "Guardando...";
+        msgEl.className   = "ab-form-msg";
+
+        try {
+            const result = await window.api.apiRequest("/api/security/master-code", {
+                method: "POST",
+                body: { current_password: currentPw, master_code: newCode }
+            });
+            msgEl.textContent = result.detail || "Código maestro actualizado.";
+            msgEl.className   = "ab-form-msg ab-form-msg-success";
+            document.getElementById("mc-current-pw").value = "";
+            document.getElementById("mc-new-code").value   = "";
+        } catch (err) {
+            const detail = (err.responseData && err.responseData.detail) || err.message;
+            msgEl.textContent = typeof detail === "string" ? detail : "Error al guardar.";
+            msgEl.className   = "ab-form-msg ab-form-msg-error";
+        } finally {
+            btn.disabled = false;
+        }
+    });
 }
 
 async function toggleBarberAccess(barberId) {

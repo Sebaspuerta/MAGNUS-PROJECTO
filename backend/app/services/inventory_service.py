@@ -151,6 +151,66 @@ def update_product(db: Session, product_id: int, payload: ProductUpdate, admin_u
     return serialize_product(product), None
 
 
+def delete_product(db: Session, product_id: int, admin_user: User):
+    from app.models.order import OrderItem
+    from app.models.service_consumable import ServiceConsumable
+
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        return None, "Producto no encontrado."
+
+    has_orders = (
+        db.query(OrderItem).filter(OrderItem.product_id == product_id).first()
+    )
+    if has_orders:
+        return None, {
+            "code": "has_history",
+            "message": (
+                f"El producto '{product.name}' ya tiene ventas registradas en comandas. "
+                "Para retirarlo del catálogo, desactívalo en lugar de eliminarlo "
+                "(así el historial de ventas queda intacto)."
+            )
+        }
+
+    has_movements = (
+        db.query(InventoryMovement).filter(InventoryMovement.product_id == product_id).first()
+    )
+    if has_movements:
+        return None, {
+            "code": "has_history",
+            "message": (
+                f"El producto '{product.name}' tiene movimientos de inventario registrados. "
+                "Para retirarlo del catálogo, desactívalo en lugar de eliminarlo."
+            )
+        }
+
+    has_consumables = (
+        db.query(ServiceConsumable).filter(ServiceConsumable.product_id == product_id).first()
+    )
+    if has_consumables:
+        return None, {
+            "code": "has_history",
+            "message": (
+                f"El producto '{product.name}' está configurado como consumible de uno o más "
+                "servicios. Retíralo de esa configuración antes de eliminarlo."
+            )
+        }
+
+    name = product.name
+    db.delete(product)
+
+    create_audit_log(
+        db=db,
+        module="inventario",
+        action="eliminar_producto",
+        detail=f"El administrador '{admin_user.username}' eliminó el producto '{name}' (ID: {product_id}).",
+        user_id=admin_user.id
+    )
+
+    db.commit()
+    return {"detail": f"Producto '{name}' eliminado correctamente."}, None
+
+
 def deactivate_product(db: Session, product_id: int, admin_user: User):
     product = db.query(Product).filter(Product.id == product_id).first()
 

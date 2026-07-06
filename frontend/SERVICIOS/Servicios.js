@@ -30,7 +30,8 @@ function filtrar() {
 
 // ── RENDER GRID ────────────────────────────────────────────────────────────────
 function renderGrid(lista) {
-    const grid = document.getElementById("grid");
+    const grid    = document.getElementById("grid");
+    const isAdmin = (window.api.getAuthUser() || {}).role === "Administrador";
 
     if (!lista.length) {
         grid.innerHTML = '<div style="color:var(--muted);">No se encontraron servicios.</div>';
@@ -44,6 +45,10 @@ function renderGrid(lista) {
         const duracion    = s.estimated_duration_minutes ? `⏱ ${s.estimated_duration_minutes} min` : "";
         const consumibles = s.uses_internal_consumables ? "🧴 Usa consumibles" : "";
         const categoria   = s.category || "Sin categoría";
+
+        const btnEliminar = isAdmin
+            ? `<button class="danger" onclick="eliminar(${s.id}, '${escAttr(s.name)}')" title="Eliminar permanentemente"><i data-lucide="trash-2"></i> Eliminar</button>`
+            : "";
 
         return `<div class="card">
             <h3>${escHtml(s.name)}</h3>
@@ -60,9 +65,12 @@ function renderGrid(lista) {
                     ? `<button class="danger" onclick="desactivar(${s.id}, '${escAttr(s.name)}')">Desactivar</button>`
                     : `<span style="color:var(--muted);font-size:.78rem;align-self:center;">Inactivo</span>`
                 }
+                ${btnEliminar}
             </div>
         </div>`;
     }).join("");
+
+    lucide.createIcons();
 }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
@@ -151,6 +159,23 @@ async function guardarServicio() {
     }
 }
 
+// ── ELIMINAR (solo admin) ─────────────────────────────────────────────────────
+async function eliminar(id, nombre) {
+    if (!confirm(`¿Eliminar permanentemente el servicio "${nombre}"?\n\nEsto es irreversible. Solo es posible si el servicio nunca ha tenido ventas.`)) return;
+    setError("error-global", "");
+    try {
+        await window.api.apiRequest(`/api/services/${id}`, { method: "DELETE" });
+        await cargarServicios();
+    } catch (err) {
+        const detail = err.responseData && err.responseData.detail;
+        if (detail && typeof detail === "object" && detail.code === "has_history") {
+            setInfo("error-global", detail.message);
+        } else {
+            setError("error-global", (typeof detail === "string" ? detail : null) || err.message);
+        }
+    }
+}
+
 // ── DESACTIVAR ────────────────────────────────────────────────────────────────
 async function desactivar(id, nombre) {
     if (!confirm(`¿Desactivar el servicio "${nombre}"? Dejará de aparecer en Comandas.`)) return;
@@ -164,7 +189,18 @@ async function desactivar(id, nombre) {
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
-function setError(id, msg) { const e = document.getElementById(id); if (e) e.textContent = msg; }
+function setError(id, msg) {
+    const e = document.getElementById(id);
+    if (!e) return;
+    e.textContent = msg;
+    e.style.color = "";
+}
+function setInfo(id, msg) {
+    const e = document.getElementById(id);
+    if (!e) return;
+    e.textContent = msg;
+    e.style.color = "var(--amber, #E7A53C)";
+}
 function money(n) {
     if (n == null) return "—";
     return "$ " + Number(n).toLocaleString("es-CO", { minimumFractionDigits: 0 });

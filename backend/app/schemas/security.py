@@ -56,3 +56,14 @@ class CurrentUserResponse(BaseModel):
 class PasswordChangeRequest(BaseModel):
     current_password: str
     new_password: str
+
+
+class MasterCodeSetRequest(BaseModel):
+    current_password: str
+    master_code: str
+
+
+class RecoverPasswordRequest(BaseModel):
+    username: str
+    master_code: str
+    new_password: str

@@ -7,7 +7,9 @@ from app.schemas.security import (
     CurrentUserResponse,
     LoginRequest,
     LoginResponse,
+    MasterCodeSetRequest,
     PasswordChangeRequest,
+    RecoverPasswordRequest,
     RoleResponse,
     UserCreate,
     UserResponse
@@ -20,7 +22,8 @@ from app.services.security_service import (
     list_roles,
     list_users
 )
-from app.utils.security import get_current_user, require_permission
+from app.services.master_code_service import recover_password, set_master_code
+from app.utils.security import get_current_user, require_admin, require_permission
 
 
 router = APIRouter(
@@ -108,6 +111,35 @@ def post_user(
     if error:
         raise HTTPException(status_code=400, detail=error)
 
+    return result
+
+
+@router.post("/master-code")
+def post_set_master_code(
+    payload: MasterCodeSetRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    result, error = set_master_code(db, current_user, payload.current_password, payload.master_code)
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+    return result
+
+
+@router.post("/recover-password")
+def post_recover_password(
+    payload: RecoverPasswordRequest,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    ip_address = request.client.host if request.client else None
+    result, error = recover_password(
+        db, payload.username, payload.master_code, payload.new_password, ip_address
+    )
+    if error:
+        if isinstance(error, dict) and error.get("code") == "master_locked":
+            raise HTTPException(status_code=423, detail=error)
+        raise HTTPException(status_code=400, detail=error)
     return result
 
 

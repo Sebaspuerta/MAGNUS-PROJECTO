@@ -16,12 +16,13 @@ from app.services.inventory_service import (
     create_inventory_entry,
     create_product,
     deactivate_product,
+    delete_product,
     get_product_by_id,
     list_product_movements,
     list_products,
     update_product
 )
-from app.utils.security import get_current_user, require_permission
+from app.utils.security import get_current_user, require_admin, require_permission
 
 
 router = APIRouter(
@@ -91,6 +92,22 @@ def patch_deactivate_product(
     result, error = deactivate_product(db, product_id, current_user)
 
     if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    return result
+
+
+@router.delete("/{product_id}")
+def delete_product_endpoint(
+    product_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    result, error = delete_product(db, product_id, current_user)
+
+    if error:
+        if isinstance(error, dict):
+            raise HTTPException(status_code=409, detail=error)
         raise HTTPException(status_code=404, detail=error)
 
     return result

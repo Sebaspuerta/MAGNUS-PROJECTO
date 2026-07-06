@@ -7,11 +7,12 @@ from app.schemas.service import ServiceCreate, ServiceResponse, ServiceUpdate
 from app.services.service_service import (
     create_service,
     deactivate_service,
+    delete_service,
     get_service_by_id,
     list_services,
     update_service
 )
-from app.utils.security import get_current_user, require_permission
+from app.utils.security import get_current_user, require_admin, require_permission
 
 
 router = APIRouter(
@@ -81,6 +82,22 @@ def patch_deactivate_service(
     result, error = deactivate_service(db, service_id, current_user)
 
     if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    return result
+
+
+@router.delete("/{service_id}")
+def delete_service_endpoint(
+    service_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    result, error = delete_service(db, service_id, current_user)
+
+    if error:
+        if isinstance(error, dict):
+            raise HTTPException(status_code=409, detail=error)
         raise HTTPException(status_code=404, detail=error)
 
     return result

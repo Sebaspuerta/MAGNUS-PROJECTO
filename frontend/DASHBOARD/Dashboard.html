@@ -162,7 +162,32 @@
             <button id="btn-close-admin" class="adm-close" title="Cerrar">&times;</button>
         </div>
         <div class="adm-body">
+
+            <div class="adm-section-label">Barberos y Acceso</div>
             <div id="admin-barber-list" class="adm-list"></div>
+
+            <div class="adm-section-label" style="margin-top:22px;">
+                <i data-lucide="shield-check"></i> C&oacute;digo maestro de recuperaci&oacute;n
+            </div>
+            <div class="adm-mc-box">
+                <p class="adm-mc-hint">
+                    Permite recuperar cualquier cuenta sin correo. Gu&aacute;rdalo en lugar seguro.<br>
+                    M&iacute;n. 6 caracteres. Confirma tu contrase&ntilde;a actual para guardarlo.
+                </p>
+                <div class="ab-pw-fields">
+                    <input type="password" id="mc-current-pw"
+                           placeholder="Tu contrase&ntilde;a actual" autocomplete="current-password">
+                    <input type="password" id="mc-new-code"
+                           placeholder="Nuevo c&oacute;digo maestro (m&iacute;n. 6 caracteres)" autocomplete="new-password">
+                </div>
+                <div id="mc-msg" class="ab-form-msg"></div>
+                <div class="ab-pw-btns">
+                    <button id="btn-save-mc" class="ab-btn ab-btn-primary">
+                        <i data-lucide="shield-check"></i> Guardar c&oacute;digo
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

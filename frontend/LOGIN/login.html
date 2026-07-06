@@ -47,7 +47,7 @@
                 <div id="error-msg"></div>
 
                 <div class="links">
-                    <a href="#">&iquest;Olvidaste tu contrase&ntilde;a?</a>
+                    <a href="#" id="link-recover">&iquest;Olvidaste tu contrase&ntilde;a?</a>
                     <span class="reg">&iquest;No tienes cuenta? <a href="/REGISTER/Register.html">Registrarse</a></span>
                 </div>
 
@@ -92,6 +92,45 @@
         </div>
     </div>
 
+</div>
+
+<!-- ── MODAL RECUPERAR CONTRASEÑA ────────────────────────── -->
+<div id="modal-recover" class="rec-overlay" aria-hidden="true">
+    <div class="rec-box">
+        <h3>Recuperar contrase&ntilde;a</h3>
+        <p class="rec-hint">
+            Solicita el <strong>c&oacute;digo maestro</strong> al administrador del negocio.<br>
+            Introduce el usuario, el c&oacute;digo y la nueva contrase&ntilde;a.
+        </p>
+
+        <div class="field">
+            <label for="rec-username">Usuario a recuperar</label>
+            <input id="rec-username" type="text" placeholder="Nombre de usuario" autocomplete="off">
+        </div>
+
+        <div class="field">
+            <label for="rec-code">C&oacute;digo maestro del negocio</label>
+            <input id="rec-code" type="password" placeholder="C&oacute;digo secreto del negocio" autocomplete="off">
+        </div>
+
+        <div class="field">
+            <label for="rec-pw1">Nueva contrase&ntilde;a</label>
+            <input id="rec-pw1" type="password" placeholder="M&iacute;n. 8 caracteres, letra y n&uacute;mero" autocomplete="new-password">
+        </div>
+
+        <div class="field">
+            <label for="rec-pw2">Confirmar nueva contrase&ntilde;a</label>
+            <input id="rec-pw2" type="password" placeholder="Repite la contrase&ntilde;a" autocomplete="new-password">
+        </div>
+
+        <div id="rec-msg"></div>
+
+        <button class="btn" id="rec-submit" type="button">Recuperar contrase&ntilde;a</button>
+
+        <div class="links" style="margin-top:18px;">
+            <a href="#" id="rec-cancel">Volver al inicio de sesi&oacute;n</a>
+        </div>
+    </div>
 </div>
 
 <!-- Pie de p&aacute;gina -->

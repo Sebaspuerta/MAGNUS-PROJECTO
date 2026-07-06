@@ -396,6 +396,72 @@ body {
     transform: scale(1.35);
 }
 
+/* ── MODAL RECUPERAR CONTRASEÑA ──────────────────────────────── */
+
+.rec-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4,5,7,.86);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+}
+
+.rec-overlay.visible { display: flex; }
+
+.rec-box {
+    width: 420px;
+    max-width: 95%;
+    max-height: 92vh;
+    overflow-y: auto;
+    background: rgba(12,16,28,.97);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 22px;
+    padding: 40px 38px;
+    position: relative;
+    box-shadow: 0 32px 80px rgba(0,0,0,.75);
+}
+
+.rec-box::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--grad);
+    border-radius: 22px 22px 0 0;
+}
+
+.rec-box h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 21px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--white);
+}
+
+.rec-hint {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+.rec-hint strong { color: var(--white); }
+
+#rec-msg {
+    min-height: 18px;
+    font-size: 13px;
+    margin-top: 14px;
+    line-height: 1.45;
+    color: #ff7a83;
+}
+
+#rec-msg.success { color: #52d39d; }
+
 /* ── PIE DE PÁGINA ───────────────────────────────────────────── */
 
 .foot {

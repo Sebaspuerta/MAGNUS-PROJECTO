@@ -125,6 +125,39 @@ def update_service(db: Session, service_id: int, payload: ServiceUpdate, admin_u
     return serialize_service(service), None
 
 
+def delete_service(db: Session, service_id: int, admin_user: User):
+    from app.models.order import OrderItem
+
+    service = db.query(Service).filter(Service.id == service_id).first()
+    if not service:
+        return None, "Servicio no encontrado."
+
+    has_orders = db.query(OrderItem).filter(OrderItem.service_id == service_id).first()
+    if has_orders:
+        return None, {
+            "code": "has_history",
+            "message": (
+                f"El servicio '{service.name}' ya tiene ventas registradas en comandas. "
+                "Para dejar de ofrecerlo, desactívalo en lugar de eliminarlo "
+                "(así el historial queda intacto)."
+            )
+        }
+
+    name = service.name
+    db.delete(service)
+
+    create_audit_log(
+        db=db,
+        module="servicios",
+        action="eliminar_servicio",
+        detail=f"El administrador '{admin_user.username}' eliminó el servicio '{name}' (ID: {service_id}).",
+        user_id=admin_user.id
+    )
+
+    db.commit()
+    return {"detail": f"Servicio '{name}' eliminado correctamente."}, None
+
+
 def deactivate_service(db: Session, service_id: int, admin_user: User):
     service = db.query(Service).filter(Service.id == service_id).first()
 

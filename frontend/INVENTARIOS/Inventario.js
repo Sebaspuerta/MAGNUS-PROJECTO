@@ -23,7 +23,8 @@ async function cargarProductos() {
 
 // ── RENDER GRID ────────────────────────────────────────────────────────────────
 function renderGrid(lista) {
-    const grid = document.getElementById("grid");
+    const grid    = document.getElementById("grid");
+    const isAdmin = (window.api.getAuthUser() || {}).role === "Administrador";
 
     if (!lista.length) {
         grid.innerHTML = '<div style="color:var(--muted);padding:8px 0;">Sin productos. Crea el primero con + Producto.</div>';
@@ -38,13 +39,19 @@ function renderGrid(lista) {
 
         const expAlert = vencimientoAlert(p);
 
+        const btnEliminar = isAdmin
+            ? `<button class="danger" onclick="eliminarProducto(${p.id}, '${escAttr(p.name)}')" title="Eliminar permanentemente" style="flex:1;"><i data-lucide="trash-2"></i> Eliminar</button>`
+            : "";
+
         const botonesActivo = p.is_active ? `
             <button class="secondary" onclick="abrirModalEditar(${p.id})" style="flex:1;">Editar</button>
             <button class="secondary" onclick="mostrarModalEntrada(${p.id}, '${escAttr(p.name)}')" style="flex:1;background:#1b3a2f;color:#81c784;">+ Stock</button>
             <button class="secondary" onclick="verMovimientos(${p.id}, '${escAttr(p.name)}')" style="flex:1;background:#1a2a45;">Movs.</button>
             <button class="danger" onclick="desactivar(${p.id}, '${escAttr(p.name)}')" style="flex:1;">Baja</button>
+            ${btnEliminar}
         ` : `
             <button class="secondary" onclick="verMovimientos(${p.id}, '${escAttr(p.name)}')" style="width:100%;background:#1a2a45;">Ver movimientos</button>
+            ${btnEliminar}
         `;
 
         return `<div class="card" style="${!p.is_active ? 'opacity:.55;' : ''}">
@@ -63,6 +70,8 @@ function renderGrid(lista) {
             </div>
         </div>`;
     }).join("");
+
+    lucide.createIcons();
 }
 
 function stockBadge(p) {
@@ -182,6 +191,23 @@ async function guardarProducto() {
     }
 }
 
+// ── ELIMINAR (solo admin) ─────────────────────────────────────────────────────
+async function eliminarProducto(id, nombre) {
+    if (!confirm(`¿Eliminar permanentemente el producto "${nombre}"?\n\nEsto es irreversible. Solo es posible si el producto nunca ha tenido ventas ni movimientos de inventario.`)) return;
+    setError("error-global", "");
+    try {
+        await window.api.apiRequest(`/api/inventory/products/${id}`, { method: "DELETE" });
+        await cargarProductos();
+    } catch (err) {
+        const detail = err.responseData && err.responseData.detail;
+        if (detail && typeof detail === "object" && detail.code === "has_history") {
+            setInfo("error-global", detail.message);
+        } else {
+            setError("error-global", (typeof detail === "string" ? detail : null) || err.message);
+        }
+    }
+}
+
 // ── DESACTIVAR ────────────────────────────────────────────────────────────────
 async function desactivar(id, nombre) {
     if (!confirm(`¿Dar de baja "${nombre}"? Dejará de aparecer en Comandas.`)) return;
@@ -274,7 +300,18 @@ function cerrarModal(id) { document.getElementById(id).classList.remove("active"
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function setText(id, v)  { const e = document.getElementById(id); if (e) e.textContent = v; }
-function setError(id, m) { const e = document.getElementById(id); if (e) e.textContent = m; }
+function setError(id, m) {
+    const e = document.getElementById(id);
+    if (!e) return;
+    e.textContent = m;
+    e.style.color = "";
+}
+function setInfo(id, m) {
+    const e = document.getElementById(id);
+    if (!e) return;
+    e.textContent = m;
+    e.style.color = "var(--amber, #E7A53C)";
+}
 function setDisabled(id, disabled, label) {
     const e = document.getElementById(id);
     if (!e) return;

@@ -12,6 +12,7 @@ from app.models.accounts_receivable import AccountsReceivable, AccountsReceivabl
 from app.models.alerts import Alert
 from app.models.system_config import SystemConfig
 from app.models.service_consumable import ServiceConsumable
+from app.models.master_code import MasterCodeConfig
 
 
 def create_tables():
