@@ -12,7 +12,7 @@
     --blue:   #2B5BFF;
     --gold:   #C9A24B;
     --line:   rgba(255, 255, 255, .10);
-    --grad:   linear-gradient(135deg, var(--red), var(--blue));
+    --grad:   linear-gradient(135deg, #1E5FFF 0%, #FF1937 45%, #FF1937 80%, #D2D7EB 100%);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }

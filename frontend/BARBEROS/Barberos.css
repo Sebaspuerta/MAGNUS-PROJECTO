@@ -17,7 +17,7 @@
   --blue-2:  #5E86FF;
   --green:   #2BC281;
   --amber:   #E7A53C;
-  --grad:    linear-gradient(135deg, var(--red), var(--blue));
+  --grad:    linear-gradient(135deg, #1E5FFF 0%, #FF1937 45%, #FF1937 80%, #D2D7EB 100%);
   --font:    'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
 }
 
