@@ -1,4 +1,24 @@
-﻿document.addEventListener("DOMContentLoaded", async () => {
+﻿// ── MODO CLARO / OSCURO ──────────────────────────────────────────────────────
+
+function _themeIcon() {
+    const isLight = document.body.classList.contains("light-mode");
+    const i = document.querySelector("#btn-theme i");
+    if (i) { i.setAttribute("data-lucide", isLight ? "moon" : "sun"); lucide.createIcons(); }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    // Aplica preferencia guardada si el script anti-flash del <body> no la capturó
+    if (localStorage.getItem("magnusTheme") === "light" && !document.body.classList.contains("light-mode")) {
+        document.body.classList.add("light-mode");
+    }
+    _themeIcon();
+
+    document.getElementById("btn-theme").addEventListener("click", function () {
+        const isLight = document.body.classList.toggle("light-mode");
+        localStorage.setItem("magnusTheme", isLight ? "light" : "dark");
+        _themeIcon();
+    });
 
     const user = window.api.getAuthUser();
 
@@ -21,6 +41,9 @@
         gearBtn.style.display = "";
         gearBtn.addEventListener("click", openAdminModal);
     }
+
+    // Filtro de navegación por rol
+    _filterNavByRole(user.role);
 
     document.getElementById("btn-close-admin").addEventListener("click", closeAdminModal);
     document.getElementById("modal-admin").addEventListener("click", function (e) {
@@ -108,6 +131,43 @@ async function loadSummary() {
 function setText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = value;
+}
+
+// ── NAVEGACIÓN POR ROL ───────────────────────────────────────────────────────
+
+function _filterNavByRole(role) {
+    const NAV_ROLE_MAP = {
+        "Barbero": [
+            "/DASHBOARD/Dashboard.html",
+            "/COMANDAS/Comandas.html",
+            "/CLIENTES/Clientes.html",
+            "/SERVICIOS/Servicios.html",
+            "/INVENTARIOS/Inventario.html",
+        ]
+    };
+
+    const allowed = NAV_ROLE_MAP[role];
+    if (!allowed) return; // Administrador y demás roles: ven todo
+
+    document.querySelectorAll(".sidebar .nav").forEach(function (a) {
+        if (!allowed.includes(a.getAttribute("href"))) {
+            a.style.display = "none";
+        }
+    });
+
+    // Ocultar etiquetas de sección que queden sin ítems visibles
+    document.querySelectorAll(".sidebar .nlabel").forEach(function (label) {
+        var sibling = label.nextElementSibling;
+        var hasVisible = false;
+        while (sibling && !sibling.classList.contains("nlabel") && !sibling.classList.contains("logout")) {
+            if (sibling.classList.contains("nav") && sibling.style.display !== "none") {
+                hasVisible = true;
+                break;
+            }
+            sibling = sibling.nextElementSibling;
+        }
+        if (!hasVisible) label.style.display = "none";
+    });
 }
 
 // ── GESTIÓN DE ADMINISTRADOR ─────────────────────────────────────────────────

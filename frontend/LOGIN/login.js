@@ -3,11 +3,11 @@
 function openRecoverModal() {
     document.getElementById("modal-recover").classList.add("visible");
     document.getElementById("rec-username").value = "";
-    document.getElementById("rec-code").value = "";
-    document.getElementById("rec-pw1").value = "";
-    document.getElementById("rec-pw2").value = "";
     document.getElementById("rec-msg").textContent = "";
     document.getElementById("rec-msg").className = "";
+    document.getElementById("rec-result").textContent = "";
+    document.getElementById("rec-result").style.display = "none";
+    document.getElementById("rec-form-area").style.display = "";
     document.getElementById("rec-submit").disabled = false;
     document.getElementById("rec-username").focus();
 }
@@ -46,21 +46,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const recSubmit = document.getElementById("rec-submit");
     if (recSubmit) {
         recSubmit.addEventListener("click", async function () {
-            const username  = document.getElementById("rec-username").value.trim();
-            const code      = document.getElementById("rec-code").value;
-            const pw1       = document.getElementById("rec-pw1").value;
-            const pw2       = document.getElementById("rec-pw2").value;
-            const msgEl     = document.getElementById("rec-msg");
+            const username = document.getElementById("rec-username").value.trim();
+            const msgEl   = document.getElementById("rec-msg");
 
             msgEl.className = "";
             msgEl.textContent = "";
 
-            if (!username || !code || !pw1 || !pw2) {
-                msgEl.textContent = "Completa todos los campos.";
-                return;
-            }
-            if (pw1 !== pw2) {
-                msgEl.textContent = "Las contraseñas no coinciden.";
+            if (!username) {
+                msgEl.textContent = "Escribe tu nombre de usuario.";
                 return;
             }
 
@@ -68,26 +61,30 @@ document.addEventListener("DOMContentLoaded", () => {
             msgEl.textContent = "Verificando...";
 
             try {
-                const data = await window.api.apiRequest("/api/security/recover-password", {
-                    method: "POST",
-                    body: { username, master_code: code, new_password: pw1 }
-                });
+                const data = await window.api.apiRequest(
+                    "/api/security/user-role-hint?username=" + encodeURIComponent(username)
+                );
 
-                msgEl.className = "success";
-                msgEl.textContent = data.detail || "Contraseña actualizada. Ya puedes iniciar sesión.";
+                msgEl.textContent = "";
 
-                setTimeout(closeRecoverModal, 2800);
+                var mensaje;
+                if (data.hint === "admin") {
+                    var nombre = (data.display_name || "Administrador").toUpperCase();
+                    mensaje = "HOLA " + nombre + ", TE RECORDAMOS QUE ERES EL ADMINISTRADOR. "
+                            + "NO TE RECOMENDAMOS CAMBIAR TUS CREDENCIALES. "
+                            + "SI SE TE OLVIDÓ TU CONTRASEÑA, PONTE EN CONTACTO CON LOS DESARROLLADORES.";
+                } else {
+                    mensaje = "PONTE EN CONTACTO CON UN SUPERIOR, ADMINISTRADOR O LOS DESARROLLADORES.";
+                }
+
+                var resultEl = document.getElementById("rec-result");
+                resultEl.textContent = mensaje;
+                resultEl.style.display = "block";
+                document.getElementById("rec-form-area").style.display = "none";
 
             } catch (err) {
                 recSubmit.disabled = false;
-                const detail = err.responseData && err.responseData.detail;
-                if (detail && typeof detail === "object" && detail.code === "master_locked") {
-                    msgEl.textContent = `Código bloqueado por demasiados intentos. Espera ${detail.minutes_remaining} minuto(s).`;
-                } else {
-                    msgEl.textContent = (typeof detail === "string" ? detail : null)
-                        || err.message
-                        || "Error al recuperar contraseña.";
-                }
+                msgEl.textContent = "Error al procesar la solicitud. Inténtalo de nuevo.";
             }
         });
     }

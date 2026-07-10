@@ -126,6 +126,16 @@ def post_set_master_code(
     return result
 
 
+@router.get("/user-role-hint")
+def get_user_role_hint(username: str, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user or not user.is_active:
+        return {"hint": "contact"}
+    if user.role.name == "Administrador":
+        return {"hint": "admin", "display_name": user.full_name or user.username}
+    return {"hint": "contact"}
+
+
 @router.post("/recover-password")
 def post_recover_password(
     payload: RecoverPasswordRequest,

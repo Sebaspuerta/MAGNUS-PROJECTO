@@ -408,7 +408,7 @@ body {
   font-size: 11px;
 }
 
-/* ── BOTÓN ENGRANAJE (solo admin) ────────── */
+/* ── BOTÓN ENGRANAJE (admin) ─────────────── */
 
 .gear-btn {
   background: transparent;
@@ -432,6 +432,62 @@ body {
 }
 
 .gear-btn i { width: 18px; height: 18px; }
+
+/* ── TOGGLE TEMA (switch deslizante) ─────── */
+
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.tog-track {
+  position: relative;
+  width: 60px;
+  height: 28px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.10);
+  border: 1px solid var(--line-2);
+  overflow: hidden;
+  transition: background .25s, border-color .25s;
+}
+
+.theme-toggle:hover .tog-track { border-color: rgba(43,91,255,.55); }
+
+.tog-thumb {
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--grad);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+  transition: left .28s cubic-bezier(.4,0,.2,1);
+  z-index: 1;
+}
+
+.tog-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: color .25s;
+  z-index: 2;
+}
+
+.tog-moon { left:  6px; color: rgba(255,255,255,.92); }
+.tog-sun  { right: 6px; color: rgba(255,255,255,.38); }
 
 /* ── MODAL ADMIN: OVERLAY ────────────────── */
 
@@ -758,3 +814,123 @@ body {
   line-height: 1.5;
   margin-bottom: 14px;
 }
+
+/* ══════════════════════════════════════════
+   MODO CLARO — body.light-mode overrides
+   Solo fondo, texto y tarjetas. --grad, --red,
+   --blue y badges permanecen sin cambio.
+   ══════════════════════════════════════════ */
+
+/* ── Variables redefinidas ─────────────── */
+body.light-mode {
+  --panel:   #FFFFFF;
+  --line:    rgba(0,0,0,.08);
+  --line-2:  rgba(0,0,0,.13);
+  --white:   #1C1F2E;
+  --muted:   #6B7185;
+  --muted-2: #9198AC;
+}
+
+/* ── Cuerpo / fondo general ────────────── */
+body.light-mode {
+  color: #1C1F2E;
+  background: #F2F4F9;
+}
+
+/* ── Sidebar ──────────────────────────── */
+body.light-mode .sidebar {
+  background: #FFFFFF;
+  border-right-color: rgba(0,0,0,.08);
+}
+body.light-mode .nav        { color: #6B7185; }
+body.light-mode .nav:hover  { background: #F0F2FA; color: #1C1F2E; }
+body.light-mode .nav.active { color: var(--blue); background: linear-gradient(90deg, rgba(43,91,255,.10), transparent 92%); }
+body.light-mode .nlabel     { color: #9198AC; }
+body.light-mode .logout     { border-color: rgba(225,29,46,.2); }
+body.light-mode .logout:hover { background: rgba(225,29,46,.08); }
+
+/* ── Topbar ──────────────────────────── */
+body.light-mode .topbar .pg   { color: #6B7185; }
+body.light-mode .user .t small { color: #6B7185; }
+body.light-mode .user .av      { color: #fff; }
+
+/* ── Botones topbar ──────────────────── */
+body.light-mode .gear-btn          { border-color: rgba(0,0,0,.12); color: #6B7185; }
+body.light-mode .gear-btn:hover    { background: #F0F2FA; color: #1C1F2E; border-color: rgba(43,91,255,.35); }
+
+/* Toggle en modo claro: thumb desliza a la derecha (sobre el sol) */
+body.light-mode .tog-track         { background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.13); }
+body.light-mode .tog-thumb         { left: 35px; }
+body.light-mode .tog-moon          { color: rgba(0,0,0,.28); }
+body.light-mode .tog-sun           { color: rgba(255,255,255,.92); }
+body.light-mode .theme-toggle:hover .tog-track { border-color: rgba(43,91,255,.45); }
+
+/* ── Hero: se mantiene oscuro (diseño intencional) ── */
+body.light-mode .hero        { color: #EEF1F8; }
+body.light-mode .hero .ht .slogan { color: #8990A4; }
+
+/* ── KPIs ────────────────────────────── */
+body.light-mode .kpi {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.07);
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+
+/* ── Paneles ─────────────────────────── */
+body.light-mode .panel {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.07);
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+body.light-mode .panel h3    { color: #6B7185; }
+body.light-mode .row         { border-bottom-color: rgba(0,0,0,.06); }
+body.light-mode .row span    { color: #6B7185; }
+
+/* ── Footer ──────────────────────────── */
+body.light-mode .foot {
+  border-top-color: rgba(0,0,0,.08);
+  color: #9198AC;
+}
+
+/* ── Modal admin ─────────────────────── */
+body.light-mode .adm-box {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 32px 80px rgba(0,0,0,.18);
+}
+body.light-mode .adm-header  { border-bottom-color: rgba(0,0,0,.08); }
+body.light-mode .adm-htitle  { color: #1C1F2E; }
+body.light-mode .adm-close   { color: #6B7185; }
+body.light-mode .adm-close:hover { background: rgba(225,29,46,.08); color: var(--red); }
+body.light-mode .adm-loading,
+body.light-mode .adm-empty   { color: #6B7185; }
+body.light-mode .adm-section-label {
+  color: #6B7185;
+  border-bottom-color: rgba(0,0,0,.08);
+}
+body.light-mode .ab-row {
+  background: #F7F8FC;
+  border-color: rgba(0,0,0,.08);
+}
+body.light-mode .ab-row:hover { border-color: rgba(0,0,0,.14); }
+body.light-mode .ab-name    { color: #1C1F2E; }
+body.light-mode .ab-no-user { color: #9198AC; }
+body.light-mode .ab-btn-cancel { background: rgba(0,0,0,.06); color: #6B7185; }
+body.light-mode .ab-btn-cancel:hover { background: rgba(0,0,0,.10); color: #1C1F2E; }
+body.light-mode .ab-btn-secondary { background: rgba(43,91,255,.07); border-color: rgba(43,91,255,.18); }
+body.light-mode .ab-subform {
+  background: #F0F2FA;
+  border-color: rgba(0,0,0,.08);
+}
+body.light-mode .ab-pw-hint { color: #6B7185; }
+body.light-mode .ab-pw-fields input {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.14);
+  color: #1C1F2E;
+}
+body.light-mode .ab-pw-fields input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(43,91,255,.12);
+}
+body.light-mode .adm-mc-box { background: #F7F8FC; border-color: rgba(0,0,0,.08); }
+body.light-mode .adm-mc-hint { color: #6B7185; }

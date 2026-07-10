@@ -462,6 +462,17 @@ body {
 
 #rec-msg.success { color: #52d39d; }
 
+.rec-result-msg {
+    display: none;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--white);
+    text-align: center;
+    margin: 8px 0 22px;
+    letter-spacing: 0.2px;
+}
+
 /* ── PIE DE PÁGINA ───────────────────────────────────────────── */
 
 .foot {

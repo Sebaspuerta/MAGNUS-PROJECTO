@@ -98,7 +98,6 @@ def seed_initial_security(db: Session):
             "servicios.ver",
             "comandas.ver", "comandas.crear", "comandas.editar", "comandas.cerrar",
             "inventario.ver",
-            "alertas.ver"
         ],
         "Cajero": [
             "dashboard.ver",

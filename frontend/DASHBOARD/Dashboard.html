@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+<script>(function(){try{if(localStorage.getItem('magnusTheme')==='light')document.body.classList.add('light-mode')}catch(e){}})()</script>
 
 <!-- ── SIDEBAR ── -->
 <aside class="sidebar">
@@ -67,6 +68,17 @@
     <div class="topbar">
         <div class="pg">Inicio</div>
         <div class="user">
+            <button id="btn-theme" class="theme-toggle" title="Cambiar modo claro / oscuro" aria-label="Cambiar tema">
+                <span class="tog-track">
+                    <span class="tog-icon tog-moon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    </span>
+                    <span class="tog-thumb"></span>
+                    <span class="tog-icon tog-sun">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                    </span>
+                </span>
+            </button>
             <button id="btn-admin-gear" class="gear-btn" title="Gestión de Administrador" style="display:none">
                 <i data-lucide="settings"></i>
             </button>
