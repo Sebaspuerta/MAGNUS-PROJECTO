@@ -1,0 +1,86 @@
+/* ══════════════════════════════════════════════════════
+   MAGNUS — Mascota Vikingo (Easter Egg compartido)
+   ══════════════════════════════════════════════════════ */
+
+.mascot-corner {
+  position: fixed;
+  width: 140px;
+  pointer-events: none;
+  z-index: 500;
+  opacity: 0;
+}
+
+.mascot-corner img {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 6px 10px rgba(0,0,0,.45)) drop-shadow(0 0 14px rgba(0,0,0,.15));
+}
+
+/* ── Inferior-Derecha ──────────────────────────────── */
+
+.mascot-br {
+  bottom: 12px;
+  right: 12px;
+  transform-origin: bottom right;
+  animation: mascotPeekBR 3.5s ease-in-out forwards;
+}
+
+@keyframes mascotPeekBR {
+  0%   { opacity: 0; transform: translate(80px, 200px) rotate(22deg) scale(.85); }
+  18%  { opacity: 1; transform: translate(0, 0) rotate(-4deg) scale(1); }
+  28%  { transform: translate(0, 0) rotate(2deg) scale(1); }
+  75%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translate(80px, 200px) rotate(18deg) scale(.85); }
+}
+
+/* ── Inferior-Izquierda ────────────────────────────── */
+
+.mascot-bl {
+  bottom: 12px;
+  left: 12px;
+  transform-origin: bottom left;
+  animation: mascotPeekBL 3.5s ease-in-out forwards;
+}
+
+@keyframes mascotPeekBL {
+  0%   { opacity: 0; transform: translate(-80px, 200px) rotate(-22deg) scale(.85); }
+  18%  { opacity: 1; transform: translate(0, 0) rotate(4deg) scale(1); }
+  28%  { transform: translate(0, 0) rotate(-2deg) scale(1); }
+  75%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translate(-80px, 200px) rotate(-18deg) scale(.85); }
+}
+
+/* ── Superior-Derecha ──────────────────────────────── */
+
+.mascot-tr {
+  top: 12px;
+  right: 12px;
+  transform-origin: top right;
+  animation: mascotPeekTR 3.5s ease-in-out forwards;
+}
+
+@keyframes mascotPeekTR {
+  0%   { opacity: 0; transform: translate(80px, -200px) rotate(-22deg) scale(.85); }
+  18%  { opacity: 1; transform: translate(0, 0) rotate(4deg) scale(1); }
+  28%  { transform: translate(0, 0) rotate(-2deg) scale(1); }
+  75%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translate(80px, -200px) rotate(-18deg) scale(.85); }
+}
+
+/* ── Superior-Izquierda ────────────────────────────── */
+
+.mascot-tl {
+  top: 12px;
+  left: 12px;
+  transform-origin: top left;
+  animation: mascotPeekTL 3.5s ease-in-out forwards;
+}
+
+@keyframes mascotPeekTL {
+  0%   { opacity: 0; transform: translate(-80px, -200px) rotate(22deg) scale(.85); }
+  18%  { opacity: 1; transform: translate(0, 0) rotate(-4deg) scale(1); }
+  28%  { transform: translate(0, 0) rotate(2deg) scale(1); }
+  75%  { opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+  100% { opacity: 0; transform: translate(-80px, -200px) rotate(18deg) scale(.85); }
+}

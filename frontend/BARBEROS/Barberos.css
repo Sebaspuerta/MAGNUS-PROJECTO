@@ -490,3 +490,70 @@ select option { background: #0d1222; }
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
 }
+
+/* ══════════════════════════════════════════════════════
+   MODO CLARO — body.light-mode overrides
+   ══════════════════════════════════════════════════════ */
+
+body.light-mode {
+  --panel:   #FFFFFF;
+  --line:    rgba(0,0,0,.08);
+  --line-2:  rgba(0,0,0,.13);
+  --white:   #1C1F2E;
+  --muted:   #6B7185;
+  --muted-2: #9198AC;
+  color: #1C1F2E;
+  background: #F2F4F9;
+}
+
+body.light-mode .page-header { border-bottom-color: rgba(0,0,0,.08); }
+
+body.light-mode .stat-card,
+body.light-mode .barbero-card {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.07);
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+
+body.light-mode thead th {
+  background: #F0F2FA;
+  color: #6B7185;
+  border-bottom-color: rgba(0,0,0,.10);
+}
+body.light-mode tbody td {
+  background: #FFFFFF;
+  color: #1C1F2E;
+  border-bottom-color: rgba(0,0,0,.06);
+}
+body.light-mode tbody tr:hover td { background: #F7F8FC; }
+
+body.light-mode .modal-content,
+body.light-mode .rend-box {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 32px 80px rgba(0,0,0,.15);
+}
+body.light-mode .modal-header h2 { color: #1C1F2E; }
+body.light-mode .modal-header button { color: #6B7185; }
+
+body.light-mode input,
+body.light-mode select {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.14);
+  color: #1C1F2E;
+}
+body.light-mode input::placeholder { color: #9198AC; }
+body.light-mode select option       { background: #FFFFFF; color: #1C1F2E; }
+body.light-mode input:focus,
+body.light-mode select:focus        { box-shadow: 0 0 0 3px rgba(43,91,255,.12); }
+
+body.light-mode .btn-secondary {
+  background: rgba(0,0,0,.05);
+  color: #6B7185;
+  border-color: rgba(0,0,0,.12);
+}
+body.light-mode .btn-secondary:hover { background: rgba(0,0,0,.09); color: #1C1F2E; }
+
+body.light-mode .datos p              { color: #6B7185; }
+body.light-mode .datos strong         { color: #1C1F2E; }
+body.light-mode .rend-row             { border-bottom-color: rgba(0,0,0,.06); }

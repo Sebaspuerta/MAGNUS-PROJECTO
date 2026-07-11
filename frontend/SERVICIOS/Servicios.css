@@ -303,3 +303,60 @@ textarea { resize: vertical; min-height: 68px; }
 .consumables-row label { color: var(--muted); font-size: .88rem; cursor: pointer; }
 
 .save { width: 100%; margin-top: 14px; padding: 12px; font-size: 14px; }
+
+/* ══════════════════════════════════════════════════════
+   MODO CLARO — body.light-mode overrides
+   ══════════════════════════════════════════════════════ */
+
+body.light-mode {
+  --panel:   #FFFFFF;
+  --line:    rgba(0,0,0,.08);
+  --line-2:  rgba(0,0,0,.13);
+  --white:   #1C1F2E;
+  --muted:   #6B7185;
+  --muted-2: #9198AC;
+  color: #1C1F2E;
+  background: #F2F4F9;
+}
+
+body.light-mode .header { border-bottom-color: rgba(0,0,0,.08); }
+
+body.light-mode .card {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.07);
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+
+body.light-mode .modal-box {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 32px 80px rgba(0,0,0,.15);
+}
+body.light-mode .modal-box h2 { color: #1C1F2E; }
+
+body.light-mode input,
+body.light-mode select,
+body.light-mode textarea {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.14);
+  color: #1C1F2E;
+}
+body.light-mode input::placeholder,
+body.light-mode textarea::placeholder { color: #9198AC; }
+body.light-mode select option          { background: #FFFFFF; color: #1C1F2E; }
+body.light-mode input:focus,
+body.light-mode select:focus,
+body.light-mode textarea:focus         { box-shadow: 0 0 0 3px rgba(43,91,255,.12); }
+
+body.light-mode .secondary {
+  background: rgba(0,0,0,.05);
+  color: #6B7185;
+  border-color: rgba(0,0,0,.12);
+}
+body.light-mode .secondary:hover { background: rgba(0,0,0,.09); color: #1C1F2E; }
+
+body.light-mode .search input {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.14);
+  color: #1C1F2E;
+}
