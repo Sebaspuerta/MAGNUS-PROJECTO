@@ -225,6 +225,7 @@ body {
 .btn:hover {
     filter: brightness(1.1);
     transform: translateY(-1px);
+    box-shadow: 0 12px 32px rgba(225, 29, 46, .28), inset 0 0 0 1px rgba(255,255,255,.25);
 }
 
 .btn:disabled {
@@ -261,7 +262,7 @@ body {
     transition: color .15s;
 }
 
-.links a:hover { color: var(--white); }
+.links a:hover { color: var(--white); text-decoration: underline; }
 
 .links .reg {
     color: var(--muted);
@@ -388,6 +389,11 @@ body {
     border: 1px solid rgba(255,255,255,.18);
     cursor: pointer;
     transition: background .35s, transform .35s;
+}
+
+.c-dot:hover {
+    background: rgba(255,255,255,.55);
+    border-color: rgba(255,255,255,.4);
 }
 
 .c-dot.active {

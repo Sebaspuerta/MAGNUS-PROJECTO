@@ -183,7 +183,10 @@ button {
   box-shadow: 0 4px 16px rgba(225,29,46,.22);
 }
 
-.primary:hover { filter: brightness(1.12); }
+.primary:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 4px 16px rgba(225,29,46,.22), inset 0 0 0 1px rgba(255,255,255,.25);
+}
 .primary i { width: 16px; height: 16px; }
 
 .secondary {
@@ -194,7 +197,7 @@ button {
   font-weight: 600;
 }
 
-.secondary:hover { background: rgba(255,255,255,.13); color: var(--white); }
+.secondary:hover { background: rgba(255,255,255,.13); color: var(--white); border-color: rgba(43,91,255,.45); }
 
 .danger {
   background: rgba(225,29,46,.13);
@@ -204,7 +207,13 @@ button {
   font-weight: 600;
 }
 
-.danger:hover { background: rgba(225,29,46,.24); }
+.danger:hover { background: rgba(225,29,46,.24); border-color: rgba(225,29,46,.55); }
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  pointer-events: none;
+}
 
 /* ── HISTORIAL / TABLA ────────────────────────────── */
 

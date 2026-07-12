@@ -1,3 +1,9 @@
+:root{
+    --red:  #E11D2E;
+    --blue: #2B5BFF;
+    --grad: linear-gradient(135deg, #1E5FFF 0%, #FF1937 45%, #FF1937 80%, #D2D7EB 100%);
+}
+
 body{
     margin:0;
     font-family:'Poppins',sans-serif;
@@ -140,8 +146,26 @@ button{
     cursor:pointer;
 
     font-weight:600;
+
+    transition: background .18s ease, box-shadow .18s ease;
 }
 
 button:hover{
     background:#ff3b3b;
+    box-shadow: 0 0 0 3px rgba(225,29,46,.35);
+}
+
+button:disabled{
+    cursor:not-allowed;
+    opacity:.55;
+    pointer-events:none;
+}
+
+a{
+    text-decoration:none;
+    transition: color .15s ease;
+}
+
+a:hover{
+    text-decoration:underline;
 }

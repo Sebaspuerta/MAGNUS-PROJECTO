@@ -253,7 +253,10 @@ h2 {
   box-shadow: 0 4px 16px rgba(225,29,46,.22);
 }
 
-.btn.primary:hover { filter: brightness(1.12); }
+.btn.primary:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 4px 16px rgba(225,29,46,.22), inset 0 0 0 1px rgba(255,255,255,.25);
+}
 
 .btn.secondary {
   background: rgba(255,255,255,.07);
@@ -262,7 +265,7 @@ h2 {
   font-weight: 600;
 }
 
-.btn.secondary:hover { background: rgba(255,255,255,.13); color: var(--white); }
+.btn.secondary:hover { background: rgba(255,255,255,.13); color: var(--white); border-color: rgba(43,91,255,.45); }
 
 .btn.danger {
   background: rgba(225,29,46,.13);
@@ -271,7 +274,13 @@ h2 {
   font-weight: 600;
 }
 
-.btn.danger:hover { background: rgba(225,29,46,.24); }
+.btn.danger:hover { background: rgba(225,29,46,.24); border-color: rgba(225,29,46,.55); }
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  pointer-events: none;
+}
 
 .save { width: 100%; margin-top: 14px; padding: 12px; font-size: 14px; }
 

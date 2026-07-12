@@ -816,6 +816,62 @@ body {
 }
 
 /* ══════════════════════════════════════════
+   ESTADOS HOVER — sistema consistente
+   Iluminado suave del fondo (ya definido en cada
+   elemento) + resplandor de borde con el color de
+   marca propio del elemento (--red, --blue, --grad).
+   Usa box-shadow inset para no alterar el layout.
+   ══════════════════════════════════════════ */
+
+.nav:hover {
+  box-shadow: inset 0 0 0 1px rgba(43,91,255,.35);
+}
+
+.logout:hover {
+  border-color: rgba(225,29,46,.5);
+}
+
+.user .av {
+  cursor: pointer;
+  transition: box-shadow .18s ease, filter .18s ease;
+}
+.user .av:hover {
+  box-shadow: 0 0 0 3px rgba(43,91,255,.22);
+  filter: brightness(1.08);
+}
+
+.ab-btn-primary:hover {
+  box-shadow: 0 4px 14px rgba(225,29,46,.2), inset 0 0 0 1px rgba(255,255,255,.25);
+}
+
+.ab-btn-secondary:hover {
+  box-shadow: inset 0 0 0 1px rgba(43,91,255,.5);
+}
+
+.ab-btn-cancel:hover {
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+
+.ab-toggle.active:hover {
+  box-shadow: inset 0 0 0 1px rgba(43,194,129,.55);
+}
+
+.ab-toggle.inactive:hover {
+  box-shadow: inset 0 0 0 1px rgba(225,29,46,.5);
+}
+
+.adm-close:hover {
+  box-shadow: inset 0 0 0 1px rgba(225,29,46,.35);
+}
+
+/* Botones deshabilitados: sin efecto hover */
+button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════
    MODO CLARO — body.light-mode overrides
    Solo fondo, texto y tarjetas. --grad, --red,
    --blue y badges permanecen sin cambio.
@@ -843,11 +899,11 @@ body.light-mode .sidebar {
   border-right-color: rgba(0,0,0,.08);
 }
 body.light-mode .nav        { color: #6B7185; }
-body.light-mode .nav:hover  { background: #F0F2FA; color: #1C1F2E; }
+body.light-mode .nav:hover  { background: #F0F2FA; color: #1C1F2E; box-shadow: inset 0 0 0 1px rgba(43,91,255,.28); }
 body.light-mode .nav.active { color: var(--blue); background: linear-gradient(90deg, rgba(43,91,255,.10), transparent 92%); }
 body.light-mode .nlabel     { color: #9198AC; }
 body.light-mode .logout     { border-color: rgba(225,29,46,.2); }
-body.light-mode .logout:hover { background: rgba(225,29,46,.08); }
+body.light-mode .logout:hover { background: rgba(225,29,46,.08); border-color: rgba(225,29,46,.45); }
 
 /* ── Topbar ──────────────────────────── */
 body.light-mode .topbar .pg   { color: #6B7185; }
@@ -901,7 +957,7 @@ body.light-mode .adm-box {
 body.light-mode .adm-header  { border-bottom-color: rgba(0,0,0,.08); }
 body.light-mode .adm-htitle  { color: #1C1F2E; }
 body.light-mode .adm-close   { color: #6B7185; }
-body.light-mode .adm-close:hover { background: rgba(225,29,46,.08); color: var(--red); }
+body.light-mode .adm-close:hover { background: rgba(225,29,46,.08); color: var(--red); box-shadow: inset 0 0 0 1px rgba(225,29,46,.3); }
 body.light-mode .adm-loading,
 body.light-mode .adm-empty   { color: #6B7185; }
 body.light-mode .adm-section-label {

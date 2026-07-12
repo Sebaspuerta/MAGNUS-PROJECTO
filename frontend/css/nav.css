@@ -49,6 +49,7 @@
 .nav-back:hover {
     background: rgba(255, 255, 255, .11);
     color: #e6e9ef;
+    border-color: rgba(43, 91, 255, .45);
 }
 
 .nav-back i {
