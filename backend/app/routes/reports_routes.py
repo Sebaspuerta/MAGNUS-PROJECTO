@@ -1,7 +1,9 @@
 from datetime import date
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from fastapi.responses import StreamingResponse
 
+from app.services.excel_report_service import generate_full_database_excel
 from app.database import get_db
 from app.models.security import User
 from app.services.reports_service import (
@@ -67,3 +69,16 @@ def get_cash_closings(
     current_user: User = Depends(require_permission("reportes.ver"))
 ):
     return cash_closings(db, start_date, end_date)
+
+@router.get("/export-excel")
+def export_excel_report(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("reportes.ver"))
+):
+    buffer = generate_full_database_excel(db)
+    filename = f"magnus_reporte_{date.today().isoformat()}.xlsx"
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )

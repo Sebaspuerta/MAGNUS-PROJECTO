@@ -11,3 +11,4 @@ alembic
 reportlab
 fpdf2
 pywebview
+openpyxl

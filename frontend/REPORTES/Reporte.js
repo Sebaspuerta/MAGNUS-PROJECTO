@@ -136,4 +136,48 @@ function printReport() {
     window.print();
 }
 
+async function exportExcel() {
+    const button = event?.target?.closest("button");
+    const originalText = button ? button.innerHTML : null;
+
+    try {
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = "Generando...";
+        }
+
+        const token = window.api.getAuthToken();
+        const response = await fetch(window.api.buildUrl("/api/reports/export-excel"), {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error del servidor (${response.status})`);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `magnus_reporte_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo generar el reporte de Excel. Intenta nuevamente.");
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalText;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', render);
+
 document.addEventListener('DOMContentLoaded', render);
