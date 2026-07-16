@@ -1,7 +1,7 @@
 """
 Servicio para generar un reporte Excel (.xlsx) con toda la información
-de la base de datos de MAGNUS BARBER, con el logo de la barbería
-incrustado en la hoja de resumen.
+de la base de datos de MAGNUS BARBER, con una portada estilizada que
+replica la identidad visual de la barbería.
 """
 
 from datetime import date, datetime
@@ -31,10 +31,8 @@ from app.models.alerts import Alert
 from app.models.system_config import SystemConfig
 
 
-# Columnas que jamás se exportan, aunque existan en el modelo
 SENSITIVE_FIELDS = {"password_hash", "quick_pin_hash", "code_hash"}
 
-# (Modelo, nombre de la hoja) — se exporta en este orden
 TABLES: list[tuple[type, str]] = [
     (Role, "Roles"),
     (Permission, "Permisos"),
@@ -57,20 +55,30 @@ TABLES: list[tuple[type, str]] = [
     (SystemConfig, "Configuracion"),
 ]
 
-BRAND_COLOR = "1A1A1A"      # negro/gris oscuro del tema de la barbería
-ACCENT_COLOR = "C9A227"     # dorado, típico de identidad de barbería
+# ---------------------------------------------------------------------------
+# IDENTIDAD VISUAL — ajusta estas constantes si algo no coincide con tu marca
+# ---------------------------------------------------------------------------
+BRAND_NAME = "MAGNUS BARBER SHOP"
+BRAND_SUBTITLE = "Reporte General de Base de Datos"
+BRAND_LOCATION = "Cartagena, Colombia"
+FOOTER_COMPANY = "Desarrollado por AVANZATECH S.A.S"
+FOOTER_TAGLINE = "Soluciones Tecnologicas que Impulsan tu Negocio"
+FOOTER_SOFTWARE = "Software MAGNUS BARBER SYSTEM v1.0"
+
+NAVY = "0E1B3D"
+GOLD = "C9A227"
+GRAY_TEXT = "6B7280"
+LIGHT_GRAY_FILL = "F3F4F6"
+DARK_TEXT = "1A1A1A"
+
+CARD_ACCENTS = [GOLD, GOLD, GOLD, NAVY, "B03A2E", "1E8449"]
+
 HEADER_FONT = Font(name="Arial", bold=True, color="FFFFFF", size=11)
-HEADER_FILL = PatternFill(start_color=BRAND_COLOR, end_color=BRAND_COLOR, fill_type="solid")
-TITLE_FONT = Font(name="Arial", bold=True, color=BRAND_COLOR, size=16)
-SUBTITLE_FONT = Font(name="Arial", italic=True, color="555555", size=10)
+HEADER_FILL = PatternFill(start_color=NAVY, end_color=NAVY, fill_type="solid")
 THIN_BORDER = Border(*(Side(style="thin", color="DDDDDD") for _ in range(4)))
 
 
 def _find_logo_path() -> Path | None:
-    """
-    Busca el logo de la barbería en un par de ubicaciones probables
-    dentro del proyecto. Ajusta esta lista si tu logo vive en otra ruta.
-    """
     here = Path(__file__).resolve()
     candidates = [
         here.parents[3] / "frontend" / "assets" / "logo.png",
@@ -83,9 +91,22 @@ def _find_logo_path() -> Path | None:
             return path
     return None
 
+def _find_footer_logo_path() -> Path | None:
+    """Logo de AvanzaTech (o el desarrollador) para el pie de página."""
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[3] / "frontend" / "assets" / "avanzatech-logo.png",
+        here.parents[2] / "frontend" / "assets" / "avanzatech-logo.png",
+        here.parents[3] / "frontend" / "assets" / "img" / "avanzatech-logo.png",
+        here.parents[3] / "frontend" / "img" / "avanzatech-logo.png",
+    ]
+    for path in candidates:
+        if path.is_file():
+            return path
+    return None
+
 
 def _clean_value(value):
-    """Convierte tipos que openpyxl no serializa bien de forma directa."""
     if isinstance(value, Decimal):
         return float(value)
     return value
@@ -137,58 +158,167 @@ def _write_model_sheet(wb: Workbook, db: Session, model: type, sheet_title: str)
     return len(rows)
 
 
-def _build_summary_sheet(wb: Workbook, table_counts: list[tuple[str, int]], logo_path: Path | None) -> None:
+def _write_kpi_card(ws: Worksheet, top_row: int, start_col: int, label: str, value, accent_hex: str) -> None:
+    """Dibuja una tarjeta de indicador de 2 columnas x 3 filas."""
+    end_col = start_col + 1
+
+    # Barra superior de color (acento)
+    ws.merge_cells(start_row=top_row, start_column=start_col, end_row=top_row, end_column=end_col)
+    accent_cell = ws.cell(row=top_row, column=start_col)
+    accent_cell.fill = PatternFill(start_color=accent_hex, end_color=accent_hex, fill_type="solid")
+    ws.row_dimensions[top_row].height = 4
+
+    # Fondo gris claro para el cuerpo de la tarjeta (label + valor)
+    for r in (top_row + 1, top_row + 2):
+        ws.merge_cells(start_row=r, start_column=start_col, end_row=r, end_column=end_col)
+        cell = ws.cell(row=r, column=start_col)
+        cell.fill = PatternFill(start_color=LIGHT_GRAY_FILL, end_color=LIGHT_GRAY_FILL, fill_type="solid")
+
+    label_cell = ws.cell(row=top_row + 1, column=start_col, value=label.upper())
+    label_cell.font = Font(name="Arial", size=8, bold=True, color=GRAY_TEXT)
+    label_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+
+    value_cell = ws.cell(row=top_row + 2, column=start_col, value=value)
+    value_cell.font = Font(name="Arial", size=14, bold=True, color=DARK_TEXT)
+    value_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+
+
+def _build_summary_sheet(
+    wb: Workbook,
+    table_counts: list[tuple[str, int]],
+    logo_path: Path | None,
+    footer_logo_path: Path | None,
+    generated_by: str | None,
+) -> None:
     ws = wb.active
     ws.title = "Resumen"
+    ws.sheet_view.showGridLines = False
+
+    total_cols = 9  # A..I
+    for col_idx in range(1, total_cols + 1):
+        ws.column_dimensions[get_column_letter(col_idx)].width = 13
+
+    # ---------------- BANNER SUPERIOR ----------------
+    BANNER_ROWS = 7
+    for r in range(1, BANNER_ROWS + 1):
+        ws.row_dimensions[r].height = 20
+        for col_idx in range(1, total_cols + 1):
+            ws.cell(row=r, column=col_idx).fill = PatternFill(
+                start_color=NAVY, end_color=NAVY, fill_type="solid"
+            )
 
     if logo_path is not None:
         try:
             img = XLImage(str(logo_path))
-            img.height = 90
-            img.width = 90
+            img.height = 120
+            img.width = 120
             ws.add_image(img, "A1")
         except Exception:
-            # Si la imagen no se puede leer, seguimos sin logo en vez de romper el reporte
             pass
 
-    ws["D1"] = "MAGNUS BARBER"
-    ws["D1"].font = TITLE_FONT
-    ws["D2"] = "Reporte General de Base de Datos"
-    ws["D2"].font = Font(name="Arial", bold=True, size=12, color=BRAND_COLOR)
-    ws["D3"] = f"Generado el {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-    ws["D3"].font = SUBTITLE_FONT
+    ws.merge_cells("D2:I2")
+    title_cell = ws["D2"]
+    title_cell.value = BRAND_NAME
+    title_cell.font = Font(name="Arial", bold=True, size=20, color="FFFFFF")
+    title_cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    start_row = 8
-    ws.cell(row=start_row, column=1, value="Tabla").font = HEADER_FONT
-    ws.cell(row=start_row, column=2, value="Registros").font = HEADER_FONT
-    for col in (1, 2):
-        c = ws.cell(row=start_row, column=col)
-        c.fill = HEADER_FILL
-        c.alignment = Alignment(horizontal="left" if col == 1 else "center")
+    ws.merge_cells("D3:I3")
+    subtitle_cell = ws["D3"]
+    subtitle_cell.value = f"{BRAND_SUBTITLE}  -  {BRAND_LOCATION}"
+    subtitle_cell.font = Font(name="Arial", bold=True, size=10, color=GOLD)
+    subtitle_cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    for i, (name, count) in enumerate(table_counts, start=start_row + 1):
-        ws.cell(row=i, column=1, value=name).border = THIN_BORDER
-        cell_count = ws.cell(row=i, column=2, value=count)
-        cell_count.border = THIN_BORDER
-        cell_count.alignment = Alignment(horizontal="center")
+    ws.merge_cells("D5:I5")
+    period_cell = ws["D5"]
+    period_cell.value = f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    period_cell.font = Font(name="Arial", bold=True, size=11, color="FFFFFF")
+    period_cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    ws.column_dimensions["A"].width = 26
-    ws.column_dimensions["B"].width = 14
-    ws.column_dimensions["D"].width = 40
+    # ---------------- FRANJA DE METADATA ----------------
+    meta_row = BANNER_ROWS + 1
+    ws.merge_cells(start_row=meta_row, start_column=1, end_row=meta_row, end_column=total_cols)
+    meta_cell = ws.cell(row=meta_row, column=1)
+    total_registros = sum(count for _, count in table_counts)
+    meta_text = (
+        f"Generado por: {generated_by or 'Sistema'}   |   "
+        f"Tablas incluidas: {len(table_counts)}   |   "
+        f"Registros totales: {total_registros}   |   Moneda: COP ($)"
+    )
+    meta_cell.value = meta_text
+    meta_cell.font = Font(name="Arial", size=9, italic=True, color=GRAY_TEXT)
+    meta_cell.fill = PatternFill(start_color=LIGHT_GRAY_FILL, end_color=LIGHT_GRAY_FILL, fill_type="solid")
+    meta_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+    ws.row_dimensions[meta_row].height = 18
+
+    # ---------------- TÍTULO DE SECCIÓN ----------------
+    section_row = meta_row + 2
+    ws.merge_cells(start_row=section_row, start_column=1, end_row=section_row, end_column=total_cols)
+    section_cell = ws.cell(row=section_row, column=1, value="RESUMEN DE TABLAS")
+    section_cell.font = Font(name="Arial", bold=True, size=12, color=DARK_TEXT)
+    for col_idx in range(1, total_cols + 1):
+        ws.cell(row=section_row + 1, column=col_idx).border = Border(
+            bottom=Side(style="medium", color=GOLD)
+        )
+
+    # ---------------- TARJETAS (3 por fila) ----------------
+    cards_start_row = section_row + 3
+    col_positions = [1, 4, 7]  # columnas A, D, G -> cada tarjeta ocupa 2 columnas
+    row_offset = 0
+
+    for i, (name, count) in enumerate(table_counts):
+        card_col = col_positions[i % 3]
+        card_row = cards_start_row + row_offset
+        accent = CARD_ACCENTS[i % len(CARD_ACCENTS)]
+        _write_kpi_card(ws, card_row, card_col, name, count, accent)
+
+        if i % 3 == 2:
+            row_offset += 4  # 3 filas de tarjeta + 1 de espacio
+
+    last_row = cards_start_row + row_offset + 4
+
+    # ---------------- PIE DE PÁGINA ----------------
+    footer_row = last_row + 2
+
+    ws.row_dimensions[footer_row].height = 30
+    ws.row_dimensions[footer_row + 1].height = 15
+
+    if footer_logo_path is not None:
+        try:
+            footer_img = XLImage(str(footer_logo_path))
+            footer_img.height = 45
+            footer_img.width = 45
+            ws.add_image(footer_img, f"A{footer_row}")
+        except Exception:
+            pass
+
+    text_start_col = 3  # columna C, deja A-B libres para el logo
+
+    ws.merge_cells(start_row=footer_row, start_column=text_start_col, end_row=footer_row, end_column=total_cols)
+    footer_cell = ws.cell(row=footer_row, column=text_start_col, value=FOOTER_COMPANY)
+    footer_cell.font = Font(name="Arial", bold=True, size=10, color=DARK_TEXT)
+    footer_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+
+    ws.merge_cells(start_row=footer_row + 1, start_column=text_start_col, end_row=footer_row + 1, end_column=total_cols)
+    tagline_cell = ws.cell(
+        row=footer_row + 1,
+        column=text_start_col,
+        value=f"{FOOTER_TAGLINE}   -   (c) {datetime.now().year}   -   {FOOTER_SOFTWARE}",
+    )
+    tagline_cell.font = Font(name="Arial", size=8, color=GRAY_TEXT)
+    tagline_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
 
 
-def generate_full_database_excel(db: Session) -> BytesIO:
+def generate_full_database_excel(db: Session, generated_by: str | None = None) -> BytesIO:
     wb = Workbook()
     logo_path = _find_logo_path()
+    footer_logo_path = _find_footer_logo_path()
 
     table_counts: list[tuple[str, int]] = []
     for model, sheet_name in TABLES:
         count = _write_model_sheet(wb, db, model, sheet_name)
         table_counts.append((sheet_name, count))
 
-    # La hoja "Resumen" se arma al final para tener ya los conteos, pero
-    # queremos que quede primera en el libro.
-    _build_summary_sheet(wb, table_counts, logo_path)
+    _build_summary_sheet(wb, table_counts, logo_path, footer_logo_path, generated_by)
     wb.move_sheet("Resumen", offset=-(len(wb.sheetnames) - 1))
 
     buffer = BytesIO()

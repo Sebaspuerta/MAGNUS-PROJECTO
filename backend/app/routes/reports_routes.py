@@ -73,9 +73,9 @@ def get_cash_closings(
 @router.get("/export-excel")
 def export_excel_report(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("reportes.ver"))
+    current_user: User = Depends(require_permission("reportes.exportar"))
 ):
-    buffer = generate_full_database_excel(db)
+    buffer = generate_full_database_excel(db, generated_by=current_user.full_name)
     filename = f"magnus_reporte_{date.today().isoformat()}.xlsx"
     return StreamingResponse(
         buffer,
