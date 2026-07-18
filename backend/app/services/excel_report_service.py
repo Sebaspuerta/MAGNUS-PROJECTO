@@ -19,7 +19,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-
+from openpyxl.chart.layout import Layout, ManualLayout
 from app.models.security import Role, Permission, User, AuditLog
 from app.models.barber import Barber
 from app.models.client import Client
@@ -413,49 +413,54 @@ def _build_summary_sheet(
     ws.title = "Resumen"
     ws.sheet_view.showGridLines = False
 
-    total_cols = 9
+    total_cols = 19  # A..S
     for col_idx in range(1, total_cols + 1):
-        ws.column_dimensions[get_column_letter(col_idx)].width = 13
+        ws.column_dimensions[get_column_letter(col_idx)].width = 10
+
+    last_col_letter = get_column_letter(total_cols)
 
     # ---------------- BANNER SUPERIOR ----------------
     BANNER_ROWS = 7
     for r in range(1, BANNER_ROWS + 1):
-        ws.row_dimensions[r].height = 20
+        ws.row_dimensions[r].height = 22
         for col_idx in range(1, total_cols + 1):
             ws.cell(row=r, column=col_idx).fill = PatternFill(start_color=BLACK, end_color=BLACK, fill_type="solid")
 
     if logo_path is not None:
         try:
             img = XLImage(str(logo_path))
-            img.height = 120
-            img.width = 120
+            img.height = 140
+            img.width = 140
             ws.add_image(img, "A1")
         except Exception:
             pass
 
-    ws.merge_cells("D2:I2")
+    ws.merge_cells(f"D2:{last_col_letter}2")
     title_cell = ws["D2"]
     title_cell.value = BRAND_NAME
-    title_cell.font = Font(name="Arial", bold=True, size=20, color=WHITE)
+    title_cell.font = Font(name="Arial", bold=True, size=24, color=WHITE)
     title_cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    ws.merge_cells("D3:I3")
+    ws.merge_cells(f"D3:{last_col_letter}3")
     subtitle_cell = ws["D3"]
     subtitle_cell.value = f"{BRAND_SUBTITLE}  -  {BRAND_LOCATION}"
-    subtitle_cell.font = Font(name="Arial", bold=True, size=10, color="D1D1D1")
+    subtitle_cell.font = Font(name="Arial", bold=True, size=12, color="D1D1D1")
     subtitle_cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    # línea roja/azul de marca
-    ws.merge_cells("D4:F4")
+    # línea roja/azul de marca (mitad y mitad del ancho útil)
+    mid_col = 4 + (total_cols - 4) // 2
+    mid_col_letter = get_column_letter(mid_col)
+    next_col_letter = get_column_letter(mid_col + 1)
+    ws.merge_cells(f"D4:{mid_col_letter}4")
     ws["D4"].fill = PatternFill(start_color=BLUE, end_color=BLUE, fill_type="solid")
-    ws.merge_cells("G4:I4")
-    ws["G4"].fill = PatternFill(start_color=RED, end_color=RED, fill_type="solid")
-    ws.row_dimensions[4].height = 4
+    ws.merge_cells(f"{next_col_letter}4:{last_col_letter}4")
+    ws[f"{next_col_letter}4"].fill = PatternFill(start_color=RED, end_color=RED, fill_type="solid")
+    ws.row_dimensions[4].height = 5
 
-    ws.merge_cells("D6:I6")
+    ws.merge_cells(f"D6:{last_col_letter}6")
     period_cell = ws["D6"]
     period_cell.value = f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-    period_cell.font = Font(name="Arial", bold=True, size=11, color=WHITE)
+    period_cell.font = Font(name="Arial", bold=True, size=12, color=WHITE)
     period_cell.alignment = Alignment(horizontal="left", vertical="center")
 
     # ---------------- FRANJA DE METADATA ----------------
@@ -468,16 +473,16 @@ def _build_summary_sheet(
         f"Tablas incluidas: {len(table_counts)}   |   "
         f"Registros totales: {total_registros}   |   Moneda: COP ($)"
     )
-    meta_cell.font = Font(name="Arial", size=9, italic=True, color=GRAY_TEXT)
+    meta_cell.font = Font(name="Arial", size=10, italic=True, color=GRAY_TEXT)
     meta_cell.fill = PatternFill(start_color=LIGHT_GRAY_FILL, end_color=LIGHT_GRAY_FILL, fill_type="solid")
     meta_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
-    ws.row_dimensions[meta_row].height = 18
+    ws.row_dimensions[meta_row].height = 20
 
     # ---------------- KPIs ----------------
     kpi_section_row = meta_row + 2
     ws.merge_cells(start_row=kpi_section_row, start_column=1, end_row=kpi_section_row, end_column=total_cols)
     ws.cell(row=kpi_section_row, column=1, value="PANORAMA GENERAL").font = Font(
-        name="Arial", bold=True, size=12, color=DARK_TEXT
+        name="Arial", bold=True, size=13, color=DARK_TEXT
     )
 
     kpi_values = [
@@ -489,26 +494,29 @@ def _build_summary_sheet(
         ("Estado de caja", kpis["estado_caja"]),
     ]
 
+    # 3 tarjetas por fila, cada una ocupa 5 columnas, con 1 columna de aire
+    # entre tarjetas y 1 columna de margen a cada lado -> queda centrado.
+    card_span = 5
+    col_positions = [2, 8, 14]
+
     kpi_row_1 = kpi_section_row + 2
-    kpi_row_2 = kpi_row_1 + 4
-    col_positions = [1, 4, 7]
+    kpi_row_2 = kpi_row_1 + 5
 
     for i, (label, value_text) in enumerate(kpi_values):
         row = kpi_row_1 if i < 3 else kpi_row_2
         col = col_positions[i % 3]
-        _write_kpi_card(ws, row, col, 3, label, value_text, KPI_COLORS[i])
+        _write_kpi_card(ws, row, col, card_span, label, value_text, KPI_COLORS[i])
 
     # ---------------- GRÁFICOS ----------------
-    charts_title_row = kpi_row_2 + 4
+    charts_title_row = kpi_row_2 + 5
     ws.merge_cells(start_row=charts_title_row, start_column=1, end_row=charts_title_row, end_column=total_cols)
     ws.cell(row=charts_title_row, column=1, value="ANALISIS VISUAL").font = Font(
-        name="Arial", bold=True, size=12, color=DARK_TEXT
+        name="Arial", bold=True, size=13, color=DARK_TEXT
     )
 
-    # Área auxiliar de datos (columna K en adelante, oculta)
-    # Hoja auxiliar de datos para los gráficos (oculta como hoja completa,
-    # mucho más confiable que ocultar columnas dentro de la misma hoja)
     ws_data = wb.create_sheet(title="DatosDashboard")
+    ws_data.sheet_view.showGridLines = False
+    ws_data.sheet_properties.tabColor = "CCCCCC"
 
     s1_start, s1_end = _write_hidden_series(ws_data, 1, 1, "Ventas por barbero", sales_by_barber)
     s2_start, s2_end = _write_hidden_series(ws_data, 1, 4, "Ventas por mes", sales_by_month)
@@ -518,26 +526,24 @@ def _build_summary_sheet(
     chart_row = charts_title_row + 2
 
     bar1 = _build_bar_chart(ws_data, "Ventas por barbero", 1, s1_start, s1_end, "DatosDashboard", x_title="Barbero", y_title="Ventas ($)")
-    ws.add_chart(bar1, f"A{chart_row}")
+    ws.add_chart(bar1, f"B{chart_row}")
 
     line1 = _build_line_chart(ws_data, "Ventas por mes", 4, s2_start, s2_end, x_title="Mes", y_title="Ventas ($)")
-    ws.add_chart(line1, f"E{chart_row}")
+    ws.add_chart(line1, f"L{chart_row}")
 
-    chart_row_2 = chart_row + 17
+    chart_row_2 = chart_row + 21
 
     pie1 = _build_pie_chart(ws_data, "Metodos de pago", 7, s3_start, s3_end)
-    ws.add_chart(pie1, f"A{chart_row_2}")
+    ws.add_chart(pie1, f"B{chart_row_2}")
 
     bar2 = _build_bar_chart(ws_data, "Top productos vendidos", 10, s4_start, s4_end, "DatosDashboard", x_title="Producto", y_title="Ventas ($)")
-    ws.add_chart(bar2, f"E{chart_row_2}")
-
-    #ws_data.sheet_state = "hidden"
+    ws.add_chart(bar2, f"L{chart_row_2}")
 
     # ---------------- DETALLE DE TABLAS (conteo por tabla) ----------------
-    detail_row = chart_row_2 + 17
+    detail_row = chart_row_2 + 21
     ws.merge_cells(start_row=detail_row, start_column=1, end_row=detail_row, end_column=total_cols)
     ws.cell(row=detail_row, column=1, value="DETALLE DE TABLAS").font = Font(
-        name="Arial", bold=True, size=12, color=DARK_TEXT
+        name="Arial", bold=True, size=13, color=DARK_TEXT
     )
 
     cards_start_row = detail_row + 2
@@ -546,22 +552,22 @@ def _build_summary_sheet(
         card_col = col_positions[i % 3]
         card_row = cards_start_row + row_offset
         accent = CARD_ACCENTS[i % len(CARD_ACCENTS)]
-        _write_kpi_card(ws, card_row, card_col, 3, name, str(count), accent)
+        _write_kpi_card(ws, card_row, card_col, card_span, name, str(count), accent)
         if i % 3 == 2:
-            row_offset += 4
+            row_offset += 5
 
-    last_row = cards_start_row + row_offset + 4
+    last_row = cards_start_row + row_offset + 5
 
     # ---------------- PIE DE PÁGINA ----------------
     footer_row = last_row + 2
-    ws.row_dimensions[footer_row].height = 30
-    ws.row_dimensions[footer_row + 1].height = 15
+    ws.row_dimensions[footer_row].height = 32
+    ws.row_dimensions[footer_row + 1].height = 16
 
     if footer_logo_path is not None:
         try:
             footer_img = XLImage(str(footer_logo_path))
-            footer_img.height = 45
-            footer_img.width = 45
+            footer_img.height = 48
+            footer_img.width = 48
             ws.add_image(footer_img, f"A{footer_row}")
         except Exception:
             pass
@@ -569,7 +575,7 @@ def _build_summary_sheet(
     text_start_col = 3
     ws.merge_cells(start_row=footer_row, start_column=text_start_col, end_row=footer_row, end_column=total_cols)
     footer_cell = ws.cell(row=footer_row, column=text_start_col, value=FOOTER_COMPANY)
-    footer_cell.font = Font(name="Arial", bold=True, size=10, color=DARK_TEXT)
+    footer_cell.font = Font(name="Arial", bold=True, size=11, color=DARK_TEXT)
     footer_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
 
     ws.merge_cells(start_row=footer_row + 1, start_column=text_start_col, end_row=footer_row + 1, end_column=total_cols)
@@ -578,8 +584,12 @@ def _build_summary_sheet(
         column=text_start_col,
         value=f"{FOOTER_TAGLINE}   -   (c) {datetime.now().year}   -   {FOOTER_SOFTWARE}",
     )
-    tagline_cell.font = Font(name="Arial", size=8, color=GRAY_TEXT)
+    tagline_cell.font = Font(name="Arial", size=9, color=GRAY_TEXT)
     tagline_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+
+    # ---------------- CENTRADO AL IMPRIMIR ----------------
+    ws.print_options.horizontalCentered = True
+    ws.print_area = f"A1:{last_col_letter}{footer_row + 2}"
 
 
 def generate_full_database_excel(db: Session, generated_by: str | None = None) -> BytesIO:
