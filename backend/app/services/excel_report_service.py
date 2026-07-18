@@ -294,45 +294,55 @@ def _write_kpi_card(
 
 
 def _write_hidden_series(ws: Worksheet, top_row: int, col: int, title: str, data: list[tuple[str, float]]):
-    """Escribe una serie de datos en un área auxiliar (a la derecha, oculta) para alimentar un gráfico nativo."""
+    """Escribe una serie de datos en un área auxiliar para alimentar un gráfico nativo."""
     ws.cell(row=top_row, column=col, value=title)
     ws.cell(row=top_row + 1, column=col, value="Categoria")
     ws.cell(row=top_row + 1, column=col + 1, value="Valor")
     for i, (label, value) in enumerate(data):
         ws.cell(row=top_row + 2 + i, column=col, value=label)
-        ws.cell(row=top_row + 2 + i, column=col + 1, value=value)
-    return top_row + 2, top_row + 2 + len(data) - 1  # (fila inicio datos, fila fin datos)
+        value_cell = ws.cell(row=top_row + 2 + i, column=col + 1, value=value)
+        value_cell.number_format = '"$" #,##0'
+    return top_row + 2, top_row + 2 + len(data) - 1
 
 
-def _build_bar_chart(ws: Worksheet, title: str, data_col: int, start_row: int, end_row: int, sheet_ref: str) -> BarChart:
+def _build_bar_chart(
+    ws: Worksheet,
+    title: str,
+    data_col: int,
+    start_row: int,
+    end_row: int,
+    sheet_ref: str,
+    x_title: str = "",
+    y_title: str = "Ventas ($)",
+) -> BarChart:
     chart = BarChart()
     chart.type = "col"
     chart.title = title
     chart.plotVisOnly = False
     chart.y_axis.majorGridlines = None
     chart.style = 10
-    chart.y_axis.title = None
-    chart.x_axis.title = None
     chart.legend = None
     chart.width = 13
     chart.height = 8
+
+    chart.x_axis.title = x_title
+    chart.y_axis.title = y_title
+    chart.x_axis.delete = False
+    chart.y_axis.delete = False
+    chart.y_axis.numFmt = '"$"#,##0'
 
     cats = Reference(ws, min_col=data_col, min_row=start_row, max_row=end_row)
     vals = Reference(ws, min_col=data_col + 1, min_row=start_row - 1, max_row=end_row)
     chart.add_data(vals, titles_from_data=True)
     chart.set_categories(cats)
 
-    series = chart.series[0]
-    series.graphicalProperties.solidFill = RED
     return chart
-
 
 def _build_pie_chart(ws: Worksheet, title: str, data_col: int, start_row: int, end_row: int) -> PieChart:
     chart = PieChart()
     chart.title = title
     chart.style = 10
     chart.plotVisOnly = False
-    chart.title = title
     chart.width = 13
     chart.height = 8
 
@@ -342,11 +352,28 @@ def _build_pie_chart(ws: Worksheet, title: str, data_col: int, start_row: int, e
     chart.set_categories(cats)
 
     chart.dataLabels = DataLabelList()
-    chart.dataLabels.showPercent = True
+    chart.dataLabels.showSerName = False
+    chart.dataLabels.showLegendKey = False
+    chart.dataLabels.showCatName = True
+    chart.dataLabels.showVal = True
+    chart.dataLabels.showPercent = False
+    chart.dataLabels.numFmt = '"$"#,##0'
+    chart.dataLabels.dLblPos = "bestFit"
+
+    chart.legend = None  # ya no hace falta, el nombre va en cada porción
+
     return chart
 
 
-def _build_line_chart(ws: Worksheet, title: str, data_col: int, start_row: int, end_row: int) -> LineChart:
+def _build_line_chart(
+    ws: Worksheet,
+    title: str,
+    data_col: int,
+    start_row: int,
+    end_row: int,
+    x_title: str = "Mes",
+    y_title: str = "Ventas ($)",
+) -> LineChart:
     chart = LineChart()
     chart.title = title
     chart.style = 10
@@ -356,15 +383,17 @@ def _build_line_chart(ws: Worksheet, title: str, data_col: int, start_row: int, 
     chart.width = 13
     chart.height = 8
 
+    chart.x_axis.title = x_title
+    chart.y_axis.title = y_title
+    chart.x_axis.delete = False
+    chart.y_axis.delete = False
+    chart.y_axis.numFmt = '"$"#,##0'
+
     cats = Reference(ws, min_col=data_col, min_row=start_row, max_row=end_row)
     vals = Reference(ws, min_col=data_col + 1, min_row=start_row - 1, max_row=end_row)
     chart.add_data(vals, titles_from_data=True)
     chart.set_categories(cats)
 
-    series = chart.series[0]
-    series.graphicalProperties.line.solidFill = BLUE
-    series.graphicalProperties.line.width = 20000
-    series.smooth = False
     return chart
 
 
@@ -488,10 +517,10 @@ def _build_summary_sheet(
 
     chart_row = charts_title_row + 2
 
-    bar1 = _build_bar_chart(ws_data, "Ventas por barbero", 1, s1_start, s1_end, "DatosDashboard")
+    bar1 = _build_bar_chart(ws_data, "Ventas por barbero", 1, s1_start, s1_end, "DatosDashboard", x_title="Barbero", y_title="Ventas ($)")
     ws.add_chart(bar1, f"A{chart_row}")
 
-    line1 = _build_line_chart(ws_data, "Ventas por mes", 4, s2_start, s2_end)
+    line1 = _build_line_chart(ws_data, "Ventas por mes", 4, s2_start, s2_end, x_title="Mes", y_title="Ventas ($)")
     ws.add_chart(line1, f"E{chart_row}")
 
     chart_row_2 = chart_row + 17
@@ -499,7 +528,7 @@ def _build_summary_sheet(
     pie1 = _build_pie_chart(ws_data, "Metodos de pago", 7, s3_start, s3_end)
     ws.add_chart(pie1, f"A{chart_row_2}")
 
-    bar2 = _build_bar_chart(ws_data, "Top productos vendidos", 10, s4_start, s4_end, "DatosDashboard")
+    bar2 = _build_bar_chart(ws_data, "Top productos vendidos", 10, s4_start, s4_end, "DatosDashboard", x_title="Producto", y_title="Ventas ($)")
     ws.add_chart(bar2, f"E{chart_row_2}")
 
     #ws_data.sheet_state = "hidden"
