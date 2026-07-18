@@ -1,19 +1,23 @@
 """
 Servicio para generar un reporte Excel (.xlsx) con toda la información
-de la base de datos de MAGNUS BARBER, con una portada estilizada que
-replica la identidad visual de la barbería.
+de la base de datos de MAGNUS BARBER, con una portada tipo dashboard
+(KPIs + gráficos nativos) que replica la identidad visual de la marca.
 """
 
 from datetime import date, datetime
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
-
+from openpyxl.chart.shapes import GraphicalProperties
+from openpyxl.drawing.line import LineProperties
 from openpyxl import Workbook
+from openpyxl.chart import BarChart, LineChart, PieChart, Reference
+from openpyxl.chart.label import DataLabelList
 from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.security import Role, Permission, User, AuditLog
@@ -56,7 +60,7 @@ TABLES: list[tuple[type, str]] = [
 ]
 
 # ---------------------------------------------------------------------------
-# IDENTIDAD VISUAL — ajusta estas constantes si algo no coincide con tu marca
+# IDENTIDAD VISUAL — ajusta si algo no coincide con tu marca
 # ---------------------------------------------------------------------------
 BRAND_NAME = "MAGNUS BARBER SHOP"
 BRAND_SUBTITLE = "Reporte General de Base de Datos"
@@ -65,19 +69,26 @@ FOOTER_COMPANY = "Desarrollado por AVANZATECH S.A.S"
 FOOTER_TAGLINE = "Soluciones Tecnologicas que Impulsan tu Negocio"
 FOOTER_SOFTWARE = "Software MAGNUS BARBER SYSTEM v1.0"
 
-NAVY = "0E1B3D"
-GOLD = "C9A227"
+BLACK = "0B0B0C"
+WHITE = "FFFFFF"
+RED = "E24B4A"
+BLUE = "378ADD"
 GRAY_TEXT = "6B7280"
-LIGHT_GRAY_FILL = "F3F4F6"
+LIGHT_GRAY_FILL = "F5F5F4"
 DARK_TEXT = "1A1A1A"
 
-CARD_ACCENTS = [GOLD, GOLD, GOLD, NAVY, "B03A2E", "1E8449"]
+KPI_COLORS = [RED, BLUE, "888780", RED, BLUE, "27500A"]
+CARD_ACCENTS = [RED, BLUE, "888780", "0C447C", "993C1D", "27500A"]
 
 HEADER_FONT = Font(name="Arial", bold=True, color="FFFFFF", size=11)
-HEADER_FILL = PatternFill(start_color=NAVY, end_color=NAVY, fill_type="solid")
+HEADER_FILL = PatternFill(start_color=BLACK, end_color=BLACK, fill_type="solid")
 THIN_BORDER = Border(*(Side(style="thin", color="DDDDDD") for _ in range(4)))
+CURRENCY_FMT = '"$" #,##0'
 
 
+# ---------------------------------------------------------------------------
+# Utilidades generales
+# ---------------------------------------------------------------------------
 def _find_logo_path() -> Path | None:
     here = Path(__file__).resolve()
     candidates = [
@@ -91,8 +102,8 @@ def _find_logo_path() -> Path | None:
             return path
     return None
 
+
 def _find_footer_logo_path() -> Path | None:
-    """Logo de AvanzaTech (o el desarrollador) para el pie de página."""
     here = Path(__file__).resolve()
     candidates = [
         here.parents[3] / "frontend" / "assets" / "avanzatech-logo.png",
@@ -158,34 +169,213 @@ def _write_model_sheet(wb: Workbook, db: Session, model: type, sheet_title: str)
     return len(rows)
 
 
-def _write_kpi_card(ws: Worksheet, top_row: int, start_col: int, label: str, value, accent_hex: str) -> None:
-    """Dibuja una tarjeta de indicador de 2 columnas x 3 filas."""
-    end_col = start_col + 1
+# ---------------------------------------------------------------------------
+# Métricas de negocio para el dashboard
+# ---------------------------------------------------------------------------
+def _compute_kpis(db: Session) -> dict:
+    total_sales = db.query(func.coalesce(func.sum(Payment.amount), 0)).scalar()
 
-    # Barra superior de color (acento)
-    ws.merge_cells(start_row=top_row, start_column=start_col, end_row=top_row, end_column=end_col)
-    accent_cell = ws.cell(row=top_row, column=start_col)
-    accent_cell.fill = PatternFill(start_color=accent_hex, end_color=accent_hex, fill_type="solid")
-    ws.row_dimensions[top_row].height = 4
+    cxc_pendiente = (
+        db.query(func.coalesce(func.sum(AccountsReceivable.balance), 0))
+        .filter(AccountsReceivable.status != "pagado")
+        .scalar()
+    )
 
-    # Fondo gris claro para el cuerpo de la tarjeta (label + valor)
-    for r in (top_row + 1, top_row + 2):
-        ws.merge_cells(start_row=r, start_column=start_col, end_row=r, end_column=end_col)
-        cell = ws.cell(row=r, column=start_col)
-        cell.fill = PatternFill(start_color=LIGHT_GRAY_FILL, end_color=LIGHT_GRAY_FILL, fill_type="solid")
+    stock_bajo = (
+        db.query(func.count(Product.id))
+        .filter(Product.minimum_stock.isnot(None))
+        .filter(Product.current_stock <= Product.minimum_stock)
+        .scalar()
+    )
 
-    label_cell = ws.cell(row=top_row + 1, column=start_col, value=label.upper())
-    label_cell.font = Font(name="Arial", size=8, bold=True, color=GRAY_TEXT)
+    barbero_top = (
+        db.query(Barber.full_name, func.sum(Order.total))
+        .join(Order, Order.barber_id == Barber.id)
+        .group_by(Barber.id, Barber.full_name)
+        .order_by(func.sum(Order.total).desc())
+        .first()
+    )
+
+    producto_top = (
+        db.query(Product.name, func.sum(OrderItem.quantity))
+        .join(OrderItem, OrderItem.product_id == Product.id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(OrderItem.quantity).desc())
+        .first()
+    )
+
+    caja_abierta = db.query(CashRegister).filter(CashRegister.is_closed.is_(False)).first()
+
+    return {
+        "total_sales": float(total_sales or 0),
+        "cxc_pendiente": float(cxc_pendiente or 0),
+        "stock_bajo": int(stock_bajo or 0),
+        "barbero_top": barbero_top[0] if barbero_top else "Sin datos",
+        "barbero_top_monto": float(barbero_top[1]) if barbero_top else 0,
+        "producto_top": producto_top[0] if producto_top else "Sin datos",
+        "producto_top_unidades": int(producto_top[1]) if producto_top else 0,
+        "estado_caja": "Abierta" if caja_abierta else "Cerrada",
+    }
+
+
+def _fetch_sales_by_barber(db: Session, limit: int = 6) -> list[tuple[str, float]]:
+    rows = (
+        db.query(Barber.full_name, func.sum(Order.total))
+        .join(Order, Order.barber_id == Barber.id)
+        .group_by(Barber.id, Barber.full_name)
+        .order_by(func.sum(Order.total).desc())
+        .limit(limit)
+        .all()
+    )
+    return [(name, float(total or 0)) for name, total in rows]
+
+
+def _fetch_sales_by_month(db: Session, months: int = 12) -> list[tuple[str, float]]:
+    month_col = func.date_trunc("month", Order.created_at).label("mes")
+    rows = (
+        db.query(month_col, func.sum(Order.total))
+        .group_by(month_col)
+        .order_by(month_col)
+        .all()
+    )
+    rows = rows[-months:]
+    return [(mes.strftime("%b %Y"), float(total or 0)) for mes, total in rows]
+
+
+def _fetch_payment_methods(db: Session) -> list[tuple[str, float]]:
+    rows = (
+        db.query(Payment.payment_method, func.sum(Payment.amount))
+        .group_by(Payment.payment_method)
+        .order_by(func.sum(Payment.amount).desc())
+        .all()
+    )
+    return [(method or "Sin especificar", float(total or 0)) for method, total in rows]
+
+
+def _fetch_top_products(db: Session, limit: int = 6) -> list[tuple[str, float]]:
+    rows = (
+        db.query(Product.name, func.sum(OrderItem.total_price))
+        .join(OrderItem, OrderItem.product_id == Product.id)
+        .group_by(Product.id, Product.name)
+        .order_by(func.sum(OrderItem.total_price).desc())
+        .limit(limit)
+        .all()
+    )
+    return [(name, float(total or 0)) for name, total in rows]
+
+
+# ---------------------------------------------------------------------------
+# Construcción visual del dashboard
+# ---------------------------------------------------------------------------
+def _write_kpi_card(
+    ws: Worksheet,
+    row: int,
+    col_start: int,
+    col_span: int,
+    label: str,
+    value_text: str,
+    accent_hex: str,
+) -> None:
+    end_col = col_start + col_span - 1
+
+    ws.merge_cells(start_row=row, start_column=col_start, end_row=row, end_column=end_col)
+    label_cell = ws.cell(row=row, column=col_start, value=label.upper())
+    label_cell.font = Font(name="Arial", size=9, bold=True, color=GRAY_TEXT)
     label_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
 
-    value_cell = ws.cell(row=top_row + 2, column=start_col, value=value)
-    value_cell.font = Font(name="Arial", size=14, bold=True, color=DARK_TEXT)
+    ws.merge_cells(start_row=row + 1, start_column=col_start, end_row=row + 1, end_column=end_col)
+    value_cell = ws.cell(row=row + 1, column=col_start, value=value_text)
+    value_cell.font = Font(name="Arial", size=17, bold=True, color=accent_hex)
     value_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
+
+    ws.merge_cells(start_row=row + 2, start_column=col_start, end_row=row + 2, end_column=end_col)
+    for c in range(col_start, end_col + 1):
+        ws.cell(row=row + 2, column=c).border = Border(bottom=Side(style="thin", color=accent_hex))
+
+
+def _write_hidden_series(ws: Worksheet, top_row: int, col: int, title: str, data: list[tuple[str, float]]):
+    """Escribe una serie de datos en un área auxiliar (a la derecha, oculta) para alimentar un gráfico nativo."""
+    ws.cell(row=top_row, column=col, value=title)
+    ws.cell(row=top_row + 1, column=col, value="Categoria")
+    ws.cell(row=top_row + 1, column=col + 1, value="Valor")
+    for i, (label, value) in enumerate(data):
+        ws.cell(row=top_row + 2 + i, column=col, value=label)
+        ws.cell(row=top_row + 2 + i, column=col + 1, value=value)
+    return top_row + 2, top_row + 2 + len(data) - 1  # (fila inicio datos, fila fin datos)
+
+
+def _build_bar_chart(ws: Worksheet, title: str, data_col: int, start_row: int, end_row: int, sheet_ref: str) -> BarChart:
+    chart = BarChart()
+    chart.type = "col"
+    chart.title = title
+    chart.plotVisOnly = False
+    chart.y_axis.majorGridlines = None
+    chart.style = 10
+    chart.y_axis.title = None
+    chart.x_axis.title = None
+    chart.legend = None
+    chart.width = 13
+    chart.height = 8
+
+    cats = Reference(ws, min_col=data_col, min_row=start_row, max_row=end_row)
+    vals = Reference(ws, min_col=data_col + 1, min_row=start_row - 1, max_row=end_row)
+    chart.add_data(vals, titles_from_data=True)
+    chart.set_categories(cats)
+
+    series = chart.series[0]
+    series.graphicalProperties.solidFill = RED
+    return chart
+
+
+def _build_pie_chart(ws: Worksheet, title: str, data_col: int, start_row: int, end_row: int) -> PieChart:
+    chart = PieChart()
+    chart.title = title
+    chart.style = 10
+    chart.plotVisOnly = False
+    chart.title = title
+    chart.width = 13
+    chart.height = 8
+
+    cats = Reference(ws, min_col=data_col, min_row=start_row, max_row=end_row)
+    vals = Reference(ws, min_col=data_col + 1, min_row=start_row - 1, max_row=end_row)
+    chart.add_data(vals, titles_from_data=True)
+    chart.set_categories(cats)
+
+    chart.dataLabels = DataLabelList()
+    chart.dataLabels.showPercent = True
+    return chart
+
+
+def _build_line_chart(ws: Worksheet, title: str, data_col: int, start_row: int, end_row: int) -> LineChart:
+    chart = LineChart()
+    chart.title = title
+    chart.style = 10
+    chart.legend = None
+    chart.y_axis.majorGridlines = None
+    chart.plotVisOnly = False
+    chart.width = 13
+    chart.height = 8
+
+    cats = Reference(ws, min_col=data_col, min_row=start_row, max_row=end_row)
+    vals = Reference(ws, min_col=data_col + 1, min_row=start_row - 1, max_row=end_row)
+    chart.add_data(vals, titles_from_data=True)
+    chart.set_categories(cats)
+
+    series = chart.series[0]
+    series.graphicalProperties.line.solidFill = BLUE
+    series.graphicalProperties.line.width = 20000
+    series.smooth = False
+    return chart
 
 
 def _build_summary_sheet(
     wb: Workbook,
     table_counts: list[tuple[str, int]],
+    kpis: dict,
+    sales_by_barber: list[tuple[str, float]],
+    sales_by_month: list[tuple[str, float]],
+    payment_methods: list[tuple[str, float]],
+    top_products: list[tuple[str, float]],
     logo_path: Path | None,
     footer_logo_path: Path | None,
     generated_by: str | None,
@@ -194,7 +384,7 @@ def _build_summary_sheet(
     ws.title = "Resumen"
     ws.sheet_view.showGridLines = False
 
-    total_cols = 9  # A..I
+    total_cols = 9
     for col_idx in range(1, total_cols + 1):
         ws.column_dimensions[get_column_letter(col_idx)].width = 13
 
@@ -203,9 +393,7 @@ def _build_summary_sheet(
     for r in range(1, BANNER_ROWS + 1):
         ws.row_dimensions[r].height = 20
         for col_idx in range(1, total_cols + 1):
-            ws.cell(row=r, column=col_idx).fill = PatternFill(
-                start_color=NAVY, end_color=NAVY, fill_type="solid"
-            )
+            ws.cell(row=r, column=col_idx).fill = PatternFill(start_color=BLACK, end_color=BLACK, fill_type="solid")
 
     if logo_path is not None:
         try:
@@ -219,19 +407,26 @@ def _build_summary_sheet(
     ws.merge_cells("D2:I2")
     title_cell = ws["D2"]
     title_cell.value = BRAND_NAME
-    title_cell.font = Font(name="Arial", bold=True, size=20, color="FFFFFF")
+    title_cell.font = Font(name="Arial", bold=True, size=20, color=WHITE)
     title_cell.alignment = Alignment(horizontal="left", vertical="center")
 
     ws.merge_cells("D3:I3")
     subtitle_cell = ws["D3"]
     subtitle_cell.value = f"{BRAND_SUBTITLE}  -  {BRAND_LOCATION}"
-    subtitle_cell.font = Font(name="Arial", bold=True, size=10, color=GOLD)
+    subtitle_cell.font = Font(name="Arial", bold=True, size=10, color="D1D1D1")
     subtitle_cell.alignment = Alignment(horizontal="left", vertical="center")
 
-    ws.merge_cells("D5:I5")
-    period_cell = ws["D5"]
+    # línea roja/azul de marca
+    ws.merge_cells("D4:F4")
+    ws["D4"].fill = PatternFill(start_color=BLUE, end_color=BLUE, fill_type="solid")
+    ws.merge_cells("G4:I4")
+    ws["G4"].fill = PatternFill(start_color=RED, end_color=RED, fill_type="solid")
+    ws.row_dimensions[4].height = 4
+
+    ws.merge_cells("D6:I6")
+    period_cell = ws["D6"]
     period_cell.value = f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
-    period_cell.font = Font(name="Arial", bold=True, size=11, color="FFFFFF")
+    period_cell.font = Font(name="Arial", bold=True, size=11, color=WHITE)
     period_cell.alignment = Alignment(horizontal="left", vertical="center")
 
     # ---------------- FRANJA DE METADATA ----------------
@@ -239,46 +434,97 @@ def _build_summary_sheet(
     ws.merge_cells(start_row=meta_row, start_column=1, end_row=meta_row, end_column=total_cols)
     meta_cell = ws.cell(row=meta_row, column=1)
     total_registros = sum(count for _, count in table_counts)
-    meta_text = (
+    meta_cell.value = (
         f"Generado por: {generated_by or 'Sistema'}   |   "
         f"Tablas incluidas: {len(table_counts)}   |   "
         f"Registros totales: {total_registros}   |   Moneda: COP ($)"
     )
-    meta_cell.value = meta_text
     meta_cell.font = Font(name="Arial", size=9, italic=True, color=GRAY_TEXT)
     meta_cell.fill = PatternFill(start_color=LIGHT_GRAY_FILL, end_color=LIGHT_GRAY_FILL, fill_type="solid")
     meta_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
     ws.row_dimensions[meta_row].height = 18
 
-    # ---------------- TÍTULO DE SECCIÓN ----------------
-    section_row = meta_row + 2
-    ws.merge_cells(start_row=section_row, start_column=1, end_row=section_row, end_column=total_cols)
-    section_cell = ws.cell(row=section_row, column=1, value="RESUMEN DE TABLAS")
-    section_cell.font = Font(name="Arial", bold=True, size=12, color=DARK_TEXT)
-    for col_idx in range(1, total_cols + 1):
-        ws.cell(row=section_row + 1, column=col_idx).border = Border(
-            bottom=Side(style="medium", color=GOLD)
-        )
+    # ---------------- KPIs ----------------
+    kpi_section_row = meta_row + 2
+    ws.merge_cells(start_row=kpi_section_row, start_column=1, end_row=kpi_section_row, end_column=total_cols)
+    ws.cell(row=kpi_section_row, column=1, value="PANORAMA GENERAL").font = Font(
+        name="Arial", bold=True, size=12, color=DARK_TEXT
+    )
 
-    # ---------------- TARJETAS (3 por fila) ----------------
-    cards_start_row = section_row + 3
-    col_positions = [1, 4, 7]  # columnas A, D, G -> cada tarjeta ocupa 2 columnas
+    kpi_values = [
+        ("Ventas totales", f"$ {kpis['total_sales']:,.0f}".replace(",", ".")),
+        ("Cuentas por cobrar", f"$ {kpis['cxc_pendiente']:,.0f}".replace(",", ".")),
+        ("Productos stock bajo", str(kpis["stock_bajo"])),
+        ("Barbero con más ventas", kpis["barbero_top"]),
+        ("Producto más vendido", kpis["producto_top"]),
+        ("Estado de caja", kpis["estado_caja"]),
+    ]
+
+    kpi_row_1 = kpi_section_row + 2
+    kpi_row_2 = kpi_row_1 + 4
+    col_positions = [1, 4, 7]
+
+    for i, (label, value_text) in enumerate(kpi_values):
+        row = kpi_row_1 if i < 3 else kpi_row_2
+        col = col_positions[i % 3]
+        _write_kpi_card(ws, row, col, 3, label, value_text, KPI_COLORS[i])
+
+    # ---------------- GRÁFICOS ----------------
+    charts_title_row = kpi_row_2 + 4
+    ws.merge_cells(start_row=charts_title_row, start_column=1, end_row=charts_title_row, end_column=total_cols)
+    ws.cell(row=charts_title_row, column=1, value="ANALISIS VISUAL").font = Font(
+        name="Arial", bold=True, size=12, color=DARK_TEXT
+    )
+
+    # Área auxiliar de datos (columna K en adelante, oculta)
+    # Hoja auxiliar de datos para los gráficos (oculta como hoja completa,
+    # mucho más confiable que ocultar columnas dentro de la misma hoja)
+    ws_data = wb.create_sheet(title="DatosDashboard")
+
+    s1_start, s1_end = _write_hidden_series(ws_data, 1, 1, "Ventas por barbero", sales_by_barber)
+    s2_start, s2_end = _write_hidden_series(ws_data, 1, 4, "Ventas por mes", sales_by_month)
+    s3_start, s3_end = _write_hidden_series(ws_data, 1, 7, "Metodos de pago", payment_methods)
+    s4_start, s4_end = _write_hidden_series(ws_data, 1, 10, "Top productos", top_products)
+
+    chart_row = charts_title_row + 2
+
+    bar1 = _build_bar_chart(ws_data, "Ventas por barbero", 1, s1_start, s1_end, "DatosDashboard")
+    ws.add_chart(bar1, f"A{chart_row}")
+
+    line1 = _build_line_chart(ws_data, "Ventas por mes", 4, s2_start, s2_end)
+    ws.add_chart(line1, f"E{chart_row}")
+
+    chart_row_2 = chart_row + 17
+
+    pie1 = _build_pie_chart(ws_data, "Metodos de pago", 7, s3_start, s3_end)
+    ws.add_chart(pie1, f"A{chart_row_2}")
+
+    bar2 = _build_bar_chart(ws_data, "Top productos vendidos", 10, s4_start, s4_end, "DatosDashboard")
+    ws.add_chart(bar2, f"E{chart_row_2}")
+
+    #ws_data.sheet_state = "hidden"
+
+    # ---------------- DETALLE DE TABLAS (conteo por tabla) ----------------
+    detail_row = chart_row_2 + 17
+    ws.merge_cells(start_row=detail_row, start_column=1, end_row=detail_row, end_column=total_cols)
+    ws.cell(row=detail_row, column=1, value="DETALLE DE TABLAS").font = Font(
+        name="Arial", bold=True, size=12, color=DARK_TEXT
+    )
+
+    cards_start_row = detail_row + 2
     row_offset = 0
-
     for i, (name, count) in enumerate(table_counts):
         card_col = col_positions[i % 3]
         card_row = cards_start_row + row_offset
         accent = CARD_ACCENTS[i % len(CARD_ACCENTS)]
-        _write_kpi_card(ws, card_row, card_col, name, count, accent)
-
+        _write_kpi_card(ws, card_row, card_col, 3, name, str(count), accent)
         if i % 3 == 2:
-            row_offset += 4  # 3 filas de tarjeta + 1 de espacio
+            row_offset += 4
 
     last_row = cards_start_row + row_offset + 4
 
     # ---------------- PIE DE PÁGINA ----------------
     footer_row = last_row + 2
-
     ws.row_dimensions[footer_row].height = 30
     ws.row_dimensions[footer_row + 1].height = 15
 
@@ -291,8 +537,7 @@ def _build_summary_sheet(
         except Exception:
             pass
 
-    text_start_col = 3  # columna C, deja A-B libres para el logo
-
+    text_start_col = 3
     ws.merge_cells(start_row=footer_row, start_column=text_start_col, end_row=footer_row, end_column=total_cols)
     footer_cell = ws.cell(row=footer_row, column=text_start_col, value=FOOTER_COMPANY)
     footer_cell.font = Font(name="Arial", bold=True, size=10, color=DARK_TEXT)
@@ -318,7 +563,29 @@ def generate_full_database_excel(db: Session, generated_by: str | None = None) -
         count = _write_model_sheet(wb, db, model, sheet_name)
         table_counts.append((sheet_name, count))
 
-    _build_summary_sheet(wb, table_counts, logo_path, footer_logo_path, generated_by)
+    kpis = _compute_kpis(db)
+    sales_by_barber = _fetch_sales_by_barber(db)
+    sales_by_month = _fetch_sales_by_month(db)
+    payment_methods = _fetch_payment_methods(db)
+    top_products = _fetch_top_products(db)
+
+    print(f"[DEBUG] sales_by_barber: {sales_by_barber}")
+    print(f"[DEBUG] sales_by_month: {sales_by_month}")
+    print(f"[DEBUG] payment_methods: {payment_methods}")
+    print(f"[DEBUG] top_products: {top_products}")
+
+    _build_summary_sheet(
+        wb,
+        table_counts,
+        kpis,
+        sales_by_barber,
+        sales_by_month,
+        payment_methods,
+        top_products,
+        logo_path,
+        footer_logo_path,
+        generated_by,
+    )
     wb.move_sheet("Resumen", offset=-(len(wb.sheetnames) - 1))
 
     buffer = BytesIO()
