@@ -1,13 +1,17 @@
 ﻿import re
 import unicodedata
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.barber import Barber
 from app.models.security import Role, User
 from app.schemas.barber import BarberCreate, BarberUpdate
 from app.services.security_service import create_audit_log
 from app.utils.security import hash_password
+
+_BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
 
 def serialize_barber(barber: Barber):
@@ -63,6 +67,19 @@ def list_barbers(db: Session, include_inactive: bool = False):
         query = query.filter(Barber.is_active == True)
 
     return [serialize_barber(barber) for barber in query.all()]
+
+
+def list_active_barbers_basic(db: Session):
+    """Lista mínima (id + nombre) de barberos activos, sin datos administrativos
+    (teléfono, comisión, usuario vinculado). Pensada para selectores de
+    formularios (ej. asignar comanda) que no requieren el permiso barberos.ver."""
+    barbers = (
+        db.query(Barber)
+        .filter(Barber.is_active == True)  # noqa: E712
+        .order_by(Barber.full_name.asc())
+        .all()
+    )
+    return [{"id": barber.id, "full_name": barber.full_name} for barber in barbers]
 
 
 def get_barber_by_id(db: Session, barber_id: int):
@@ -351,7 +368,7 @@ def get_barber_user_info(db: Session, barber_id: int):
 
 
 def get_barber_performance(db: Session, barber_id: int, start_date=None, end_date=None):
-    from datetime import datetime, date, timedelta
+    from datetime import timedelta, timezone
     from sqlalchemy import func
     from app.models.order import Order
 
@@ -360,12 +377,16 @@ def get_barber_performance(db: Session, barber_id: int, start_date=None, end_dat
         return None, "Barbero no encontrado."
 
     if end_date is None:
-        end_date = date.today()
+        end_date = datetime.now(_BUSINESS_TZ).date()
     if start_date is None:
         start_date = end_date - timedelta(days=30)
 
-    start_dt = datetime(start_date.year, start_date.month, start_date.day)
-    end_dt = datetime(end_date.year, end_date.month, end_date.day) + timedelta(days=1)
+    # Los limites del rango representan dias en hora Colombia; se convierten
+    # a UTC naivo para compararlos con los timestamps de la BD (igual que en
+    # reports_service.py y dashboard_service.py).
+    start_dt = datetime(start_date.year, start_date.month, start_date.day, tzinfo=_BUSINESS_TZ).astimezone(timezone.utc).replace(tzinfo=None)
+    end_midnight_col = datetime(end_date.year, end_date.month, end_date.day, tzinfo=_BUSINESS_TZ)
+    end_dt = (end_midnight_col + timedelta(days=1)).astimezone(timezone.utc).replace(tzinfo=None)
 
     base = (
         db.query(Order)

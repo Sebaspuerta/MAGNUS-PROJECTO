@@ -10,6 +10,7 @@ from app.models.cash_register import CashRegister
 from app.models.inventory import Product
 from app.models.accounts_receivable import AccountsReceivable
 from app.models.alerts import Alert
+from app.models.barber import Barber
 
 _BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
@@ -146,3 +147,27 @@ def get_dashboard_summary(db: Session):
             "unread": int(unread_alerts or 0)
         }
     }
+
+
+def get_my_cuts_today(db: Session, user_id: int):
+    """Conteo personal (sin dinero) de comandas cerradas hoy para el barbero
+    vinculado al usuario autenticado. Si el usuario no tiene barbero asociado,
+    devuelve 0 en lugar de fallar."""
+    start, end = _today_bounds()
+
+    barber = db.query(Barber).filter(Barber.user_id == user_id).first()
+    if not barber:
+        return {"cortes_hoy": 0}
+
+    cortes_hoy = (
+        db.query(func.count(Order.id))
+        .filter(
+            Order.barber_id == barber.id,
+            Order.status == "cerrada",
+            Order.closed_at >= start,
+            Order.closed_at < end
+        )
+        .scalar()
+    )
+
+    return {"cortes_hoy": int(cortes_hoy or 0)}

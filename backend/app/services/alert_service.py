@@ -1,10 +1,14 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.alerts import Alert
 from app.models.security import User
 from app.schemas.alert import AlertCreate
 from app.services.security_service import create_audit_log
+
+_BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
 
 def serialize_alert(alert: Alert):
@@ -90,7 +94,7 @@ def _alert_exists(db: Session, alert_type: str, reference_type: str, reference_i
 def generate_system_alerts(db: Session, current_user: User):
     """Escanea inventario y cuentas por cobrar y crea alertas automáticas,
     evitando duplicar alertas activas no leídas para la misma referencia."""
-    from datetime import date, timedelta
+    from datetime import timedelta
     from app.models.inventory import Product
     from app.models.accounts_receivable import AccountsReceivable
 
@@ -98,7 +102,7 @@ def generate_system_alerts(db: Session, current_user: User):
 
     # --- Inventario: agotado, stock bajo y por vencer ---
     products = db.query(Product).filter(Product.is_active == True).all()  # noqa: E712
-    expiring_limit = date.today() + timedelta(days=30)
+    expiring_limit = datetime.now(_BUSINESS_TZ).date() + timedelta(days=30)
 
     for product in products:
         if product.current_stock <= 0:
@@ -137,7 +141,7 @@ def generate_system_alerts(db: Session, current_user: User):
                 created += 1
 
     # --- Cuentas por cobrar vencidas ---
-    today = date.today()
+    today = datetime.now(_BUSINESS_TZ).date()
     overdue = (
         db.query(AccountsReceivable)
         .filter(

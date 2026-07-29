@@ -1,8 +1,10 @@
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from fastapi.responses import StreamingResponse
 
+from app.config import settings
 from app.services.excel_report_service import generate_full_database_excel
 from app.database import get_db
 from app.models.security import User
@@ -14,6 +16,8 @@ from app.services.reports_service import (
     top_products
 )
 from app.utils.security import require_permission
+
+_BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
 
 router = APIRouter(
@@ -76,7 +80,7 @@ def export_excel_report(
     current_user: User = Depends(require_permission("reportes.exportar"))
 ):
     buffer = generate_full_database_excel(db, generated_by=current_user.full_name)
-    filename = f"magnus_reporte_{date.today().isoformat()}.xlsx"
+    filename = f"magnus_reporte_{datetime.now(_BUSINESS_TZ).date().isoformat()}.xlsx"
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

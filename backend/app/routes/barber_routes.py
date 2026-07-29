@@ -12,6 +12,7 @@ from app.services.barber_service import (
     get_barber_by_id,
     get_barber_performance,
     get_barber_user_info,
+    list_active_barbers_basic,
     list_barbers,
     reset_barber_password,
     toggle_barber_access,
@@ -33,6 +34,17 @@ def get_barbers(
     current_user: User = Depends(require_permission("barberos.ver"))
 ):
     return list_barbers(db, include_inactive=include_inactive)
+
+
+@router.get("/active-basic")
+def get_active_barbers_basic(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("comandas.ver"))
+):
+    """Lista mínima de barberos activos (id + nombre) para selectores de
+    formularios como el de comandas. No expone datos administrativos y no
+    requiere el permiso barberos.ver (Barbero y Cajero no lo tienen)."""
+    return list_active_barbers_basic(db)
 
 
 @router.get("/{barber_id}", response_model=BarberResponse)

@@ -177,7 +177,7 @@ def _compute_kpis(db: Session) -> dict:
 
     cxc_pendiente = (
         db.query(func.coalesce(func.sum(AccountsReceivable.balance), 0))
-        .filter(AccountsReceivable.status != "pagado")
+        .filter(AccountsReceivable.is_active == True, AccountsReceivable.balance > 0)  # noqa: E712
         .scalar()
     )
 
@@ -191,6 +191,7 @@ def _compute_kpis(db: Session) -> dict:
     barbero_top = (
         db.query(Barber.full_name, func.sum(Order.total))
         .join(Order, Order.barber_id == Barber.id)
+        .filter(Order.status == "cerrada")
         .group_by(Barber.id, Barber.full_name)
         .order_by(func.sum(Order.total).desc())
         .first()
@@ -199,6 +200,8 @@ def _compute_kpis(db: Session) -> dict:
     producto_top = (
         db.query(Product.name, func.sum(OrderItem.quantity))
         .join(OrderItem, OrderItem.product_id == Product.id)
+        .join(Order, OrderItem.order_id == Order.id)
+        .filter(Order.status == "cerrada")
         .group_by(Product.id, Product.name)
         .order_by(func.sum(OrderItem.quantity).desc())
         .first()
@@ -222,6 +225,7 @@ def _fetch_sales_by_barber(db: Session, limit: int = 6) -> list[tuple[str, float
     rows = (
         db.query(Barber.full_name, func.sum(Order.total))
         .join(Order, Order.barber_id == Barber.id)
+        .filter(Order.status == "cerrada")
         .group_by(Barber.id, Barber.full_name)
         .order_by(func.sum(Order.total).desc())
         .limit(limit)
@@ -231,9 +235,10 @@ def _fetch_sales_by_barber(db: Session, limit: int = 6) -> list[tuple[str, float
 
 
 def _fetch_sales_by_month(db: Session, months: int = 12) -> list[tuple[str, float]]:
-    month_col = func.date_trunc("month", Order.created_at).label("mes")
+    month_col = func.date_trunc("month", Order.closed_at).label("mes")
     rows = (
         db.query(month_col, func.sum(Order.total))
+        .filter(Order.status == "cerrada")
         .group_by(month_col)
         .order_by(month_col)
         .all()
@@ -256,6 +261,8 @@ def _fetch_top_products(db: Session, limit: int = 6) -> list[tuple[str, float]]:
     rows = (
         db.query(Product.name, func.sum(OrderItem.total_price))
         .join(OrderItem, OrderItem.product_id == Product.id)
+        .join(Order, OrderItem.order_id == Order.id)
+        .filter(Order.status == "cerrada")
         .group_by(Product.id, Product.name)
         .order_by(func.sum(OrderItem.total_price).desc())
         .limit(limit)

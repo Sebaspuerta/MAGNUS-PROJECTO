@@ -57,35 +57,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            // No consultamos al backend qué tipo de cuenta es: el mensaje de
+            // orientación es el mismo para todos, para no revelar si un
+            // usuario puntual existe o es el administrador.
             recSubmit.disabled = true;
-            msgEl.textContent = "Verificando...";
+            msgEl.textContent = "";
 
-            try {
-                const data = await window.api.apiRequest(
-                    "/api/security/user-role-hint?username=" + encodeURIComponent(username)
-                );
+            var mensaje = "SI ERES EL ADMINISTRADOR, NO TE RECOMENDAMOS CAMBIAR TUS CREDENCIALES POR ESTE MEDIO: "
+                        + "PONTE EN CONTACTO CON LOS DESARROLLADORES. "
+                        + "SI ERES OTRO USUARIO, PONTE EN CONTACTO CON UN SUPERIOR O ADMINISTRADOR DEL SISTEMA.";
 
-                msgEl.textContent = "";
-
-                var mensaje;
-                if (data.hint === "admin") {
-                    var nombre = (data.display_name || "Administrador").toUpperCase();
-                    mensaje = "HOLA " + nombre + ", TE RECORDAMOS QUE ERES EL ADMINISTRADOR. "
-                            + "NO TE RECOMENDAMOS CAMBIAR TUS CREDENCIALES. "
-                            + "SI SE TE OLVIDÓ TU CONTRASEÑA, PONTE EN CONTACTO CON LOS DESARROLLADORES.";
-                } else {
-                    mensaje = "PONTE EN CONTACTO CON UN SUPERIOR, ADMINISTRADOR O LOS DESARROLLADORES.";
-                }
-
-                var resultEl = document.getElementById("rec-result");
-                resultEl.textContent = mensaje;
-                resultEl.style.display = "block";
-                document.getElementById("rec-form-area").style.display = "none";
-
-            } catch (err) {
-                recSubmit.disabled = false;
-                msgEl.textContent = "Error al procesar la solicitud. Inténtalo de nuevo.";
-            }
+            var resultEl = document.getElementById("rec-result");
+            resultEl.textContent = mensaje;
+            resultEl.style.display = "block";
+            document.getElementById("rec-form-area").style.display = "none";
         });
     }
 

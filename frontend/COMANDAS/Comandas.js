@@ -19,7 +19,7 @@ async function cargarCatalogos() {
     try {
         const resultados = await Promise.allSettled([
             window.api.apiRequest("/api/clients"),
-            window.api.apiRequest("/api/barbers"),
+            window.api.apiRequest("/api/barbers/active-basic"),
             window.api.apiRequest("/api/services"),
             window.api.apiRequest("/api/inventory/products"),
             window.api.apiRequest("/api/cash-registers"),
@@ -31,7 +31,7 @@ async function cargarCatalogos() {
         const productos = val(3);
         const cajas     = val(4);
         catalogos.clientes    = clientes.filter(c => c.is_active);
-        catalogos.barberos    = barberos.filter(b => b.is_active);
+        catalogos.barberos    = barberos; // /active-basic ya solo devuelve barberos activos
         catalogos.servicios   = servicios.filter(s => s.is_active);
         catalogos.productos   = productos.filter(p => p.is_active);
         catalogos.cajaAbierta = cajas.find(c => !c.is_closed) || null;

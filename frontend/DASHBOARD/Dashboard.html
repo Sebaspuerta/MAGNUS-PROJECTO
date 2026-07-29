@@ -103,25 +103,31 @@
 
     <!-- KPIs -->
     <div class="kpis">
-        <div class="kpi g">
+        <div class="kpi p" id="kpi-card-cortes" style="display:none;">
+            <div class="ic"><i data-lucide="scissors"></i></div>
+            <div class="l">Cortes hoy</div>
+            <div class="v" id="kpi-cortes-hoy">—</div>
+            <div class="s">Mis servicios cerrados</div>
+        </div>
+        <div class="kpi g" id="kpi-card-total">
             <div class="ic"><i data-lucide="trending-up"></i></div>
             <div class="l">Ingresos hoy</div>
             <div class="v" id="kpi-total">—</div>
             <div class="s">Total recibido</div>
         </div>
-        <div class="kpi b">
+        <div class="kpi b" id="kpi-card-closed">
             <div class="ic"><i data-lucide="check-check"></i></div>
             <div class="l">Comandas cerradas</div>
             <div class="v" id="kpi-closed">—</div>
             <div class="s">Hoy</div>
         </div>
-        <div class="kpi a">
+        <div class="kpi a" id="kpi-card-open">
             <div class="ic"><i data-lucide="hourglass"></i></div>
             <div class="l">Comandas abiertas</div>
             <div class="v" id="kpi-open">—</div>
             <div class="s">En curso</div>
         </div>
-        <div class="kpi r">
+        <div class="kpi r" id="kpi-card-alerts">
             <div class="ic"><i data-lucide="bell-ring"></i></div>
             <div class="l">Alertas</div>
             <div class="v" id="kpi-alerts">—</div>
@@ -130,13 +136,13 @@
     </div>
 
     <!-- PANELES FILA 1 -->
-    <div class="grid2">
-        <div class="panel">
+    <div class="grid2" id="grid-fila1">
+        <div class="panel" id="panel-caja">
             <h3><i data-lucide="wallet"></i> Estado de caja</h3>
             <div class="row"><span>Estado</span><span id="cash-status">—</span></div>
             <div class="row"><span>Monto esperado</span><b id="cash-amount">—</b></div>
         </div>
-        <div class="panel">
+        <div class="panel" id="panel-inventario">
             <h3><i data-lucide="package"></i> Inventario</h3>
             <div class="row"><span>Stock bajo</span><span id="inv-low">—</span></div>
             <div class="row"><span>Sin stock</span><span id="inv-out">—</span></div>
@@ -144,13 +150,13 @@
     </div>
 
     <!-- PANELES FILA 2 -->
-    <div class="grid2">
-        <div class="panel">
+    <div class="grid2" id="grid-fila2">
+        <div class="panel" id="panel-ar">
             <h3><i data-lucide="hand-coins"></i> Cuentas por cobrar</h3>
             <div class="row"><span>Fiados pendientes</span><b id="ar-count">—</b></div>
             <div class="row"><span>Saldo pendiente</span><b id="ar-balance">—</b></div>
         </div>
-        <div class="panel">
+        <div class="panel" id="panel-resumen">
             <h3><i data-lucide="clipboard-list"></i> Resumen del día</h3>
             <div class="row"><span>Comandas cerradas</span><b id="sum-closed">—</b></div>
             <div class="row"><span>Comandas abiertas</span><b id="sum-open">—</b></div>

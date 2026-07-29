@@ -22,7 +22,7 @@ from app.services.inventory_service import (
     list_products,
     update_product
 )
-from app.utils.security import get_current_user, require_admin, require_permission
+from app.utils.security import require_admin, require_permission
 
 
 router = APIRouter(
@@ -58,7 +58,7 @@ def post_product(
 def get_product(
     product_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("inventario.ver"))
 ):
     result, error = get_product_by_id(db, product_id)
 

@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Filtro de navegación por rol
     _filterNavByRole(user.role);
+    _filterHomeCardsByRole(user.role);
 
     document.getElementById("btn-close-admin").addEventListener("click", closeAdminModal);
     document.getElementById("modal-admin").addEventListener("click", function (e) {
@@ -62,7 +63,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.location.replace("/LOGIN/login.html");
     });
 
-    await loadSummary();
+    if (user.role === "Barbero") {
+        await loadMyCutsToday();
+    } else {
+        await loadSummary();
+    }
 
 });
 
@@ -168,6 +173,41 @@ function _filterNavByRole(role) {
         }
         if (!hasVisible) label.style.display = "none";
     });
+}
+
+// ── TARJETAS DE INICIO POR ROL ────────────────────────────────────────────────
+// Un Barbero es un trabajador normal: solo ve su propio conteo de cortes del
+// día, nunca dinero, caja ni fiados. Estas tarjetas ni siquiera intentan
+// cargarse para ese rol (ver loadMyCutsToday / DOMContentLoaded).
+function _filterHomeCardsByRole(role) {
+    if (role !== "Barbero") return;
+
+    const hideIds = [
+        "kpi-card-total", "kpi-card-closed", "kpi-card-open", "kpi-card-alerts",
+        "panel-caja", "panel-inventario", "panel-ar", "panel-resumen"
+    ];
+    hideIds.forEach(function (id) {
+        const el = document.getElementById(id);
+        if (el) el.style.display = "none";
+    });
+
+    ["grid-fila1", "grid-fila2"].forEach(function (id) {
+        const grid = document.getElementById(id);
+        if (grid) grid.style.display = "none";
+    });
+
+    const cortesCard = document.getElementById("kpi-card-cortes");
+    if (cortesCard) cortesCard.style.display = "";
+}
+
+async function loadMyCutsToday() {
+    try {
+        const d = await window.api.apiRequest("/api/dashboard/mis-cortes-hoy");
+        setText("kpi-cortes-hoy", d.cortes_hoy != null ? d.cortes_hoy : "—");
+    } catch (err) {
+        setText("kpi-cortes-hoy", "Error");
+        console.error("Error cargando mis cortes de hoy:", err.message);
+    }
 }
 
 // ── GESTIÓN DE ADMINISTRADOR ─────────────────────────────────────────────────

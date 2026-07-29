@@ -299,6 +299,7 @@ body {
 .kpi.g .ic { background: rgba(43,194,129,.14); color: #52d39d; }
 .kpi.a .ic { background: rgba(231,165,60,.14); color: var(--amber); }
 .kpi.r .ic { background: rgba(225,29,46,.14);  color: var(--red-2); }
+.kpi.p .ic { background: rgba(43,91,255,.14);  color: var(--blue-2); }
 
 .kpi .ic i { width: 20px; height: 20px; }
 

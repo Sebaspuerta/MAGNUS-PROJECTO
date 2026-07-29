@@ -158,7 +158,6 @@ def add_order_item(db: Session, order_id: int, payload: OrderItemCreate, current
     db.add(item)
     db.flush()
 
-    order.items.append(item)
     _recalculate_order_totals(order)
     order.updated_at = datetime.utcnow()
 

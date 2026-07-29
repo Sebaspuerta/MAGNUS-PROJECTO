@@ -1,12 +1,16 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.models.accounts_receivable import AccountsReceivable, AccountsReceivablePayment
 from app.models.security import User
 from app.models.order import Order
 from app.models.client import Client
 from app.schemas.accounts_receivable import AccountsReceivableCreate, AccountsReceivablePaymentCreate
 from app.services.security_service import create_audit_log
+
+_BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
 
 def serialize_accounts_receivable(ar: AccountsReceivable):
@@ -132,9 +136,7 @@ def add_accounts_receivable_payment(db: Session, ar_id: int, payload: AccountsRe
 def refresh_overdue_status(db: Session):
     """Marca como 'vencido' las cuentas activas con saldo y fecha de vencimiento
     pasada. Devuelve cuántas se actualizaron. No hace commit (lo hace quien llama)."""
-    from datetime import date
-
-    today = date.today()
+    today = datetime.now(_BUSINESS_TZ).date()
     overdue = (
         db.query(AccountsReceivable)
         .filter(
@@ -152,13 +154,12 @@ def refresh_overdue_status(db: Session):
 
 
 def get_accounts_receivable_summary(db: Session):
-    from datetime import date
     from sqlalchemy import func
 
     refresh_overdue_status(db)
     db.commit()
 
-    today = date.today()
+    today = datetime.now(_BUSINESS_TZ).date()
 
     pending_count = (
         db.query(func.count(AccountsReceivable.id))
