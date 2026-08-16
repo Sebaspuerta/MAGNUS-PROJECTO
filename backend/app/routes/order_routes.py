@@ -171,6 +171,7 @@ def patch_order_cancel(
     result, error = cancel_order(db, order_id, current_user)
 
     if error:
-        raise HTTPException(status_code=404, detail=error)
+        status_code = 404 if error == "Comanda no encontrada." else 400
+        raise HTTPException(status_code=status_code, detail=error)
 
     return result

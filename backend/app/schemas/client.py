@@ -9,6 +9,7 @@ class ClientCreate(BaseModel):
     document_number: str | None = None
     birth_date: date | None = None
     notes: str | None = None
+    force_create: bool = False
 
 
 class ClientUpdate(BaseModel):

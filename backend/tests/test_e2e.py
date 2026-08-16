@@ -626,6 +626,78 @@ def bloque5():
     else:
         _warn("Doble cierre → OMITIDO (sin comanda del Bloque 3)")
 
+    # 5.5  Cancelar una comanda ya cerrada → rechazada, sin efectos colaterales
+    producto_id = _ctx.get("producto_id")
+    caja_id     = _ctx.get("caja_id")
+    if comanda_id and caja_id:
+        r_antes = _get(f"/api/orders/{comanda_id}")
+        estado_antes = r_antes.json() if r_antes and r_antes.status_code == 200 else None
+
+        stock_antes = None
+        if producto_id:
+            r = _get(f"/api/inventory/products/{producto_id}")
+            if r and r.status_code == 200:
+                stock_antes = r.json().get("current_stock")
+
+        r = _get("/api/cash-movements", {"cash_register_id": caja_id})
+        movs_antes = len(r.json()) if r and r.status_code == 200 else None
+
+        r = _patch(f"/api/orders/{comanda_id}/cancel")
+        rechazado = r is not None and r.status_code == 400
+        _rec("Cancelar comanda ya cerrada → rechazado 400",
+             rechazado,
+             "" if rechazado else _detail(r))
+
+        r_despues = _get(f"/api/orders/{comanda_id}")
+        estado_despues = r_despues.json() if r_despues and r_despues.status_code == 200 else None
+        _rec("Comanda sigue 'cerrada' tras intento de cancelación fallido",
+             estado_antes is not None and estado_despues is not None
+             and estado_despues.get("status") == "cerrada"
+             and estado_despues.get("status") == estado_antes.get("status")
+             and estado_despues.get("payment_status") == estado_antes.get("payment_status"),
+             f"antes={estado_antes and estado_antes.get('status')}  después={estado_despues and estado_despues.get('status')}")
+
+        if producto_id and stock_antes is not None:
+            r = _get(f"/api/inventory/products/{producto_id}")
+            stock_despues = r.json().get("current_stock") if r and r.status_code == 200 else None
+            _rec(f"Stock de producto sin cambios tras cancelación fallida ({stock_antes})",
+                 stock_despues == stock_antes,
+                 f"stock actual={stock_despues}" if stock_despues != stock_antes else "")
+
+        if movs_antes is not None:
+            r = _get("/api/cash-movements", {"cash_register_id": caja_id})
+            movs_despues = len(r.json()) if r and r.status_code == 200 else None
+            _rec(f"Movimientos de caja sin cambios tras cancelación fallida ({movs_antes})",
+                 movs_despues == movs_antes,
+                 f"movimientos actuales={movs_despues}" if movs_despues != movs_antes else "")
+    else:
+        _warn("Cancelar comanda cerrada → OMITIDO (sin comanda/caja del Bloque 3)")
+
+    # 5.6  Cancelar una comanda abierta → sigue funcionando normal
+    cliente_id = _ctx.get("cliente_id")
+    if barbero_id:
+        r = _post("/api/orders", {
+            "client_id": cliente_id,
+            "barber_id": barbero_id,
+            "is_fiado":  False,
+            "discount":  0
+        })
+        if r and r.status_code == 200:
+            abierta_id = r.json()["id"]
+            _rec("Crear comanda para prueba de cancelación → 200 status='abierta'",
+                 r.json().get("status") == "abierta",
+                 f"id={abierta_id}")
+
+            r = _patch(f"/api/orders/{abierta_id}/cancel")
+            _rec("Cancelar comanda abierta → 200 status='cancelada'",
+                 r is not None and r.status_code == 200
+                 and r.json().get("status") == "cancelada",
+                 "" if r and r.status_code == 200 else _detail(r))
+        else:
+            _rec("Crear comanda para prueba de cancelación → 200", False, _detail(r))
+    else:
+        _warn("Cancelar comanda abierta → OMITIDO (sin barbero del Bloque 2)")
+
 
 # ── BLOQUE 6 · VOLUMEN ────────────────────────────────────────────────────────
 def bloque6():

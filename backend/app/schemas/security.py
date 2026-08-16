@@ -51,6 +51,7 @@ class CurrentUserResponse(BaseModel):
     full_name: str
     role: str
     is_active: bool
+    barber_id: int | None = None
 
 
 class PasswordChangeRequest(BaseModel):

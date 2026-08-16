@@ -678,10 +678,12 @@ def cancel_order(db: Session, order_id: int, current_user: User):
     if not order:
         return None, "Comanda no encontrada."
 
+    if order.status in ["cancelada", "cerrada"]:
+        return None, "La comanda no se puede cancelar en su estado actual."
+
     order.status = "cancelada"
     order.updated_at = datetime.utcnow()
 
-    # Aquí se podrá integrar caja, inventario o fiado cuando se implementen esos módulos.
     create_audit_log(
         db=db,
         module="comandas",

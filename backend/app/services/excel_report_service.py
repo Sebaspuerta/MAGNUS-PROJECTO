@@ -174,7 +174,13 @@ def _write_model_sheet(wb: Workbook, db: Session, model: type, sheet_title: str)
 # Métricas de negocio para el dashboard
 # ---------------------------------------------------------------------------
 def _compute_kpis(db: Session) -> dict:
-    total_sales = db.query(func.coalesce(func.sum(Payment.amount), 0)).scalar()
+    # "Ventas totales" = dinero realmente recibido: pagos de comandas MÁS
+    # abonos de cuentas por cobrar (fiados). Mismo criterio que
+    # dashboard_service.get_dashboard_summary — Payment.amount solo no basta,
+    # deja afuera lo cobrado después vía abonos a fiados.
+    total_sales_payments = db.query(func.coalesce(func.sum(Payment.amount), 0)).scalar()
+    total_sales_ar_payments = db.query(func.coalesce(func.sum(AccountsReceivablePayment.amount), 0)).scalar()
+    total_sales = float(total_sales_payments or 0) + float(total_sales_ar_payments or 0)
 
     cxc_pendiente = (
         db.query(func.coalesce(func.sum(AccountsReceivable.balance), 0))
@@ -219,7 +225,7 @@ def _compute_kpis(db: Session) -> dict:
         producto_top_nombre = producto_top[0] + (DELETED_PRODUCT_SUFFIX if producto_top[1] else "")
 
     return {
-        "total_sales": float(total_sales or 0),
+        "total_sales": total_sales,
         "cxc_pendiente": float(cxc_pendiente or 0),
         "stock_bajo": int(stock_bajo or 0),
         "barbero_top": barbero_top_nombre,
@@ -231,6 +237,10 @@ def _compute_kpis(db: Session) -> dict:
 
 
 def _fetch_sales_by_barber(db: Session, limit: int = 6) -> list[tuple[str, float]]:
+    # Usa Order.total (valor de la venta), no Payment.amount (dinero recibido):
+    # una comanda fiada ya cuenta su total completo al cerrarse, sin importar
+    # si el cliente ya pagó. No hay que sumarle los abonos de AR aparte, o se
+    # contaría esa venta dos veces.
     rows = (
         db.query(Barber.full_name, Barber.is_deleted, func.sum(Order.total))
         .join(Order, Order.barber_id == Barber.id)
@@ -247,6 +257,9 @@ def _fetch_sales_by_barber(db: Session, limit: int = 6) -> list[tuple[str, float
 
 
 def _fetch_sales_by_month(db: Session, months: int = 12) -> list[tuple[str, float]]:
+    # Mismo criterio que _fetch_sales_by_barber: Order.total ya refleja el
+    # valor total de la venta (incluidas fiadas), así que sumar los abonos de
+    # AR aquí duplicaría esa venta.
     month_col = func.date_trunc("month", Order.closed_at).label("mes")
     rows = (
         db.query(month_col, func.sum(Order.total))
@@ -260,13 +273,29 @@ def _fetch_sales_by_month(db: Session, months: int = 12) -> list[tuple[str, floa
 
 
 def _fetch_payment_methods(db: Session) -> list[tuple[str, float]]:
+    # Igual que total_sales en _compute_kpis: esto es dinero recibido por
+    # método, así que también hay que sumar los abonos de AR (también tienen
+    # payment_method) o el desglose subestima efectivo/transferencia/etc.
     rows = (
         db.query(Payment.payment_method, func.sum(Payment.amount))
         .group_by(Payment.payment_method)
-        .order_by(func.sum(Payment.amount).desc())
         .all()
     )
-    return [(method or "Sin especificar", float(total or 0)) for method, total in rows]
+    ar_rows = (
+        db.query(AccountsReceivablePayment.payment_method, func.sum(AccountsReceivablePayment.amount))
+        .group_by(AccountsReceivablePayment.payment_method)
+        .all()
+    )
+
+    totals: dict[str, float] = {}
+    for method, total in rows:
+        key = method or "Sin especificar"
+        totals[key] = totals.get(key, 0.0) + float(total or 0)
+    for method, total in ar_rows:
+        key = method or "Sin especificar"
+        totals[key] = totals.get(key, 0.0) + float(total or 0)
+
+    return sorted(totals.items(), key=lambda x: x[1], reverse=True)
 
 
 def _fetch_top_products(db: Session, limit: int = 6) -> list[tuple[str, float]]:

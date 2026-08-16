@@ -67,6 +67,8 @@ def post_client(
     result, error = create_client(db, payload, current_user)
 
     if error:
+        if isinstance(error, dict):
+            raise HTTPException(status_code=409, detail=error)
         raise HTTPException(status_code=400, detail=error)
 
     return result

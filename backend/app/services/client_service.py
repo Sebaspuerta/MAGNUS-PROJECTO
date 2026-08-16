@@ -1,10 +1,13 @@
 from datetime import datetime
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.models.client import Client
 from app.models.security import User
 from app.schemas.client import ClientCreate, ClientUpdate
 from app.services.security_service import create_audit_log
+
+DUPLICATE_CLIENT_ERROR_PREFIX = "Ya existe un cliente activo con este teléfono o documento"
 
 
 def serialize_client(client: Client):
@@ -38,7 +41,38 @@ def get_client_by_id(db: Session, client_id: int):
     return serialize_client(client), None
 
 
+def find_duplicate_active_client(db: Session, phone: str | None, document_number: str | None):
+    conditions = []
+
+    if phone:
+        conditions.append(Client.phone == phone)
+
+    if document_number:
+        doc_norm = document_number.strip().upper()
+        conditions.append(func.upper(func.trim(Client.document_number)) == doc_norm)
+
+    if not conditions:
+        return None
+
+    return (
+        db.query(Client)
+        .filter(Client.is_active == True)  # noqa: E712
+        .filter(or_(*conditions))
+        .first()
+    )
+
+
 def create_client(db: Session, payload: ClientCreate, admin_user: User):
+    if not payload.force_create:
+        duplicate = find_duplicate_active_client(db, payload.phone, payload.document_number)
+        if duplicate:
+            return None, {
+                "code": "duplicate_client",
+                "message": f"{DUPLICATE_CLIENT_ERROR_PREFIX}: {duplicate.full_name} (ID {duplicate.id}).",
+                "existing_client_id": duplicate.id,
+                "existing_client_name": duplicate.full_name
+            }
+
     client = Client(
         full_name=payload.full_name,
         phone=payload.phone,

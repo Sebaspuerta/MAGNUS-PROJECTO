@@ -2,6 +2,7 @@
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.barber import Barber
 from app.models.security import User
 from app.schemas.security import (
     CurrentUserResponse,
@@ -58,13 +59,15 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
 
 
 @router.get("/me", response_model=CurrentUserResponse)
-def me(current_user: User = Depends(get_current_user)):
+def me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    linked_barber = db.query(Barber).filter(Barber.user_id == current_user.id).first()
     return {
         "id": current_user.id,
         "username": current_user.username,
         "full_name": current_user.full_name,
         "role": current_user.role.name,
-        "is_active": current_user.is_active
+        "is_active": current_user.is_active,
+        "barber_id": linked_barber.id if linked_barber else None
     }
 
 

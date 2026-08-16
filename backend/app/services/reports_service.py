@@ -34,20 +34,24 @@ def sales_by_period(db: Session, start_date=None, end_date=None):
     start_date, end_date, start_dt, end_dt = _resolve_range(start_date, end_date)
 
     rows = (
-        db.query(
-            func.date(Order.closed_at).label("day"),
-            func.count(Order.id).label("orders_count"),
-            func.coalesce(func.sum(Order.total), 0).label("sales_total")
-        )
+        db.query(Order.closed_at, Order.total)
         .filter(Order.status == "cerrada", Order.closed_at >= start_dt, Order.closed_at < end_dt)
-        .group_by(func.date(Order.closed_at))
-        .order_by(func.date(Order.closed_at))
         .all()
     )
 
+    # closed_at está en UTC naivo; agrupamos por la fecha resultante de
+    # convertirlo a hora Colombia, no por la fecha UTC cruda (ventas después
+    # de las 7pm Colombia caerían en el día siguiente si no se convierte).
+    by_day: dict[date, dict] = {}
+    for closed_at, total in rows:
+        day_col = closed_at.replace(tzinfo=timezone.utc).astimezone(_BUSINESS_TZ).date()
+        bucket = by_day.setdefault(day_col, {"orders_count": 0, "sales_total": 0.0})
+        bucket["orders_count"] += 1
+        bucket["sales_total"] += float(total or 0)
+
     days = [
-        {"date": str(r.day), "orders_count": int(r.orders_count or 0), "sales_total": float(r.sales_total or 0)}
-        for r in rows
+        {"date": str(d), "orders_count": v["orders_count"], "sales_total": round(v["sales_total"], 2)}
+        for d, v in sorted(by_day.items())
     ]
     total_sales = sum(d["sales_total"] for d in days)
     total_orders = sum(d["orders_count"] for d in days)
