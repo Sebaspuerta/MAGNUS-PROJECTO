@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -18,15 +18,23 @@ def get_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.ver"))
 ):
-    # Un Barbero no debe recibir cifras de dinero/caja/fiados, ni siquiera en
-    # crudo vía API. Usa /mis-cortes-hoy para su panel de inicio.
-    if current_user.role.name == "Barbero":
-        raise HTTPException(
-            status_code=403,
-            detail="Los barberos no tienen acceso al resumen financiero. Usa /api/dashboard/mis-cortes-hoy."
-        )
+    summary = get_dashboard_summary(db)
 
-    return get_dashboard_summary(db)
+    # Un Barbero no debe recibir cifras de dinero/fiados/inventario, ni
+    # siquiera en crudo vía API (usa /mis-cortes-hoy para su panel de
+    # inicio). La única excepción es el estado de caja (abierta o no, y
+    # desde cuándo) sin montos, para el atajo de "Abrir caja" del
+    # Dashboard — ahora que el rol Barbero tiene permiso caja.abrir.
+    if current_user.role.name == "Barbero":
+        cash = summary["cash"]
+        return {
+            "cash": {
+                "has_open_register": cash["has_open_register"],
+                "opened_at": cash["opened_at"]
+            }
+        }
+
+    return summary
 
 
 @router.get("/mis-cortes-hoy")

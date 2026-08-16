@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.accounts_receivable import AccountsReceivable, AccountsReceivablePayment
+from app.models.cash_movement import CashMovement
+from app.models.cash_register import CashRegister
 from app.models.security import User
 from app.models.order import Order
 from app.models.client import Client
@@ -37,6 +39,7 @@ def serialize_accounts_receivable_payment(payment: AccountsReceivablePayment):
         "id": payment.id,
         "accounts_receivable_id": payment.accounts_receivable_id,
         "user_id": payment.user_id,
+        "cash_register_id": payment.cash_register_id,
         "amount": float(payment.amount or 0),
         "payment_method": payment.payment_method,
         "note": payment.note,
@@ -104,9 +107,20 @@ def add_accounts_receivable_payment(db: Session, ar_id: int, payload: AccountsRe
     if not ar:
         return None, "Cuenta por cobrar no encontrada."
 
+    # Si hay una caja abierta, el abono queda ligado a ella (para que el
+    # arqueo la vea). Si no hay caja abierta, el abono se registra igual:
+    # la ausencia de caja nunca bloquea el registro de un abono.
+    open_register = (
+        db.query(CashRegister)
+        .filter(CashRegister.is_closed == False)  # noqa: E712
+        .order_by(CashRegister.id.desc())
+        .first()
+    )
+
     payment = AccountsReceivablePayment(
         accounts_receivable_id=ar.id,
         user_id=current_user.id,
+        cash_register_id=open_register.id if open_register else None,
         amount=payload.amount,
         payment_method=payload.payment_method,
         note=payload.note
@@ -114,6 +128,20 @@ def add_accounts_receivable_payment(db: Session, ar_id: int, payload: AccountsRe
 
     db.add(payment)
     db.flush()
+
+    if open_register and (payload.payment_method or "").lower() == "efectivo":
+        movement = CashMovement(
+            cash_register_id=open_register.id,
+            user_id=current_user.id,
+            movement_type="ingreso_abono_fiado",
+            amount=payload.amount,
+            payment_method=payload.payment_method,
+            description=f"Abono a cuenta por cobrar {ar.id}",
+            reference_type="accounts_receivable",
+            reference_id=ar.id
+        )
+        db.add(movement)
+        db.flush()
 
     ar.paid_amount = float(ar.paid_amount or 0) + float(payload.amount)
     ar.balance = float(ar.total_amount or 0) - float(ar.paid_amount or 0)

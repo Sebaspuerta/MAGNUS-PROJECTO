@@ -9,6 +9,7 @@ from app.routes.client_routes import router as client_router
 from app.routes.service_routes import router as service_router
 from app.routes.order_routes import router as order_router
 from app.routes.inventory_routes import router as inventory_router
+from app.routes.category_routes import router as category_router
 from app.routes.payment_routes import router as payment_router
 from app.routes.cash_register_routes import router as cash_register_router
 from app.routes.cash_movement_routes import router as cash_movement_router
@@ -32,6 +33,9 @@ app = FastAPI(
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 FRONTEND_DIR = BASE_DIR / "frontend"
+STATIC_DIR = BASE_DIR / "backend" / "static"
+PRODUCT_PHOTOS_DIR = STATIC_DIR / "product_photos"
+PRODUCT_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @app.get("/api/health")
@@ -50,6 +54,7 @@ app.include_router(client_router)
 app.include_router(service_router)
 app.include_router(order_router)
 app.include_router(inventory_router)
+app.include_router(category_router)
 app.include_router(payment_router)
 app.include_router(cash_register_router)
 app.include_router(cash_movement_router)
@@ -60,6 +65,16 @@ app.include_router(service_consumable_router)
 app.include_router(dashboard_router)
 app.include_router(reports_router)
 
+
+# IMPORTANTE: este mount debe registrarse ANTES que el de "/" — FastAPI/Starlette
+# resuelve los mounts en el orden en que se registran, y el mount de "/" con
+# html=True es un catch-all que, si fuera primero, capturaría también las
+# rutas de /media.
+app.mount(
+    "/media",
+    StaticFiles(directory=STATIC_DIR),
+    name="media"
+)
 
 app.mount(
     "/",

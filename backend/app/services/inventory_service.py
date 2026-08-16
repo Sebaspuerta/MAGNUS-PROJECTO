@@ -1,6 +1,10 @@
+import io
 from datetime import datetime
+from pathlib import Path
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.orm import Session
 
+from app.models.category import Category
 from app.models.inventory import InventoryMovement, Product
 from app.models.security import User
 from app.schemas.inventory import (
@@ -10,16 +14,31 @@ from app.schemas.inventory import (
     ProductUpdate
 )
 from app.services.security_service import create_audit_log
+from app.utils.deleted_labels import category_label
 
 
 VALID_PRODUCT_TYPES = ["venta", "consumible_interno", "perecedero"]
 
+# backend/app/services/inventory_service.py -> parents[2] == backend/
+PRODUCT_PHOTOS_DIR = Path(__file__).resolve().parents[2] / "static" / "product_photos"
+ALLOWED_PHOTO_FORMATS = {"PNG", "JPEG", "WEBP"}
+PHOTO_THUMBNAIL_SIZE = 200
+
+
+def _build_photo_url(photo_filename: str | None) -> str | None:
+    if not photo_filename:
+        return None
+    return f"/media/{photo_filename}"
+
 
 def serialize_product(product: Product):
+    category = product.category_ref
     return {
         "id": product.id,
         "name": product.name,
-        "category": product.category,
+        "category_id": product.category_id,
+        "category_name": category_label(category.name, category) if category else None,
+        "category_is_deleted": bool(category and category.is_deleted),
         "product_type": product.product_type,
         "description": product.description,
         "purchase_cost": float(product.purchase_cost or 0),
@@ -28,7 +47,10 @@ def serialize_product(product: Product):
         "minimum_stock": product.minimum_stock,
         "expiration_date": product.expiration_date,
         "supplier": product.supplier,
-        "is_active": product.is_active
+        "is_active": product.is_active,
+        "is_deleted": product.is_deleted,
+        "photo_filename": product.photo_filename,
+        "photo_url": _build_photo_url(product.photo_filename)
     }
 
 
@@ -48,17 +70,35 @@ def serialize_inventory_movement(movement: InventoryMovement):
     }
 
 
-def list_products(db: Session, include_inactive: bool = False):
-    query = db.query(Product).order_by(Product.id.asc())
+def get_live_product(db: Session, product_id: int) -> Product | None:
+    """Producto no eliminado. Los eliminados (is_deleted) nunca se devuelven:
+    quedan solo en el historial ya registrado, no se pueden volver a usar ni
+    editar, sin importar include_inactive."""
+    return (
+        db.query(Product)
+        .filter(Product.id == product_id, Product.is_deleted == False)  # noqa: E712
+        .first()
+    )
+
+
+def list_products(db: Session, include_inactive: bool = False, category_id: int | None = None):
+    query = (
+        db.query(Product)
+        .filter(Product.is_deleted == False)  # noqa: E712
+        .order_by(Product.id.asc())
+    )
 
     if not include_inactive:
         query = query.filter(Product.is_active == True)
+
+    if category_id is not None:
+        query = query.filter(Product.category_id == category_id)
 
     return [serialize_product(product) for product in query.all()]
 
 
 def get_product_by_id(db: Session, product_id: int):
-    product = db.query(Product).filter(Product.id == product_id).first()
+    product = get_live_product(db, product_id)
 
     if not product:
         return None, "Producto no encontrado."
@@ -66,13 +106,30 @@ def get_product_by_id(db: Session, product_id: int):
     return serialize_product(product), None
 
 
+def _validate_category_id(db: Session, category_id: int | None):
+    if category_id is None:
+        return None
+    category = (
+        db.query(Category)
+        .filter(Category.id == category_id, Category.is_deleted == False)  # noqa: E712
+        .first()
+    )
+    if not category:
+        return "Categoría no encontrada."
+    return None
+
+
 def create_product(db: Session, payload: ProductCreate, admin_user: User):
     if payload.product_type not in VALID_PRODUCT_TYPES:
         return None, "Tipo de producto inválido."
 
+    error = _validate_category_id(db, payload.category_id)
+    if error:
+        return None, error
+
     product = Product(
         name=payload.name,
-        category=payload.category,
+        category_id=payload.category_id,
         product_type=payload.product_type,
         description=payload.description,
         purchase_cost=payload.purchase_cost,
@@ -102,7 +159,7 @@ def create_product(db: Session, payload: ProductCreate, admin_user: User):
 
 
 def update_product(db: Session, product_id: int, payload: ProductUpdate, admin_user: User):
-    product = db.query(Product).filter(Product.id == product_id).first()
+    product = get_live_product(db, product_id)
 
     if not product:
         return None, "Producto no encontrado."
@@ -114,8 +171,11 @@ def update_product(db: Session, product_id: int, payload: ProductUpdate, admin_u
 
     if payload.name is not None:
         product.name = payload.name
-    if payload.category is not None:
-        product.category = payload.category
+    if payload.category_id is not None:
+        error = _validate_category_id(db, payload.category_id)
+        if error:
+            return None, error
+        product.category_id = payload.category_id
     if payload.description is not None:
         product.description = payload.description
     if payload.purchase_cost is not None:
@@ -152,58 +212,23 @@ def update_product(db: Session, product_id: int, payload: ProductUpdate, admin_u
 
 
 def delete_product(db: Session, product_id: int, admin_user: User):
-    from app.models.order import OrderItem
-    from app.models.service_consumable import ServiceConsumable
-
-    product = db.query(Product).filter(Product.id == product_id).first()
+    """Borrado lógico: nunca se hace db.delete(). El producto se marca como
+    eliminado y deja de estar disponible para cualquier uso futuro, pero las
+    ventas y movimientos de inventario ya registrados quedan intactos."""
+    product = get_live_product(db, product_id)
     if not product:
         return None, "Producto no encontrado."
 
-    has_orders = (
-        db.query(OrderItem).filter(OrderItem.product_id == product_id).first()
-    )
-    if has_orders:
-        return None, {
-            "code": "has_history",
-            "message": (
-                f"El producto '{product.name}' ya tiene ventas registradas en comandas. "
-                "Para retirarlo del catálogo, desactívalo en lugar de eliminarlo "
-                "(así el historial de ventas queda intacto)."
-            )
-        }
-
-    has_movements = (
-        db.query(InventoryMovement).filter(InventoryMovement.product_id == product_id).first()
-    )
-    if has_movements:
-        return None, {
-            "code": "has_history",
-            "message": (
-                f"El producto '{product.name}' tiene movimientos de inventario registrados. "
-                "Para retirarlo del catálogo, desactívalo en lugar de eliminarlo."
-            )
-        }
-
-    has_consumables = (
-        db.query(ServiceConsumable).filter(ServiceConsumable.product_id == product_id).first()
-    )
-    if has_consumables:
-        return None, {
-            "code": "has_history",
-            "message": (
-                f"El producto '{product.name}' está configurado como consumible de uno o más "
-                "servicios. Retíralo de esa configuración antes de eliminarlo."
-            )
-        }
-
     name = product.name
-    db.delete(product)
+    product.is_deleted = True
+    product.is_active = False
+    product.updated_at = datetime.utcnow()
 
     create_audit_log(
         db=db,
         module="inventario",
         action="eliminar_producto",
-        detail=f"El administrador '{admin_user.username}' eliminó el producto '{name}' (ID: {product_id}).",
+        detail=f"El dueño '{admin_user.username}' eliminó el producto '{name}' (ID: {product_id}).",
         user_id=admin_user.id
     )
 
@@ -212,7 +237,7 @@ def delete_product(db: Session, product_id: int, admin_user: User):
 
 
 def deactivate_product(db: Session, product_id: int, admin_user: User):
-    product = db.query(Product).filter(Product.id == product_id).first()
+    product = get_live_product(db, product_id)
 
     if not product:
         return None, "Producto no encontrado."
@@ -235,7 +260,7 @@ def deactivate_product(db: Session, product_id: int, admin_user: User):
 
 
 def create_inventory_entry(db: Session, product_id: int, payload: InventoryEntryCreate, admin_user: User):
-    product = db.query(Product).filter(Product.id == product_id).first()
+    product = get_live_product(db, product_id)
     if not product:
         return None, "Producto no encontrado."
 
@@ -273,7 +298,7 @@ def create_inventory_entry(db: Session, product_id: int, payload: InventoryEntry
 
 
 def create_inventory_adjustment(db: Session, product_id: int, payload: InventoryAdjustmentCreate, admin_user: User):
-    product = db.query(Product).filter(Product.id == product_id).first()
+    product = get_live_product(db, product_id)
     if not product:
         return None, "Producto no encontrado."
 
@@ -313,8 +338,65 @@ def create_inventory_adjustment(db: Session, product_id: int, payload: Inventory
     return serialize_product(product), None
 
 
+def _crop_to_square_thumbnail(image: Image.Image, size: int) -> Image.Image:
+    """Recorta al centro al lado más corto (sin deformar) y redimensiona al
+    cuadrado fijo solicitado."""
+    width, height = image.size
+    side = min(width, height)
+    left = (width - side) // 2
+    top = (height - side) // 2
+    cropped = image.crop((left, top, left + side, top + side))
+    return cropped.resize((size, size), Image.LANCZOS)
+
+
+def save_product_photo(db: Session, product_id: int, file_bytes: bytes, admin_user: User):
+    """Valida, recorta a cuadrado y guarda como PNG 200x200 la foto de un
+    producto. El formato real se determina con Pillow (no se confía en el
+    Content-Type ni en la extensión que envía el cliente)."""
+    product = get_live_product(db, product_id)
+    if not product:
+        return None, "Producto no encontrado."
+
+    if not file_bytes:
+        return None, "El archivo de imagen está vacío."
+
+    try:
+        image = Image.open(io.BytesIO(file_bytes))
+        image.load()
+    except (UnidentifiedImageError, OSError):
+        return None, "El archivo no es una imagen válida."
+
+    if image.format not in ALLOWED_PHOTO_FORMATS:
+        return None, "Formato no soportado. Usa PNG, JPG/JPEG o WEBP."
+
+    if image.mode not in ("RGB", "RGBA"):
+        image = image.convert("RGBA")
+
+    thumbnail = _crop_to_square_thumbnail(image, PHOTO_THUMBNAIL_SIZE)
+
+    PRODUCT_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
+    destination = PRODUCT_PHOTOS_DIR / f"{product.id}.png"
+    thumbnail.save(destination, format="PNG")
+
+    product.photo_filename = f"product_photos/{product.id}.png"
+    product.updated_at = datetime.utcnow()
+
+    create_audit_log(
+        db=db,
+        module="inventario",
+        action="subir_foto_producto",
+        detail=f"El administrador {admin_user.username} actualizó la foto del producto {product.name}.",
+        user_id=admin_user.id
+    )
+
+    db.commit()
+    db.refresh(product)
+
+    return serialize_product(product), None
+
+
 def list_product_movements(db: Session, product_id: int):
-    product = db.query(Product).filter(Product.id == product_id).first()
+    product = get_live_product(db, product_id)
     if not product:
         return None, "Producto no encontrado."
 

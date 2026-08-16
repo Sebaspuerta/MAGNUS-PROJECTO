@@ -16,12 +16,28 @@ def serialize_service(service: Service):
         "price": float(service.price or 0),
         "estimated_duration_minutes": service.estimated_duration_minutes,
         "uses_internal_consumables": service.uses_internal_consumables,
-        "is_active": service.is_active
+        "is_active": service.is_active,
+        "is_deleted": service.is_deleted
     }
 
 
+def get_live_service(db: Session, service_id: int) -> Service | None:
+    """Servicio no eliminado. Los eliminados (is_deleted) nunca se devuelven:
+    quedan solo en el historial ya registrado, no se pueden volver a usar ni
+    editar, sin importar include_inactive."""
+    return (
+        db.query(Service)
+        .filter(Service.id == service_id, Service.is_deleted == False)  # noqa: E712
+        .first()
+    )
+
+
 def list_services(db: Session, include_inactive: bool = False):
-    query = db.query(Service).order_by(Service.id.asc())
+    query = (
+        db.query(Service)
+        .filter(Service.is_deleted == False)  # noqa: E712
+        .order_by(Service.id.asc())
+    )
 
     if not include_inactive:
         query = query.filter(Service.is_active == True)
@@ -30,7 +46,7 @@ def list_services(db: Session, include_inactive: bool = False):
 
 
 def get_service_by_id(db: Session, service_id: int):
-    service = db.query(Service).filter(Service.id == service_id).first()
+    service = get_live_service(db, service_id)
 
     if not service:
         return None, "Servicio no encontrado."
@@ -76,7 +92,7 @@ def create_service(db: Session, payload: ServiceCreate, admin_user: User):
 
 
 def update_service(db: Session, service_id: int, payload: ServiceUpdate, admin_user: User):
-    service = db.query(Service).filter(Service.id == service_id).first()
+    service = get_live_service(db, service_id)
 
     if not service:
         return None, "Servicio no encontrado."
@@ -126,31 +142,23 @@ def update_service(db: Session, service_id: int, payload: ServiceUpdate, admin_u
 
 
 def delete_service(db: Session, service_id: int, admin_user: User):
-    from app.models.order import OrderItem
-
-    service = db.query(Service).filter(Service.id == service_id).first()
+    """Borrado lógico: nunca se hace db.delete(). El servicio se marca como
+    eliminado y deja de estar disponible para cualquier uso futuro, pero las
+    ventas ya registradas quedan intactas."""
+    service = get_live_service(db, service_id)
     if not service:
         return None, "Servicio no encontrado."
 
-    has_orders = db.query(OrderItem).filter(OrderItem.service_id == service_id).first()
-    if has_orders:
-        return None, {
-            "code": "has_history",
-            "message": (
-                f"El servicio '{service.name}' ya tiene ventas registradas en comandas. "
-                "Para dejar de ofrecerlo, desactívalo en lugar de eliminarlo "
-                "(así el historial queda intacto)."
-            )
-        }
-
     name = service.name
-    db.delete(service)
+    service.is_deleted = True
+    service.is_active = False
+    service.updated_at = datetime.utcnow()
 
     create_audit_log(
         db=db,
         module="servicios",
         action="eliminar_servicio",
-        detail=f"El administrador '{admin_user.username}' eliminó el servicio '{name}' (ID: {service_id}).",
+        detail=f"El dueño '{admin_user.username}' eliminó el servicio '{name}' (ID: {service_id}).",
         user_id=admin_user.id
     )
 
@@ -159,7 +167,7 @@ def delete_service(db: Session, service_id: int, admin_user: User):
 
 
 def deactivate_service(db: Session, service_id: int, admin_user: User):
-    service = db.query(Service).filter(Service.id == service_id).first()
+    service = get_live_service(db, service_id)
 
     if not service:
         return None, "Servicio no encontrado."

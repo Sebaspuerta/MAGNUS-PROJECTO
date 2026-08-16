@@ -33,6 +33,7 @@ from app.models.cash_movement import CashMovement
 from app.models.accounts_receivable import AccountsReceivable, AccountsReceivablePayment
 from app.models.alerts import Alert
 from app.models.system_config import SystemConfig
+from app.utils.deleted_labels import DELETED_BARBER_SUFFIX, DELETED_PRODUCT_SUFFIX
 
 
 SENSITIVE_FIELDS = {"password_hash", "quick_pin_hash", "code_hash"}
@@ -189,49 +190,60 @@ def _compute_kpis(db: Session) -> dict:
     )
 
     barbero_top = (
-        db.query(Barber.full_name, func.sum(Order.total))
+        db.query(Barber.full_name, Barber.is_deleted, func.sum(Order.total))
         .join(Order, Order.barber_id == Barber.id)
         .filter(Order.status == "cerrada")
-        .group_by(Barber.id, Barber.full_name)
+        .group_by(Barber.id, Barber.full_name, Barber.is_deleted)
         .order_by(func.sum(Order.total).desc())
         .first()
     )
 
     producto_top = (
-        db.query(Product.name, func.sum(OrderItem.quantity))
+        db.query(Product.name, Product.is_deleted, func.sum(OrderItem.quantity))
         .join(OrderItem, OrderItem.product_id == Product.id)
         .join(Order, OrderItem.order_id == Order.id)
         .filter(Order.status == "cerrada")
-        .group_by(Product.id, Product.name)
+        .group_by(Product.id, Product.name, Product.is_deleted)
         .order_by(func.sum(OrderItem.quantity).desc())
         .first()
     )
 
     caja_abierta = db.query(CashRegister).filter(CashRegister.is_closed.is_(False)).first()
 
+    barbero_top_nombre = "Sin datos"
+    if barbero_top:
+        barbero_top_nombre = barbero_top[0] + (DELETED_BARBER_SUFFIX if barbero_top[1] else "")
+
+    producto_top_nombre = "Sin datos"
+    if producto_top:
+        producto_top_nombre = producto_top[0] + (DELETED_PRODUCT_SUFFIX if producto_top[1] else "")
+
     return {
         "total_sales": float(total_sales or 0),
         "cxc_pendiente": float(cxc_pendiente or 0),
         "stock_bajo": int(stock_bajo or 0),
-        "barbero_top": barbero_top[0] if barbero_top else "Sin datos",
-        "barbero_top_monto": float(barbero_top[1]) if barbero_top else 0,
-        "producto_top": producto_top[0] if producto_top else "Sin datos",
-        "producto_top_unidades": int(producto_top[1]) if producto_top else 0,
+        "barbero_top": barbero_top_nombre,
+        "barbero_top_monto": float(barbero_top[2]) if barbero_top else 0,
+        "producto_top": producto_top_nombre,
+        "producto_top_unidades": int(producto_top[2]) if producto_top else 0,
         "estado_caja": "Abierta" if caja_abierta else "Cerrada",
     }
 
 
 def _fetch_sales_by_barber(db: Session, limit: int = 6) -> list[tuple[str, float]]:
     rows = (
-        db.query(Barber.full_name, func.sum(Order.total))
+        db.query(Barber.full_name, Barber.is_deleted, func.sum(Order.total))
         .join(Order, Order.barber_id == Barber.id)
         .filter(Order.status == "cerrada")
-        .group_by(Barber.id, Barber.full_name)
+        .group_by(Barber.id, Barber.full_name, Barber.is_deleted)
         .order_by(func.sum(Order.total).desc())
         .limit(limit)
         .all()
     )
-    return [(name, float(total or 0)) for name, total in rows]
+    return [
+        (name + (DELETED_BARBER_SUFFIX if is_deleted else ""), float(total or 0))
+        for name, is_deleted, total in rows
+    ]
 
 
 def _fetch_sales_by_month(db: Session, months: int = 12) -> list[tuple[str, float]]:
@@ -259,16 +271,19 @@ def _fetch_payment_methods(db: Session) -> list[tuple[str, float]]:
 
 def _fetch_top_products(db: Session, limit: int = 6) -> list[tuple[str, float]]:
     rows = (
-        db.query(Product.name, func.sum(OrderItem.total_price))
+        db.query(Product.name, Product.is_deleted, func.sum(OrderItem.total_price))
         .join(OrderItem, OrderItem.product_id == Product.id)
         .join(Order, OrderItem.order_id == Order.id)
         .filter(Order.status == "cerrada")
-        .group_by(Product.id, Product.name)
+        .group_by(Product.id, Product.name, Product.is_deleted)
         .order_by(func.sum(OrderItem.total_price).desc())
         .limit(limit)
         .all()
     )
-    return [(name, float(total or 0)) for name, total in rows]
+    return [
+        (name + (DELETED_PRODUCT_SUFFIX if is_deleted else ""), float(total or 0))
+        for name, is_deleted, total in rows
+    ]
 
 
 # ---------------------------------------------------------------------------

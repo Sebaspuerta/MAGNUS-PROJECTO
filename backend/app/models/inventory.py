@@ -10,7 +10,11 @@ class Product(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    # Respaldo del campo de texto libre viejo. Ya no se usa en código nuevo
+    # (reemplazado por category_id -> categories), se deja en la tabla sin
+    # mapear activamente para no perder el histórico de datos.
     category: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), nullable=True)
     product_type: Mapped[str] = mapped_column(String(40), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     purchase_cost: Mapped[float] = mapped_column(Numeric(12, 2), default=0, nullable=False)
@@ -20,11 +24,14 @@ class Product(Base):
     expiration_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     supplier: Mapped[str | None] = mapped_column(String(120), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    photo_filename: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     movements = relationship("InventoryMovement", back_populates="product", cascade="all, delete-orphan")
     service_consumables = relationship("ServiceConsumable", back_populates="product")
+    category_ref = relationship("Category", back_populates="products")
 
 
 class InventoryMovement(Base):

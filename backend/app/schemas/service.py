@@ -29,6 +29,7 @@ class ServiceResponse(BaseModel):
     estimated_duration_minutes: int | None = None
     uses_internal_consumables: bool
     is_active: bool
+    is_deleted: bool = False
 
     class Config:
         from_attributes = True

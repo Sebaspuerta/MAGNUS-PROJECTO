@@ -454,6 +454,125 @@ select option      { background: #0d1222; }
   margin-top: 18px;
 }
 
+/* ── REGISTRO RÁPIDO ──────────────────────────────── */
+
+.rapido-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.rapido-opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  font-size: 15px;
+  justify-content: flex-start;
+}
+
+.rapido-opcion i {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+#rapido-preview {
+  color: var(--muted);
+  font-size: .85rem;
+  margin-top: 14px;
+  padding: 9px 12px;
+  background: rgba(43,91,255,.06);
+  border-radius: 10px;
+  border: 1px solid rgba(43,91,255,.18);
+  min-height: 1.1em;
+}
+
+#error-rapido {
+  color: var(--red-2);
+  font-size: .82rem;
+  margin-top: 10px;
+  min-height: 1.1em;
+}
+
+/* ── PICKER DE PRODUCTO CON THUMBNAIL (registro rápido) ───── */
+
+.rapido-producto-lista {
+  display: none;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  margin-top: 4px;
+  background: rgba(6,9,15,.95);
+}
+
+.rapido-producto-lista.visible { display: block; }
+
+.rapido-producto-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--line);
+}
+
+.rapido-producto-item:last-child { border-bottom: none; }
+.rapido-producto-item:hover,
+.rapido-producto-item.selected { background: rgba(43,91,255,.14); }
+
+.rapido-producto-thumb,
+.rapido-producto-thumb-placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  object-fit: cover;
+  background: rgba(255,255,255,.06);
+}
+
+.rapido-producto-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.rapido-producto-info { flex: 1; min-width: 0; }
+
+.rapido-producto-nombre {
+  font-size: 13px;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rapido-producto-precio {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.rapido-producto-vacio {
+  padding: 12px;
+  color: var(--muted);
+  font-size: .82rem;
+  text-align: center;
+}
+
+.rapido-producto-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(43,91,255,.3);
+  border-radius: 10px;
+  background: rgba(43,91,255,.06);
+}
+
 /* ── RESPONSIVE ───────────────────────────────────── */
 
 @media (max-width: 768px) {
@@ -556,3 +675,15 @@ body.light-mode .cliente-info strong   { color: #1C1F2E; }
 body.light-mode .cliente-info p        { color: #6B7185; }
 body.light-mode .rend-row,
 body.light-mode .perfil-row            { border-bottom-color: rgba(0,0,0,.06); }
+
+body.light-mode .rapido-producto-lista {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.12);
+}
+body.light-mode .rapido-producto-item        { border-bottom-color: rgba(0,0,0,.06); }
+body.light-mode .rapido-producto-item:hover,
+body.light-mode .rapido-producto-item.selected { background: rgba(43,91,255,.08); }
+body.light-mode .rapido-producto-nombre      { color: #1C1F2E; }
+body.light-mode .rapido-producto-thumb,
+body.light-mode .rapido-producto-thumb-placeholder,
+body.light-mode .rapido-producto-chip        { background: #F0F2FA; }

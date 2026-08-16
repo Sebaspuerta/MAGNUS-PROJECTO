@@ -31,7 +31,7 @@ function filtrar() {
 // ── RENDER GRID ────────────────────────────────────────────────────────────────
 function renderGrid(lista) {
     const grid    = document.getElementById("grid");
-    const isAdmin = (window.api.getAuthUser() || {}).role === "Administrador";
+    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
 
     if (!lista.length) {
         grid.innerHTML = '<div style="color:var(--muted);">No se encontraron servicios.</div>';
@@ -46,8 +46,8 @@ function renderGrid(lista) {
         const consumibles = s.uses_internal_consumables ? "🧴 Usa consumibles" : "";
         const categoria   = s.category || "Sin categoría";
 
-        const btnEliminar = isAdmin
-            ? `<button class="danger" onclick="eliminar(${s.id}, '${escAttr(s.name)}')" title="Eliminar permanentemente"><i data-lucide="trash-2"></i> Eliminar</button>`
+        const btnEliminar = isOwner
+            ? `<button class="danger" onclick="eliminar(${s.id}, '${escAttr(s.name)}')" title="Eliminar del sistema"><i data-lucide="trash-2"></i> Eliminar</button>`
             : "";
 
         return `<div class="card">
@@ -159,20 +159,19 @@ async function guardarServicio() {
     }
 }
 
-// ── ELIMINAR (solo admin) ─────────────────────────────────────────────────────
+// ── ELIMINAR (solo el dueño, Mateo) ────────────────────────────────────────────
 async function eliminar(id, nombre) {
-    if (!confirm(`¿Eliminar permanentemente el servicio "${nombre}"?\n\nEsto es irreversible. Solo es posible si el servicio nunca ha tenido ventas.`)) return;
+    const msg = `Esto ocultará "${nombre}" de todo el sistema para uso futuro. ` +
+        `El historial de ventas ya registrado se conserva, pero se marcará como eliminado. ` +
+        `Esta acción no se puede deshacer. ¿Continuar?`;
+    if (!confirm(msg)) return;
     setError("error-global", "");
     try {
         await window.api.apiRequest(`/api/services/${id}`, { method: "DELETE" });
         await cargarServicios();
     } catch (err) {
         const detail = err.responseData && err.responseData.detail;
-        if (detail && typeof detail === "object" && detail.code === "has_history") {
-            setInfo("error-global", detail.message);
-        } else {
-            setError("error-global", (typeof detail === "string" ? detail : null) || err.message);
-        }
+        setError("error-global", (typeof detail === "string" ? detail : null) || err.message);
     }
 }
 

@@ -38,6 +38,7 @@ function renderStats(lista) {
 function renderCards(lista) {
     const grid = document.getElementById("barberos-grid");
     const activos = lista.filter(b => b.is_active);
+    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
 
     if (!activos.length) {
         grid.innerHTML = '<div style="color:#9aa4b2;padding:20px 0;">No hay barberos activos.</div>';
@@ -49,6 +50,13 @@ function renderCards(lista) {
         const comision = b.commission_type === "porcentaje"
             ? `${b.commission_value}%`
             : `$${Number(b.commission_value).toLocaleString("es-CO")} fijo`;
+
+        const esMateo = (b.user_username || "").toLowerCase() === "mateo" ||
+            b.full_name.toLowerCase().split(/\s+/).includes("mateo");
+
+        const btnEliminar = isOwner && !esMateo
+            ? `<button class="btn-danger" onclick="eliminarBarbero(${b.id}, '${escAttr(b.full_name)}')">Eliminar</button>`
+            : "";
 
         return `<div class="barbero-card">
             <div class="barbero-header">
@@ -68,6 +76,7 @@ function renderCards(lista) {
                 <button class="btn-info"      onclick="verRendimiento(${b.id})">Rendimiento</button>
                 <button class="btn-secondary" onclick="mostrarModalEditar(${b.id})">Editar</button>
                 <button class="btn-danger"    onclick="desactivar(${b.id}, '${escAttr(b.full_name)}')">Desactivar</button>
+                ${btnEliminar}
             </div>
         </div>`;
     }).join("");
@@ -175,6 +184,22 @@ async function desactivar(id, nombre) {
         await cargarBarberos();
     } catch (err) {
         setError("error-global", err.message);
+    }
+}
+
+// ── ELIMINAR (solo el dueño, Mateo) ────────────────────────────────────────────
+async function eliminarBarbero(id, nombre) {
+    const msg = `Esto ocultará "${nombre}" de todo el sistema para uso futuro. ` +
+        `El historial de ventas ya registrado se conserva, pero se marcará como eliminado. ` +
+        `Esta acción no se puede deshacer. ¿Continuar?`;
+    if (!confirm(msg)) return;
+    setError("error-global", "");
+    try {
+        await window.api.apiRequest(`/api/barbers/${id}`, { method: "DELETE" });
+        await cargarBarberos();
+    } catch (err) {
+        const detail = err.responseData && err.responseData.detail;
+        setError("error-global", (typeof detail === "string" ? detail : null) || err.message);
     }
 }
 

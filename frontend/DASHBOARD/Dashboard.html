@@ -101,6 +101,16 @@
         </div>
     </section>
 
+    <!-- CAJA DESTACADA -->
+    <section class="caja-featured" id="caja-featured" style="display:none;">
+        <div class="cf-icon"><i data-lucide="wallet"></i></div>
+        <div class="cf-text">
+            <div class="cf-title" id="caja-featured-title">—</div>
+            <div class="cf-sub" id="caja-featured-sub"></div>
+        </div>
+        <a class="cf-btn" id="caja-featured-btn" href="/CAJA/Caja.html" style="display:none;">Abrir caja</a>
+    </section>
+
     <!-- KPIs -->
     <div class="kpis">
         <div class="kpi p" id="kpi-card-cortes" style="display:none;">
@@ -205,6 +215,22 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+</div>
+
+<!-- ── MODAL: CERRAR CAJA (atajo desde la tarjeta destacada) ── -->
+<div id="modal-cerrar-caja" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Cerrar Caja</h3>
+        <label>Efectivo contado (COP)</label>
+        <input id="cc-closing-amount" type="number" min="0" step="any" placeholder="0">
+        <label>Notas (opcional)</label>
+        <input id="cc-notes" type="text" placeholder="Observaciones...">
+        <div id="cc-error"></div>
+        <div class="modal-btns">
+            <button id="cc-btn-confirm" class="danger" onclick="confirmarCerrarCajaDashboard()">Cerrar caja</button>
+            <button class="secondary" onclick="cerrarModalCerrarCajaDashboard()">Cancelar</button>
         </div>
     </div>
 </div>

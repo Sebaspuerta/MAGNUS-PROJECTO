@@ -9,6 +9,7 @@ from app.services.barber_service import (
     create_barber,
     create_barber_user,
     deactivate_barber,
+    delete_barber,
     get_barber_by_id,
     get_barber_performance,
     get_barber_user_info,
@@ -18,7 +19,7 @@ from app.services.barber_service import (
     toggle_barber_access,
     update_barber
 )
-from app.utils.security import get_current_user, require_admin, require_permission
+from app.utils.security import get_current_user, require_admin, require_owner, require_permission
 
 
 router = APIRouter(
@@ -113,6 +114,20 @@ def patch_deactivate_barber(
     current_user: User = Depends(require_permission("barberos.eliminar"))
 ):
     result, error = deactivate_barber(db, barber_id, current_user)
+
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    return result
+
+
+@router.delete("/{barber_id}")
+def delete_barber_endpoint(
+    barber_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_owner)
+):
+    result, error = delete_barber(db, barber_id, current_user)
 
     if error:
         raise HTTPException(status_code=404, detail=error)

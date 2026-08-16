@@ -20,33 +20,53 @@
         <button class="nav-back" onclick="window.history.back()"><i data-lucide="arrow-left"></i> Regresar</button>
     </div>
 
-    <div class="header">
-        <h1><i data-lucide="package"></i> Productos</h1>
-        <button class="primary" onclick="abrirModalNuevo()"><i data-lucide="plus"></i> Producto</button>
+    <!-- ═══ VISTA HOME: categorías ═══ -->
+    <div id="vista-home">
+        <div class="header">
+            <h1><i data-lucide="layers"></i> Categorías de Productos</h1>
+            <button class="primary" id="btn-nueva-categoria" style="display:none;" onclick="abrirModalCategoria()">
+                <i data-lucide="plus"></i> Categoría
+            </button>
+        </div>
+
+        <div id="error-home" class="err"></div>
+        <div id="msg-carga-categorias">Cargando categorías...</div>
+
+        <div class="grid categorias-grid" id="grid-categorias"></div>
     </div>
 
-    <div id="error-global" class="err"></div>
-    <div id="msg-carga">Cargando inventario...</div>
+    <!-- ═══ VISTA CATEGORÍA: productos de una categoría ═══ -->
+    <div id="vista-categoria" style="display:none;">
+        <button class="secondary volver-btn" onclick="volverAHome()"><i data-lucide="arrow-left"></i> Volver a categorías</button>
 
-    <div class="grid" id="grid"></div>
+        <div class="header">
+            <h1><i data-lucide="package"></i> <span id="categoria-actual-nombre">Categoría</span></h1>
+            <button class="primary" onclick="abrirModalNuevo()"><i data-lucide="plus"></i> Producto</button>
+        </div>
 
-    <div class="history" style="margin-top:30px;">
-        <h2><i data-lucide="history"></i> Movimientos — <span id="history-title">selecciona "Ver movimientos" en un producto</span>
-        </h2>
-        <div id="msg-movs" style="color:var(--muted);font-size:.85rem;padding:8px 0;"></div>
-        <table id="tabla-movs" style="display:none;">
-            <thead>
-                <tr>
-                    <th>Tipo</th>
-                    <th>Cantidad</th>
-                    <th>Stock anterior</th>
-                    <th>Stock nuevo</th>
-                    <th>Motivo</th>
-                    <th>Fecha</th>
-                </tr>
-            </thead>
-            <tbody id="history"></tbody>
-        </table>
+        <div id="error-global" class="err"></div>
+        <div id="msg-carga">Cargando inventario...</div>
+
+        <div class="grid" id="grid"></div>
+
+        <div class="history" style="margin-top:30px;">
+            <h2><i data-lucide="history"></i> Movimientos — <span id="history-title">selecciona "Ver movimientos" en un producto</span>
+            </h2>
+            <div id="msg-movs" style="color:var(--muted);font-size:.85rem;padding:8px 0;"></div>
+            <table id="tabla-movs" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Stock anterior</th>
+                        <th>Stock nuevo</th>
+                        <th>Motivo</th>
+                        <th>Fecha</th>
+                    </tr>
+                </thead>
+                <tbody id="history"></tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -58,17 +78,25 @@
 
         <input type="hidden" id="edit-id">
 
+        <span class="lbl">Foto</span>
+        <div class="foto-picker">
+            <div class="foto-preview-box" id="foto-preview-box">
+                <img id="foto-preview-img" style="display:none;">
+                <i data-lucide="image" id="foto-preview-placeholder"></i>
+            </div>
+            <div class="foto-picker-actions">
+                <label class="foto-picker-btn" for="f-photo"><i data-lucide="upload"></i> Elegir foto</label>
+                <input type="file" id="f-photo" accept="image/png,image/jpeg,image/webp" style="display:none;" onchange="previewFotoSeleccionada()">
+                <span class="foto-picker-hint">PNG, JPG o WEBP. Se recorta automáticamente a cuadrado.</span>
+            </div>
+        </div>
+
         <span class="lbl">Nombre *</span>
         <input id="f-name" placeholder="Nombre del producto">
 
         <span class="lbl">Categoría</span>
         <select id="f-category">
             <option value="">Sin categoría</option>
-            <option value="Cuidado masculino">Cuidado masculino</option>
-            <option value="Bebida">Bebida</option>
-            <option value="Mecato">Mecato</option>
-            <option value="Herramientas">Herramientas</option>
-            <option value="Otro">Otro</option>
         </select>
 
         <span class="lbl">Tipo de producto *</span>
@@ -124,6 +152,21 @@
 
         <button class="primary save" id="btn-confirmar-entrada" onclick="confirmarEntrada()">Confirmar Entrada</button>
         <button class="secondary save" onclick="cerrarModal('modal-entrada')">Cancelar</button>
+    </div>
+</div>
+
+<!-- MODAL CREAR CATEGORÍA -->
+<div class="modal" id="modal-categoria">
+    <div class="modal-box">
+        <h2>Nueva Categoría</h2>
+
+        <span class="lbl">Nombre *</span>
+        <input id="cat-name" placeholder="Ej. Cuidado masculino">
+
+        <div id="error-categoria" class="err"></div>
+
+        <button class="primary save" id="btn-guardar-categoria" onclick="guardarCategoria()">Guardar</button>
+        <button class="secondary save" onclick="cerrarModal('modal-categoria')">Cancelar</button>
     </div>
 </div>
 

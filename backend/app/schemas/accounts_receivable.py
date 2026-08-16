@@ -20,6 +20,7 @@ class AccountsReceivablePaymentResponse(BaseModel):
     id: int
     accounts_receivable_id: int
     user_id: int
+    cash_register_id: int | None = None
     amount: float
     payment_method: str | None = None
     note: str | None = None

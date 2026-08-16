@@ -8,9 +8,10 @@ from app.models.order import Order, OrderItem
 from app.models.payment import Payment
 from app.models.barber import Barber
 from app.models.inventory import Product
-from app.models.accounts_receivable import AccountsReceivable
+from app.models.accounts_receivable import AccountsReceivable, AccountsReceivablePayment
 from app.models.cash_register import CashRegister
 from app.models.client import Client
+from app.utils.deleted_labels import barber_label, product_label
 
 _BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
@@ -90,7 +91,7 @@ def sales_by_barber(db: Session, start_date=None, end_date=None):
 
         result.append({
             "barber_id": r.barber_id,
-            "barber_name": barber.full_name if barber else "Sin barbero",
+            "barber_name": barber_label(barber.full_name, barber) if barber else "Sin barbero",
             "orders_count": orders_count,
             "sales_total": round(sales_total, 2),
             "estimated_commission": round(commission, 2)
@@ -131,7 +132,7 @@ def top_products(db: Session, start_date=None, end_date=None, limit: int = 10):
         product = db.query(Product).filter(Product.id == r.product_id).first()
         products.append({
             "product_id": r.product_id,
-            "product_name": product.name if product else "Producto eliminado",
+            "product_name": product_label(product.name, product) if product else "Producto eliminado",
             "quantity_sold": int(r.qty or 0),
             "revenue": round(float(r.revenue or 0), 2)
         })
@@ -195,11 +196,22 @@ def cash_closings(db: Session, start_date=None, end_date=None):
 
     items = []
     for reg in registers:
-        received = (
+        # Mismo criterio que el arqueo real al cerrar (cash_register_service.
+        # close_cash_register): solo efectivo físico cuenta como esperado.
+        received_orders = (
             db.query(func.coalesce(func.sum(Payment.amount), 0))
-            .filter(Payment.cash_register_id == reg.id)
+            .filter(Payment.cash_register_id == reg.id, Payment.payment_method == "efectivo")
             .scalar()
         )
+        received_ar_payments = (
+            db.query(func.coalesce(func.sum(AccountsReceivablePayment.amount), 0))
+            .filter(
+                AccountsReceivablePayment.cash_register_id == reg.id,
+                AccountsReceivablePayment.payment_method == "efectivo"
+            )
+            .scalar()
+        )
+        received = float(received_orders or 0) + float(received_ar_payments or 0)
         expected = float(reg.opening_amount or 0) + float(received or 0)
         counted = float(reg.closing_amount or 0)
         items.append({

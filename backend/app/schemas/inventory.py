@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 class ProductCreate(BaseModel):
     name: str
-    category: str | None = None
+    category_id: int | None = None
     product_type: str
     description: str | None = None
     purchase_cost: float = Field(0, ge=0)
@@ -17,7 +17,7 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: str | None = None
-    category: str | None = None
+    category_id: int | None = None
     product_type: str | None = None
     description: str | None = None
     purchase_cost: float | None = Field(None, ge=0)
@@ -32,7 +32,9 @@ class ProductUpdate(BaseModel):
 class ProductResponse(BaseModel):
     id: int
     name: str
-    category: str | None = None
+    category_id: int | None = None
+    category_name: str | None = None
+    category_is_deleted: bool = False
     product_type: str
     description: str | None = None
     purchase_cost: float
@@ -42,6 +44,9 @@ class ProductResponse(BaseModel):
     expiration_date: date | None = None
     supplier: str | None = None
     is_active: bool
+    is_deleted: bool = False
+    photo_filename: str | None = None
+    photo_url: str | None = None
 
     class Config:
         from_attributes = True

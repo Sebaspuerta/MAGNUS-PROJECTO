@@ -259,6 +259,205 @@ body {
   font-size: 12.5px;
 }
 
+/* ── CAJA DESTACADA ───────────────────────── */
+
+.caja-featured {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, var(--panel), #0A0E1A);
+}
+
+.caja-featured.cf-alert {
+  border-color: rgba(225,29,46,.35);
+  background: linear-gradient(160deg, rgba(225,29,46,.14), rgba(225,29,46,.05));
+}
+
+.cf-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43,91,255,.14);
+  color: var(--blue-2);
+}
+
+.caja-featured.cf-alert .cf-icon {
+  background: rgba(225,29,46,.18);
+  color: var(--red-2);
+}
+
+.cf-icon i { width: 22px; height: 22px; }
+
+.cf-text { flex: 1; min-width: 0; }
+
+.cf-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.caja-featured.cf-alert .cf-title { color: var(--red-2); }
+
+.cf-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.cf-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(225,29,46,.22);
+  transition: filter .18s;
+}
+
+.cf-btn:hover { filter: brightness(1.12); }
+
+.cf-btn.cf-btn-secondary {
+  background: rgba(255,255,255,.07);
+  color: var(--white);
+  border: 1px solid var(--line-2);
+  box-shadow: none;
+}
+
+.cf-btn.cf-btn-secondary:hover { background: rgba(255,255,255,.13); }
+
+@media (max-width: 640px) {
+  .caja-featured { flex-wrap: wrap; }
+  .cf-btn { width: 100%; justify-content: center; }
+}
+
+/* ── MODAL CERRAR CAJA (atajo desde la tarjeta destacada) ──
+   Mismo patrón visual (.modal-overlay/.modal-box) que los demás modales
+   de la app (ver frontend/CAJA/Caja.css). */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+}
+
+.modal-overlay.visible { display: flex; }
+
+.modal-box {
+  width: 440px;
+  max-width: 100%;
+  background: rgba(10,14,26,.97);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.75);
+}
+
+.modal-box::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--grad);
+}
+
+.modal-box h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.modal-box label {
+  display: block;
+  color: var(--muted);
+  font-size: .8rem;
+  margin-bottom: 4px;
+  margin-top: 14px;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(6,9,15,.9);
+  color: var(--white);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.modal-box input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(43,91,255,.18);
+}
+
+.modal-box input::placeholder { color: var(--muted-2); }
+
+#cc-error {
+  color: var(--red-2);
+  font-size: .82rem;
+  margin-top: 10px;
+  min-height: 1.1em;
+}
+
+.modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.secondary {
+  background: rgba(255,255,255,.07);
+  color: var(--muted);
+  border: 1px solid var(--line-2);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: .18s;
+}
+
+.secondary:hover { background: rgba(255,255,255,.13); color: var(--white); border-color: rgba(43,91,255,.45); }
+
+.danger {
+  background: rgba(225,29,46,.13);
+  color: var(--red-2);
+  border: 1px solid rgba(225,29,46,.28);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: .18s;
+}
+
+.danger:hover { background: rgba(225,29,46,.24); border-color: rgba(225,29,46,.55); }
+
 /* ── KPIs ───────────────────────────────── */
 
 .kpis {
@@ -932,6 +1131,48 @@ body.light-mode .kpi {
   border-color: rgba(0,0,0,.07);
   box-shadow: 0 2px 12px rgba(0,0,0,.05);
 }
+
+/* ── Modal cerrar caja ───────────────── */
+body.light-mode .modal-box {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 32px 80px rgba(0,0,0,.15);
+}
+body.light-mode .modal-box h3     { color: #1C1F2E; }
+body.light-mode .modal-box label  { color: #6B7185; }
+body.light-mode .modal-box input {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.14);
+  color: #1C1F2E;
+}
+body.light-mode .modal-box input::placeholder { color: #9198AC; }
+body.light-mode .modal-box input:focus         { box-shadow: 0 0 0 3px rgba(43,91,255,.12); }
+body.light-mode .secondary {
+  background: rgba(0,0,0,.05);
+  color: #6B7185;
+  border-color: rgba(0,0,0,.12);
+}
+body.light-mode .secondary:hover { background: rgba(0,0,0,.09); color: #1C1F2E; }
+
+/* ── Caja destacada ──────────────────── */
+body.light-mode .caja-featured {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.07);
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+}
+body.light-mode .caja-featured.cf-alert {
+  background: linear-gradient(160deg, rgba(225,29,46,.08), rgba(225,29,46,.02));
+  border-color: rgba(225,29,46,.25);
+}
+body.light-mode .cf-title { color: #1C1F2E; }
+body.light-mode .caja-featured.cf-alert .cf-title { color: var(--red); }
+body.light-mode .cf-sub  { color: #6B7185; }
+body.light-mode .cf-btn.cf-btn-secondary {
+  background: rgba(0,0,0,.05);
+  color: #1C1F2E;
+  border-color: rgba(0,0,0,.12);
+}
+body.light-mode .cf-btn.cf-btn-secondary:hover { background: rgba(0,0,0,.09); }
 
 /* ── Paneles ─────────────────────────── */
 body.light-mode .panel {

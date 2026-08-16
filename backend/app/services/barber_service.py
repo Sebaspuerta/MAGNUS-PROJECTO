@@ -2,6 +2,7 @@
 import unicodedata
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -9,7 +10,8 @@ from app.models.barber import Barber
 from app.models.security import Role, User
 from app.schemas.barber import BarberCreate, BarberUpdate
 from app.services.security_service import create_audit_log
-from app.utils.security import hash_password
+from app.utils.deleted_labels import barber_label
+from app.utils.security import OWNER_USERNAME, hash_password
 
 _BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
@@ -26,7 +28,8 @@ def serialize_barber(barber: Barber):
         "commission_type": barber.commission_type,
         "commission_value": float(barber.commission_value or 0),
         "notes": barber.notes,
-        "is_active": barber.is_active
+        "is_active": barber.is_active,
+        "is_deleted": barber.is_deleted
     }
 
 
@@ -60,8 +63,33 @@ def _generate_unique_username(db: Session, base: str) -> str:
     return candidate
 
 
+def is_owner_barber(barber: Barber) -> bool:
+    """True si el barbero es Mateo, el dueño del negocio. Se identifica por el
+    username del usuario vinculado o por su nombre completo."""
+    if barber.user and (barber.user.username or "").lower() == OWNER_USERNAME:
+        return True
+
+    normalized = _slugify_name(barber.full_name or "")
+    return OWNER_USERNAME in normalized.split(".")
+
+
+def get_live_barber(db: Session, barber_id: int) -> Barber | None:
+    """Barbero no eliminado. Los eliminados (is_deleted) nunca se devuelven:
+    quedan solo en el historial ya registrado, no se pueden volver a usar ni
+    editar, sin importar include_inactive."""
+    return (
+        db.query(Barber)
+        .filter(Barber.id == barber_id, Barber.is_deleted == False)  # noqa: E712
+        .first()
+    )
+
+
 def list_barbers(db: Session, include_inactive: bool = False):
-    query = db.query(Barber).order_by(Barber.id.asc())
+    query = (
+        db.query(Barber)
+        .filter(Barber.is_deleted == False)  # noqa: E712
+        .order_by(Barber.id.asc())
+    )
 
     if not include_inactive:
         query = query.filter(Barber.is_active == True)
@@ -75,7 +103,7 @@ def list_active_barbers_basic(db: Session):
     formularios (ej. asignar comanda) que no requieren el permiso barberos.ver."""
     barbers = (
         db.query(Barber)
-        .filter(Barber.is_active == True)  # noqa: E712
+        .filter(Barber.is_active == True, Barber.is_deleted == False)  # noqa: E712
         .order_by(Barber.full_name.asc())
         .all()
     )
@@ -83,7 +111,7 @@ def list_active_barbers_basic(db: Session):
 
 
 def get_barber_by_id(db: Session, barber_id: int):
-    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    barber = get_live_barber(db, barber_id)
 
     if not barber:
         return None, "Barbero no encontrado."
@@ -144,7 +172,7 @@ def create_barber(db: Session, payload: BarberCreate, admin_user: User):
 
 
 def update_barber(db: Session, barber_id: int, payload: BarberUpdate, admin_user: User):
-    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    barber = get_live_barber(db, barber_id)
 
     if not barber:
         return None, "Barbero no encontrado."
@@ -208,7 +236,7 @@ def update_barber(db: Session, barber_id: int, payload: BarberUpdate, admin_user
 
 
 def deactivate_barber(db: Session, barber_id: int, admin_user: User):
-    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    barber = get_live_barber(db, barber_id)
 
     if not barber:
         return None, "Barbero no encontrado."
@@ -230,8 +258,39 @@ def deactivate_barber(db: Session, barber_id: int, admin_user: User):
     return serialize_barber(barber), None
 
 
+def delete_barber(db: Session, barber_id: int, admin_user: User):
+    """Borrado lógico: nunca se hace db.delete(). El barbero se marca como
+    eliminado y deja de estar disponible para cualquier uso futuro, pero las
+    comandas ya registradas a su nombre quedan intactas."""
+    barber = get_live_barber(db, barber_id)
+    if not barber:
+        return None, "Barbero no encontrado."
+
+    if is_owner_barber(barber):
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede eliminar a Mateo, es el dueño del negocio."
+        )
+
+    name = barber.full_name
+    barber.is_deleted = True
+    barber.is_active = False
+    barber.updated_at = datetime.utcnow()
+
+    create_audit_log(
+        db=db,
+        module="barberos",
+        action="eliminar_barbero",
+        detail=f"El dueño '{admin_user.username}' eliminó el barbero '{name}' (ID: {barber_id}).",
+        user_id=admin_user.id
+    )
+
+    db.commit()
+    return {"detail": f"Barbero '{name}' eliminado correctamente."}, None
+
+
 def create_barber_user(db: Session, barber_id: int, password: str, admin_user: User):
-    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    barber = get_live_barber(db, barber_id)
     if not barber:
         return None, "Barbero no encontrado."
 
@@ -280,7 +339,7 @@ def create_barber_user(db: Session, barber_id: int, password: str, admin_user: U
 
 
 def reset_barber_password(db: Session, barber_id: int, password: str, admin_user: User):
-    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    barber = get_live_barber(db, barber_id)
     if not barber:
         return None, "Barbero no encontrado."
 
@@ -318,7 +377,7 @@ def reset_barber_password(db: Session, barber_id: int, password: str, admin_user
 
 
 def toggle_barber_access(db: Session, barber_id: int, admin_user: User):
-    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    barber = get_live_barber(db, barber_id)
     if not barber:
         return None, "Barbero no encontrado."
 
@@ -351,7 +410,7 @@ def toggle_barber_access(db: Session, barber_id: int, admin_user: User):
 
 
 def get_barber_user_info(db: Session, barber_id: int):
-    barber = db.query(Barber).filter(Barber.id == barber_id).first()
+    barber = get_live_barber(db, barber_id)
     if not barber:
         return None, "Barbero no encontrado."
 
@@ -416,7 +475,7 @@ def get_barber_performance(db: Session, barber_id: int, start_date=None, end_dat
 
     return {
         "barber_id": barber.id,
-        "full_name": barber.full_name,
+        "full_name": barber_label(barber.full_name, barber),
         "alias": barber.alias,
         "period": {"start_date": start_date, "end_date": end_date},
         "orders_count": orders_count,

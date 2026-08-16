@@ -1,17 +1,125 @@
+let categorias = [];
+let categoriaActual = null; // { id, name } o null si estamos en la vista home
 let todosLosProductos = [];
+let fotoSeleccionadaFile = null;
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => cargarProductos());
+document.addEventListener("DOMContentLoaded", () => {
+    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
+    const btnCat = document.getElementById("btn-nueva-categoria");
+    if (btnCat) btnCat.style.display = isOwner ? "inline-flex" : "none";
 
-// ── CARGA ─────────────────────────────────────────────────────────────────────
+    cargarCategorias();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CATEGORÍAS
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function cargarCategorias() {
+    setError("error-home", "");
+    const msg = document.getElementById("msg-carga-categorias");
+    if (msg) { msg.textContent = "Cargando categorías..."; msg.style.display = "block"; }
+
+    try {
+        categorias = await window.api.apiRequest("/api/categories");
+        if (msg) msg.style.display = "none";
+        renderCategorias(categorias);
+    } catch (err) {
+        if (msg) msg.textContent = "Error al cargar: " + err.message;
+        setError("error-home", err.message);
+    }
+}
+
+function renderCategorias(lista) {
+    const grid    = document.getElementById("grid-categorias");
+    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
+
+    if (!lista.length) {
+        grid.innerHTML = '<div style="color:var(--muted);padding:8px 0;">Sin categorías. Crea la primera con + Categoría.</div>';
+        return;
+    }
+
+    grid.innerHTML = lista.map(c => {
+        const btnEliminar = isOwner
+            ? `<button class="category-delete-btn" onclick="event.stopPropagation(); eliminarCategoria(${c.id}, '${escAttr(c.name)}')" title="Eliminar categoría"><i data-lucide="trash-2"></i></button>`
+            : "";
+
+        return `<div class="card category-card" onclick="abrirCategoria(${c.id}, '${escAttr(c.name)}')">
+            ${btnEliminar}
+            <div class="category-icon"><i data-lucide="folder"></i></div>
+            <div class="category-name">${escHtml(c.name)}</div>
+            <div class="category-count">${c.product_count} producto${c.product_count === 1 ? "" : "s"}</div>
+        </div>`;
+    }).join("");
+
+    lucide.createIcons();
+}
+
+function abrirCategoria(id, name) {
+    categoriaActual = { id, name };
+    setText("categoria-actual-nombre", name);
+    document.getElementById("vista-home").style.display      = "none";
+    document.getElementById("vista-categoria").style.display = "block";
+    cargarProductos();
+}
+
+function volverAHome() {
+    categoriaActual = null;
+    document.getElementById("vista-categoria").style.display = "none";
+    document.getElementById("vista-home").style.display      = "block";
+    cargarCategorias();
+}
+
+function abrirModalCategoria() {
+    document.getElementById("cat-name").value = "";
+    setError("error-categoria", "");
+    setDisabled("btn-guardar-categoria", false, "Guardar");
+    abrirModal("modal-categoria");
+}
+
+async function guardarCategoria() {
+    const nombre = document.getElementById("cat-name").value.trim();
+    if (!nombre) { setError("error-categoria", "El nombre es obligatorio."); return; }
+
+    setDisabled("btn-guardar-categoria", true, "Guardando...");
+    setError("error-categoria", "");
+
+    try {
+        await window.api.apiRequest("/api/categories", { method: "POST", body: { name: nombre } });
+        cerrarModal("modal-categoria");
+        await cargarCategorias();
+    } catch (err) {
+        setError("error-categoria", err.message);
+        setDisabled("btn-guardar-categoria", false, "Guardar");
+    }
+}
+
+async function eliminarCategoria(id, nombre) {
+    if (!confirm(`¿Eliminar la categoría "${nombre}"? Solo se puede borrar si ya no tiene productos activos.`)) return;
+    setError("error-home", "");
+    try {
+        await window.api.apiRequest(`/api/categories/${id}`, { method: "DELETE" });
+        await cargarCategorias();
+    } catch (err) {
+        const detail = err.responseData && err.responseData.detail;
+        setError("error-home", (typeof detail === "string" ? detail : null) || err.message);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PRODUCTOS (dentro de una categoría)
+// ══════════════════════════════════════════════════════════════════════════════
+
 async function cargarProductos() {
+    if (!categoriaActual) return;
     setError("error-global", "");
     const msg = document.getElementById("msg-carga");
     if (msg) { msg.textContent = "Cargando inventario..."; msg.style.display = "block"; }
 
     try {
         todosLosProductos = await window.api.apiRequest(
-            "/api/inventory/products?include_inactive=true"
+            `/api/inventory/products?include_inactive=true&category_id=${categoriaActual.id}`
         );
         if (msg) msg.style.display = "none";
         renderGrid(todosLosProductos);
@@ -24,23 +132,22 @@ async function cargarProductos() {
 // ── RENDER GRID ────────────────────────────────────────────────────────────────
 function renderGrid(lista) {
     const grid    = document.getElementById("grid");
-    const isAdmin = (window.api.getAuthUser() || {}).role === "Administrador";
+    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
 
     if (!lista.length) {
-        grid.innerHTML = '<div style="color:var(--muted);padding:8px 0;">Sin productos. Crea el primero con + Producto.</div>';
+        grid.innerHTML = '<div style="color:var(--muted);padding:8px 0;">Sin productos en esta categoría. Crea el primero con + Producto.</div>';
         return;
     }
 
     grid.innerHTML = lista.map(p => {
         const { badgeClass, badgeLabel } = stockBadge(p);
         const precioVenta = money(p.sale_price);
-        const cat  = p.category   || "Sin categoría";
         const tipo = tipoLabel(p.product_type);
 
         const expAlert = vencimientoAlert(p);
 
-        const btnEliminar = isAdmin
-            ? `<button class="danger" onclick="eliminarProducto(${p.id}, '${escAttr(p.name)}')" title="Eliminar permanentemente" style="flex:1;"><i data-lucide="trash-2"></i> Eliminar</button>`
+        const btnEliminar = isOwner
+            ? `<button class="danger" onclick="eliminarProducto(${p.id}, '${escAttr(p.name)}')" title="Eliminar del sistema" style="flex:1;"><i data-lucide="trash-2"></i> Eliminar</button>`
             : "";
 
         const botonesActivo = p.is_active ? `
@@ -54,9 +161,14 @@ function renderGrid(lista) {
             ${btnEliminar}
         `;
 
-        return `<div class="card" style="${!p.is_active ? 'opacity:.55;' : ''}">
+        const thumbHtml = p.photo_url
+            ? `<img class="thumb" src="${escAttr(p.photo_url)}" alt="">`
+            : `<div class="thumb-placeholder"><i data-lucide="package"></i></div>`;
+
+        return `<div class="card product-card" style="${!p.is_active ? 'opacity:.55;' : ''}">
+            <div class="product-photo-frame">${thumbHtml}</div>
             <div class="title">${escHtml(p.name)}</div>
-            <div class="meta" style="color:var(--gold);font-size:.72rem;">${escHtml(cat)} · ${escHtml(tipo)}</div>
+            <div class="meta" style="color:var(--gold);font-size:.72rem;">${escHtml(tipo)}</div>
             <div class="meta">💰 Venta: ${precioVenta}</div>
             <div class="meta">📦 Stock: <strong style="color:${p.current_stock === 0 ? 'var(--red)' : p.current_stock <= (p.minimum_stock || 0) ? 'var(--orange)' : 'var(--green)'}">${p.current_stock}</strong>${p.minimum_stock != null ? ` / mín ${p.minimum_stock}` : ''}</div>
             ${p.expiration_date ? `<div class="meta">📅 Vence: ${p.expiration_date}</div>` : ''}
@@ -95,12 +207,73 @@ function tipoLabel(tipo) {
     return map[tipo] || tipo || "—";
 }
 
+// ── FOTO (preview local + subida tras guardar) ─────────────────────────────────
+function resetFotoPicker(photoUrl) {
+    fotoSeleccionadaFile = null;
+    document.getElementById("f-photo").value = "";
+    const img = document.getElementById("foto-preview-img");
+    const placeholder = document.getElementById("foto-preview-placeholder");
+    if (photoUrl) {
+        img.src = photoUrl;
+        img.style.display = "block";
+        placeholder.style.display = "none";
+    } else {
+        img.style.display = "none";
+        img.src = "";
+        placeholder.style.display = "block";
+    }
+}
+
+function previewFotoSeleccionada() {
+    const input = document.getElementById("f-photo");
+    const file  = input.files && input.files[0];
+    if (!file) return;
+
+    fotoSeleccionadaFile = file;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        const img = document.getElementById("foto-preview-img");
+        img.src = reader.result;
+        img.style.display = "block";
+        document.getElementById("foto-preview-placeholder").style.display = "none";
+    };
+    reader.readAsDataURL(file);
+}
+
+async function subirFotoProducto(id) {
+    if (!fotoSeleccionadaFile) return;
+
+    const formData = new FormData();
+    formData.append("photo", fotoSeleccionadaFile);
+
+    const token = window.api.getAuthToken();
+    const resp = await fetch(window.api.buildUrl(`/api/inventory/products/${id}/photo`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+    });
+
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => null);
+        const detail = data && data.detail;
+        throw new Error((typeof detail === "string" ? detail : null) || "No se pudo subir la foto.");
+    }
+}
+
+// ── SELECT DE CATEGORÍA (modal producto) ───────────────────────────────────────
+function poblarSelectCategorias(selectedId) {
+    const sel = document.getElementById("f-category");
+    sel.innerHTML = '<option value="">Sin categoría</option>' +
+        categorias.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join("");
+    sel.value = selectedId != null ? String(selectedId) : "";
+}
+
 // ── MODAL CREAR ────────────────────────────────────────────────────────────────
 function abrirModalNuevo() {
     setText("modal-titulo", "Nuevo Producto");
     document.getElementById("edit-id").value        = "";
     document.getElementById("f-name").value         = "";
-    document.getElementById("f-category").value     = "";
     document.getElementById("f-type").value         = "venta";
     document.getElementById("f-desc").value         = "";
     document.getElementById("f-sale-price").value   = "";
@@ -109,6 +282,8 @@ function abrirModalNuevo() {
     document.getElementById("f-min-stock").value    = "";
     document.getElementById("f-expiry").value       = "";
     document.getElementById("stock-inicial-section").style.display = "block";
+    poblarSelectCategorias(categoriaActual ? categoriaActual.id : null);
+    resetFotoPicker(null);
     setError("error-producto", "");
     setDisabled("btn-guardar", false, "Guardar");
     abrirModal("modal-producto");
@@ -123,7 +298,6 @@ async function abrirModalEditar(id) {
         setText("modal-titulo", "Editar Producto");
         document.getElementById("edit-id").value        = p.id;
         document.getElementById("f-name").value         = p.name            || "";
-        document.getElementById("f-category").value     = p.category        || "";
         document.getElementById("f-type").value         = p.product_type    || "venta";
         document.getElementById("f-desc").value         = p.description     || "";
         document.getElementById("f-sale-price").value   = p.sale_price      ?? "";
@@ -131,6 +305,8 @@ async function abrirModalEditar(id) {
         document.getElementById("f-min-stock").value    = p.minimum_stock   ?? "";
         document.getElementById("f-expiry").value       = p.expiration_date || "";
         document.getElementById("stock-inicial-section").style.display = "none";
+        poblarSelectCategorias(p.category_id);
+        resetFotoPicker(p.photo_url || null);
         setError("error-producto", "");
         setDisabled("btn-guardar", false, "Guardar Cambios");
         abrirModal("modal-producto");
@@ -143,7 +319,7 @@ async function abrirModalEditar(id) {
 async function guardarProducto() {
     const id         = document.getElementById("edit-id").value;
     const nombre     = document.getElementById("f-name").value.trim();
-    const categoria  = document.getElementById("f-category").value || null;
+    const categoryR  = document.getElementById("f-category").value;
     const tipo       = document.getElementById("f-type").value;
     const desc       = document.getElementById("f-desc").value.trim() || null;
     const salePriceR = document.getElementById("f-sale-price").value;
@@ -160,7 +336,7 @@ async function guardarProducto() {
 
     const body = {
         name:             nombre,
-        category:         categoria,
+        category_id:      categoryR ? parseInt(categoryR) : null,
         product_type:     tipo,
         description:      desc,
         sale_price:       salePrice,
@@ -178,11 +354,25 @@ async function guardarProducto() {
     setError("error-producto", "");
 
     try {
+        let productoId = id;
         if (id) {
             await window.api.apiRequest(`/api/inventory/products/${id}`, { method: "PATCH", body });
         } else {
-            await window.api.apiRequest("/api/inventory/products", { method: "POST", body });
+            const creado = await window.api.apiRequest("/api/inventory/products", { method: "POST", body });
+            productoId = creado.id;
         }
+
+        if (fotoSeleccionadaFile) {
+            try {
+                await subirFotoProducto(productoId);
+            } catch (fotoErr) {
+                cerrarModal("modal-producto");
+                await cargarProductos();
+                setError("error-global", "El producto se guardó, pero la foto no se pudo subir: " + fotoErr.message);
+                return;
+            }
+        }
+
         cerrarModal("modal-producto");
         await cargarProductos();
     } catch (err) {
@@ -191,20 +381,19 @@ async function guardarProducto() {
     }
 }
 
-// ── ELIMINAR (solo admin) ─────────────────────────────────────────────────────
+// ── ELIMINAR (solo el dueño, Mateo) ────────────────────────────────────────────
 async function eliminarProducto(id, nombre) {
-    if (!confirm(`¿Eliminar permanentemente el producto "${nombre}"?\n\nEsto es irreversible. Solo es posible si el producto nunca ha tenido ventas ni movimientos de inventario.`)) return;
+    const msg = `Esto ocultará "${nombre}" de todo el sistema para uso futuro. ` +
+        `El historial de ventas ya registrado se conserva, pero se marcará como eliminado. ` +
+        `Esta acción no se puede deshacer. ¿Continuar?`;
+    if (!confirm(msg)) return;
     setError("error-global", "");
     try {
         await window.api.apiRequest(`/api/inventory/products/${id}`, { method: "DELETE" });
         await cargarProductos();
     } catch (err) {
         const detail = err.responseData && err.responseData.detail;
-        if (detail && typeof detail === "object" && detail.code === "has_history") {
-            setInfo("error-global", detail.message);
-        } else {
-            setError("error-global", (typeof detail === "string" ? detail : null) || err.message);
-        }
+        setError("error-global", (typeof detail === "string" ? detail : null) || err.message);
     }
 }
 

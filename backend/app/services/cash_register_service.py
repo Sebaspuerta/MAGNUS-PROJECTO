@@ -61,6 +61,7 @@ def open_cash_register(db: Session, payload: CashRegisterOpenRequest, current_us
 def close_cash_register(db: Session, register_id: int, payload: CashRegisterCloseRequest, current_user: User):
     from sqlalchemy import func
     from app.models.payment import Payment
+    from app.models.accounts_receivable import AccountsReceivablePayment
 
     register = db.query(CashRegister).filter(CashRegister.id == register_id).first()
     if not register:
@@ -69,13 +70,24 @@ def close_cash_register(db: Session, register_id: int, payload: CashRegisterClos
     if register.is_closed:
         return None, "La caja ya está cerrada."
 
-    # Arqueo: efectivo esperado = apertura + pagos registrados en la caja.
-    received = (
+    # Arqueo: efectivo físico esperado = apertura + pagos en efectivo de esta
+    # caja (comandas + abonos de fiados). Nequi, Daviplata, tarjeta,
+    # transferencia, cortesía y combinado no son efectivo físico y no cuentan.
+    received_orders = (
         db.query(func.coalesce(func.sum(Payment.amount), 0))
-        .filter(Payment.cash_register_id == register.id)
+        .filter(Payment.cash_register_id == register.id, Payment.payment_method == "efectivo")
         .scalar()
     )
-    expected_amount = float(register.opening_amount or 0) + float(received or 0)
+    received_ar_payments = (
+        db.query(func.coalesce(func.sum(AccountsReceivablePayment.amount), 0))
+        .filter(
+            AccountsReceivablePayment.cash_register_id == register.id,
+            AccountsReceivablePayment.payment_method == "efectivo"
+        )
+        .scalar()
+    )
+    received = float(received_orders or 0) + float(received_ar_payments or 0)
+    expected_amount = float(register.opening_amount or 0) + received
     difference = float(payload.closing_amount) - expected_amount
 
     register.closing_amount = payload.closing_amount

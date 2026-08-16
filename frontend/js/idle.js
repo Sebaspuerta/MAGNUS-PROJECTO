@@ -1,5 +1,5 @@
 (function () {
-    var INACTIVITY_LIMIT = 15 * 60 * 1000;
+    var INACTIVITY_LIMIT = 3 * 60 * 60 * 1000;
     var ACTIVITY_KEY     = "magnus_last_activity";
     var THROTTLE_MS      = 25 * 1000;
 

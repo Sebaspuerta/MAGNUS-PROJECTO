@@ -8,6 +8,7 @@ from app.schemas.order import (
     OrderCloseRequest,
     OrderItemCreate,
     OrderItemResponse,
+    OrderQuickRegisterCreate,
     OrderResponse,
     OrderItemUpdate
 )
@@ -20,6 +21,7 @@ from app.services.order_service import (
     get_order_by_id,
     list_orders,
     mark_order_pending,
+    quick_register_order,
     update_order_item
 )
 from app.utils.security import get_current_user, require_permission
@@ -46,6 +48,24 @@ def post_order(
     current_user: User = Depends(require_permission("comandas.crear"))
 ):
     result, error = create_order(db, payload, current_user)
+
+    if error:
+        raise HTTPException(status_code=400, detail=error)
+
+    return result
+
+
+@router.post("/quick-register", response_model=OrderResponse)
+def post_quick_register_order(
+    payload: OrderQuickRegisterCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("comandas.cerrar"))
+):
+    """Registra en un solo paso un corte o la venta de un producto suelto:
+    crea la comanda, agrega el ítem y la cierra de inmediato con el pago
+    indicado. Requiere comandas.cerrar porque, por debajo, crea Y cierra
+    la comanda en la misma operación."""
+    result, error = quick_register_order(db, payload, current_user)
 
     if error:
         raise HTTPException(status_code=400, detail=error)

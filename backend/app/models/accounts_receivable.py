@@ -34,6 +34,7 @@ class AccountsReceivablePayment(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     accounts_receivable_id: Mapped[int] = mapped_column(ForeignKey("accounts_receivable.id"), nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    cash_register_id: Mapped[int | None] = mapped_column(ForeignKey("cash_registers.id"), nullable=True)
     amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     payment_method: Mapped[str | None] = mapped_column(String(80), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -41,3 +42,4 @@ class AccountsReceivablePayment(Base):
 
     accounts_receivable = relationship("AccountsReceivable", back_populates="payments")
     user = relationship("User")
+    cash_register = relationship("CashRegister")

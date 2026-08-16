@@ -8,7 +8,7 @@ from app.models.order import Order
 from app.models.payment import Payment
 from app.models.cash_register import CashRegister
 from app.models.inventory import Product
-from app.models.accounts_receivable import AccountsReceivable
+from app.models.accounts_receivable import AccountsReceivable, AccountsReceivablePayment
 from app.models.alerts import Alert
 from app.models.barber import Barber
 
@@ -31,11 +31,21 @@ def get_dashboard_summary(db: Session):
     start, end = _today_bounds()
 
     # --- Ventas / comandas del día ---
-    received_today = (
+    # "Ingresos hoy" = ingreso real del negocio: pagos de comandas MÁS abonos
+    # de cuentas por cobrar (fiados) del día, sin filtrar por método de pago
+    # ni por si hubo caja abierta — esto no es un arqueo de efectivo físico,
+    # es cuánto entró de dinero (en cualquier forma) hoy.
+    received_orders_today = (
         db.query(func.coalesce(func.sum(Payment.amount), 0))
         .filter(Payment.paid_at >= start, Payment.paid_at < end)
         .scalar()
     )
+    received_ar_payments_today = (
+        db.query(func.coalesce(func.sum(AccountsReceivablePayment.amount), 0))
+        .filter(AccountsReceivablePayment.payment_date >= start, AccountsReceivablePayment.payment_date < end)
+        .scalar()
+    )
+    received_today = float(received_orders_today or 0) + float(received_ar_payments_today or 0)
     orders_closed_today = (
         db.query(func.count(Order.id))
         .filter(Order.status == "cerrada", Order.closed_at >= start, Order.closed_at < end)
@@ -55,26 +65,43 @@ def get_dashboard_summary(db: Session):
         .first()
     )
     if open_register:
-        received_in_register = (
+        # Mismo criterio que el arqueo real (cash_register_service.close_cash_register):
+        # solo efectivo físico cuenta como "esperado" en caja. Nequi, tarjeta,
+        # transferencia, etc. no son billetes que deban estar en el cajón.
+        received_orders_in_register = (
             db.query(func.coalesce(func.sum(Payment.amount), 0))
             .filter(
                 Payment.cash_register_id == open_register.id,
+                Payment.payment_method == "efectivo",
                 Payment.paid_at >= start,
                 Payment.paid_at < end
             )
             .scalar()
         )
+        received_ar_payments_in_register = (
+            db.query(func.coalesce(func.sum(AccountsReceivablePayment.amount), 0))
+            .filter(
+                AccountsReceivablePayment.cash_register_id == open_register.id,
+                AccountsReceivablePayment.payment_method == "efectivo",
+                AccountsReceivablePayment.payment_date >= start,
+                AccountsReceivablePayment.payment_date < end
+            )
+            .scalar()
+        )
+        received_in_register = float(received_orders_in_register or 0) + float(received_ar_payments_in_register or 0)
         cash = {
             "has_open_register": True,
             "open_register_id": open_register.id,
+            "opened_at": open_register.opened_at,
             "opening_amount": float(open_register.opening_amount or 0),
-            "received_today_in_register": float(received_in_register or 0),
-            "expected_amount": float(open_register.opening_amount or 0) + float(received_in_register or 0)
+            "received_today_in_register": received_in_register,
+            "expected_amount": float(open_register.opening_amount or 0) + received_in_register
         }
     else:
         cash = {
             "has_open_register": False,
             "open_register_id": None,
+            "opened_at": None,
             "opening_amount": 0.0,
             "received_today_in_register": 0.0,
             "expected_amount": 0.0

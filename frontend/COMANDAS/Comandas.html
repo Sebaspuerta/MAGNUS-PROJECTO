@@ -24,6 +24,9 @@
         <h1><i data-lucide="receipt-text"></i> Ingresos</h1>
         <div class="header-actions">
             <button id="btn-volver" class="btn secondary" style="display:none;" onclick="volverALista()">← Volver</button>
+            <button id="btn-rapido" class="btn secondary" title="Registro rápido" onclick="mostrarModalRapido()">
+                <i data-lucide="plus-circle"></i> Rápido
+            </button>
             <button id="btn-nueva" class="btn primary" onclick="mostrarModalNueva()">+ Nueva Comanda</button>
         </div>
     </div>
@@ -148,6 +151,78 @@
             <button id="btn-confirm-item" class="btn primary" onclick="confirmarAgregarItem()">Agregar</button>
             <button class="btn secondary" onclick="cerrarModal('modal-item')">Cancelar</button>
         </div>
+    </div>
+</div>
+
+<!-- ── MODAL REGISTRO RÁPIDO ──────────────────────────────────── -->
+<div id="modal-rapido" class="modal-overlay">
+    <div class="modal-box">
+
+        <!-- Paso 1: elegir corte o producto -->
+        <div id="rapido-paso-elegir">
+            <h3>Registro Rápido</h3>
+            <div class="rapido-opciones">
+                <button class="btn primary rapido-opcion" onclick="elegirTipoRapido('corte')">
+                    <i data-lucide="scissors"></i>
+                    <span>Registrar corte</span>
+                </button>
+                <button class="btn primary rapido-opcion" onclick="elegirTipoRapido('producto')">
+                    <i data-lucide="shopping-bag"></i>
+                    <span>Registrar producto</span>
+                </button>
+            </div>
+            <div class="modal-btns">
+                <button class="btn secondary" onclick="cerrarModal('modal-rapido')">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- Paso 2: formulario según el tipo elegido -->
+        <div id="rapido-paso-form" style="display:none;">
+            <h3 id="rapido-form-titulo">Registrar corte</h3>
+
+            <label id="rapido-barbero-label">Barbero (quién hizo el corte)</label>
+            <select id="rapido-barbero"><option value="">— seleccionar —</option></select>
+
+            <div id="rapido-campo-servicio">
+                <label>Servicio</label>
+                <select id="rapido-servicio" onchange="autoFillPrecioRapido()"><option value="">— seleccionar —</option></select>
+            </div>
+
+            <div id="rapido-campo-producto" style="display:none;">
+                <label>Producto</label>
+                <input type="hidden" id="rapido-producto-id">
+                <input type="text" id="rapido-producto-buscar" placeholder="Buscar producto por nombre..."
+                    autocomplete="off" onkeyup="filtrarProductosRapido()" onfocus="filtrarProductosRapido()">
+                <div id="rapido-producto-resultados" class="rapido-producto-lista"></div>
+                <label>Cantidad</label>
+                <input id="rapido-cantidad" type="number" min="1" value="1" onchange="autoFillPrecioRapido()">
+            </div>
+
+            <label>Método de pago</label>
+            <select id="rapido-metodo">
+                <option value="efectivo">Efectivo</option>
+                <option value="nequi">Nequi</option>
+                <option value="daviplata">Daviplata</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta">Tarjeta</option>
+                <option value="cortesia">Cortesía</option>
+                <option value="combinado">Combinado</option>
+            </select>
+            <label>Monto recibido (vacío = cobrar total)</label>
+            <input id="rapido-monto" type="number" min="0" step="any" placeholder="Dejar vacío para cobrar todo">
+
+            <label>Nota (opcional)</label>
+            <input id="rapido-nota" type="text" placeholder="Observaciones...">
+
+            <div id="rapido-preview"></div>
+
+            <div id="error-rapido"></div>
+            <div class="modal-btns">
+                <button id="btn-confirm-rapido" class="btn primary" onclick="confirmarRapido()">Registrar</button>
+                <button class="btn secondary" onclick="volverPasoElegirRapido()">← Volver</button>
+            </div>
+        </div>
+
     </div>
 </div>
 

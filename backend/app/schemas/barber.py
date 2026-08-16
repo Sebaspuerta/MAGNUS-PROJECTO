@@ -36,6 +36,7 @@ class BarberResponse(BaseModel):
     commission_value: float
     notes: str | None = None
     is_active: bool
+    is_deleted: bool = False
 
     class Config:
         from_attributes = True

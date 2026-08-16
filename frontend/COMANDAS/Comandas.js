@@ -116,7 +116,7 @@ function renderLista(ordenes) {
             ? (catalogos.clientes.find(c => c.id === o.client_id)?.full_name || `Cliente #${o.client_id}`)
             : "—";
         const barbero = o.barber_id
-            ? (catalogos.barberos.find(b => b.id === o.barber_id)?.full_name || `Barbero #${o.barber_id}`)
+            ? (o.barber_name || catalogos.barberos.find(b => b.id === o.barber_id)?.full_name || `Barbero #${o.barber_id}`)
             : "—";
 
         const { clase, label } = statusBadge(o.status);
@@ -168,7 +168,7 @@ function renderDetalle() {
         ? (catalogos.clientes.find(c => c.id === o.client_id)?.full_name || `Cliente #${o.client_id}`)
         : "Sin cliente";
     const barberoNombre = o.barber_id
-        ? (catalogos.barberos.find(b => b.id === o.barber_id)?.full_name || `Barbero #${o.barber_id}`)
+        ? (o.barber_name || catalogos.barberos.find(b => b.id === o.barber_id)?.full_name || `Barbero #${o.barber_id}`)
         : "Sin asignar";
     setText("det-cliente", clienteNombre);
     setText("det-barbero", barberoNombre);
@@ -203,9 +203,10 @@ function renderItems(items) {
     const abierta = comandaActual?.status === "abierta";
 
     container.innerHTML = items.map(it => {
-        const nombre = it.item_type === "servicio"
-            ? (catalogos.servicios.find(s => s.id === it.service_id)?.name || it.description || `Servicio #${it.service_id}`)
-            : (catalogos.productos.find(p => p.id === it.product_id)?.name || it.description || `Producto #${it.product_id}`);
+        const nombre = it.display_name ||
+            (it.item_type === "servicio"
+                ? (catalogos.servicios.find(s => s.id === it.service_id)?.name || it.description || `Servicio #${it.service_id}`)
+                : (catalogos.productos.find(p => p.id === it.product_id)?.name || it.description || `Producto #${it.product_id}`));
 
         const badge  = `<small style="color:var(--muted);font-size:.68rem;background:rgba(255,255,255,.06);padding:1px 6px;border-radius:4px;">${it.item_type}</small>`;
         const borrar = abierta
@@ -262,6 +263,186 @@ async function confirmarNueva() {
     } catch (err) {
         setError("error-nueva", err.message);
         setDisabled("btn-confirm-nueva", false, "Crear Comanda");
+    }
+}
+
+// ── REGISTRO RÁPIDO (corte o producto suelto, sin abrir comanda manualmente) ──
+let rapidoTipoActual = null; // "corte" | "producto"
+
+async function mostrarModalRapido() {
+    const btn = document.getElementById("btn-rapido");
+    if (btn) { btn.disabled = true; }
+    await cargarCatalogos();
+    if (btn) { btn.disabled = false; }
+
+    rapidoTipoActual = null;
+    document.getElementById("rapido-paso-elegir").style.display = "block";
+    document.getElementById("rapido-paso-form").style.display = "none";
+    setError("error-rapido", "");
+    abrirModal("modal-rapido");
+}
+
+function elegirTipoRapido(tipo) {
+    rapidoTipoActual = tipo;
+    setError("error-rapido", "");
+    setText("rapido-preview", "");
+
+    const esCorte = tipo === "corte";
+    setText("rapido-form-titulo", esCorte ? "Registrar corte" : "Registrar producto");
+    setText("rapido-barbero-label", esCorte ? "Barbero (quién hizo el corte)" : "Barbero / vendedor");
+
+    poblarSelect("rapido-barbero", catalogos.barberos, "— seleccionar —", b => ({ v: b.id, t: b.full_name }));
+    poblarSelect("rapido-servicio", catalogos.servicios, "— seleccionar —", s => ({ v: s.id, t: `${s.name} — ${money(s.price)}` }));
+
+    document.getElementById("rapido-producto-id").value = "";
+    document.getElementById("rapido-producto-buscar").value = "";
+    ocultarResultadosProductoRapido();
+
+    document.getElementById("rapido-campo-servicio").style.display = esCorte ? "block" : "none";
+    document.getElementById("rapido-campo-producto").style.display = esCorte ? "none" : "block";
+    document.getElementById("rapido-cantidad").value = "1";
+    document.getElementById("rapido-metodo").value = "efectivo";
+    document.getElementById("rapido-monto").value = "";
+    document.getElementById("rapido-nota").value = "";
+
+    document.getElementById("rapido-paso-elegir").style.display = "none";
+    document.getElementById("rapido-paso-form").style.display = "block";
+    setDisabled("btn-confirm-rapido", false, "Registrar");
+    autoFillPrecioRapido();
+}
+
+function volverPasoElegirRapido() {
+    rapidoTipoActual = null;
+    document.getElementById("rapido-paso-elegir").style.display = "block";
+    document.getElementById("rapido-paso-form").style.display = "none";
+}
+
+function autoFillPrecioRapido() {
+    if (!rapidoTipoActual) return;
+
+    if (rapidoTipoActual === "corte") {
+        const sel = document.getElementById("rapido-servicio");
+        const svc = catalogos.servicios.find(s => s.id === parseInt(sel.value));
+        setText("rapido-preview", svc ? `Total a cobrar: ${money(svc.price)}` : "");
+    } else {
+        const cant = parseInt(document.getElementById("rapido-cantidad").value) || 1;
+        const prodId = parseInt(document.getElementById("rapido-producto-id").value);
+        const prod = catalogos.productos.find(p => p.id === prodId);
+        setText("rapido-preview", prod ? `Total a cobrar: ${money(prod.sale_price * cant)}` : "");
+    }
+}
+
+// ── PICKER DE PRODUCTO CON THUMBNAIL (registro rápido) ────────────────────────
+const RAPIDO_PLACEHOLDER_SVG =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">' +
+    '<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>';
+
+function filtrarProductosRapido() {
+    const q = document.getElementById("rapido-producto-buscar").value.trim().toLowerCase();
+    const contenedor = document.getElementById("rapido-producto-resultados");
+
+    const productoActualId = parseInt(document.getElementById("rapido-producto-id").value);
+    // Si el texto coincide exactamente con el producto ya elegido, no re-filtramos
+    // (evita que reabrir el foco vuelva a mostrar la lista completa sin sentido).
+    const coincidencias = catalogos.productos
+        .filter(p => p.name.toLowerCase().includes(q))
+        .slice(0, 30);
+
+    if (!coincidencias.length) {
+        contenedor.innerHTML = '<div class="rapido-producto-vacio">Sin productos que coincidan.</div>';
+    } else {
+        contenedor.innerHTML = coincidencias.map(p => {
+            const thumb = p.photo_url
+                ? `<img class="rapido-producto-thumb" src="${escAttr(p.photo_url)}" alt="">`
+                : `<div class="rapido-producto-thumb-placeholder">${RAPIDO_PLACEHOLDER_SVG}</div>`;
+            const seleccionado = p.id === productoActualId ? " selected" : "";
+            return `<div class="rapido-producto-item${seleccionado}" onmousedown="event.preventDefault(); seleccionarProductoRapido(${p.id})">
+                ${thumb}
+                <div class="rapido-producto-info">
+                    <div class="rapido-producto-nombre">${escHtml(p.name)}</div>
+                    <div class="rapido-producto-precio">Stock: ${p.current_stock || 0} — ${money(p.sale_price)}</div>
+                </div>
+            </div>`;
+        }).join("");
+    }
+
+    contenedor.classList.add("visible");
+}
+
+function seleccionarProductoRapido(id) {
+    const prod = catalogos.productos.find(p => p.id === id);
+    if (!prod) return;
+
+    document.getElementById("rapido-producto-id").value = String(prod.id);
+    document.getElementById("rapido-producto-buscar").value = prod.name;
+    ocultarResultadosProductoRapido();
+    autoFillPrecioRapido();
+}
+
+function ocultarResultadosProductoRapido() {
+    const contenedor = document.getElementById("rapido-producto-resultados");
+    if (contenedor) contenedor.classList.remove("visible");
+}
+
+document.addEventListener("click", (e) => {
+    const campo = document.getElementById("rapido-campo-producto");
+    if (campo && !campo.contains(e.target)) {
+        ocultarResultadosProductoRapido();
+    }
+});
+
+async function confirmarRapido() {
+    setError("error-rapido", "");
+
+    const barberoId = parseInt(document.getElementById("rapido-barbero").value) || null;
+    const metodo    = document.getElementById("rapido-metodo").value;
+    const montoStr  = document.getElementById("rapido-monto").value.trim();
+    const nota      = document.getElementById("rapido-nota").value.trim() || null;
+
+    if (!barberoId) { setError("error-rapido", "Selecciona el barbero."); return; }
+
+    const body = {
+        tipo: rapidoTipoActual,
+        barber_id: barberoId,
+        payment_method: metodo,
+        note: nota
+    };
+
+    if (rapidoTipoActual === "corte") {
+        const servicioId = parseInt(document.getElementById("rapido-servicio").value) || null;
+        if (!servicioId) { setError("error-rapido", "Selecciona el servicio."); return; }
+        body.service_id = servicioId;
+        body.quantity = 1;
+    } else {
+        const productoId = parseInt(document.getElementById("rapido-producto-id").value) || null;
+        const cantidad = parseInt(document.getElementById("rapido-cantidad").value);
+        if (!productoId) { setError("error-rapido", "Selecciona el producto."); return; }
+        if (!cantidad || cantidad < 1) { setError("error-rapido", "La cantidad debe ser al menos 1."); return; }
+        body.product_id = productoId;
+        body.quantity = cantidad;
+    }
+
+    if (montoStr !== "") {
+        const monto = parseFloat(montoStr);
+        if (isNaN(monto) || monto < 0) { setError("error-rapido", "Monto recibido inválido."); return; }
+        body.payment_amount = monto;
+    }
+
+    if (catalogos.cajaAbierta) {
+        body.cash_register_id = catalogos.cajaAbierta.id;
+    }
+
+    setDisabled("btn-confirm-rapido", true, "Registrando...");
+
+    try {
+        const o = await window.api.apiRequest("/api/orders/quick-register", { method: "POST", body });
+        cerrarModal("modal-rapido");
+        alert(`Registrado — Comanda #${o.id} por ${money(o.total)}.`);
+        mostrarVista("lista");
+        await cargarLista();
+    } catch (err) {
+        setError("error-rapido", err.message);
+        setDisabled("btn-confirm-rapido", false, "Registrar");
     }
 }
 

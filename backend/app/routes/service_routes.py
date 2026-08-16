@@ -12,7 +12,7 @@ from app.services.service_service import (
     list_services,
     update_service
 )
-from app.utils.security import get_current_user, require_admin, require_permission
+from app.utils.security import get_current_user, require_owner, require_permission
 
 
 router = APIRouter(
@@ -91,7 +91,7 @@ def patch_deactivate_service(
 def delete_service_endpoint(
     service_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_owner)
 ):
     result, error = delete_service(db, service_id, current_user)
 

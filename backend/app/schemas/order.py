@@ -24,6 +24,8 @@ class OrderItemResponse(BaseModel):
     service_id: int | None = None
     product_id: int | None = None
     description: str | None = None
+    display_name: str | None = None
+    is_deleted_reference: bool = False
     quantity: int
     unit_price: float
     total_price: float
@@ -48,10 +50,24 @@ class OrderCloseRequest(BaseModel):
     note: str | None = None
 
 
+class OrderQuickRegisterCreate(BaseModel):
+    tipo: str = Field(..., description="corte o producto")
+    barber_id: int
+    service_id: int | None = None
+    product_id: int | None = None
+    quantity: int = Field(1, gt=0)
+    payment_method: str
+    payment_amount: float | None = None
+    cash_register_id: int | None = None
+    note: str | None = None
+
+
 class OrderResponse(BaseModel):
     id: int
     client_id: int | None = None
     barber_id: int | None = None
+    barber_name: str | None = None
+    barber_is_deleted: bool = False
     status: str
     payment_status: str
     amount_paid: float

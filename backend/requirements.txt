@@ -12,3 +12,5 @@ reportlab
 fpdf2
 pywebview
 openpyxl
+Pillow
+python-multipart

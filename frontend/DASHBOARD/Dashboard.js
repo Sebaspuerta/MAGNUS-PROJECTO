@@ -65,11 +65,185 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (user.role === "Barbero") {
         await loadMyCutsToday();
+        await loadCajaFeaturedForBarbero();
     } else {
         await loadSummary();
     }
 
 });
+
+// ── CAJA DESTACADA (tarjeta de atajo arriba del Dashboard) ────────────────────
+// Quién puede abrir/cerrar caja se define por rol, reflejando exactamente los
+// permisos caja.abrir / caja.cerrar que seed_initial_security asigna en el
+// backend (app/services/security_service.py). Si cambian allá, actualizar aquí.
+const CAJA_PERMISSIONS_BY_ROLE = {
+    "Administrador": { abrir: true, cerrar: true },
+    "Cajero":        { abrir: true, cerrar: true },
+    "Barbero":       { abrir: true, cerrar: false },
+    "Consultor":     { abrir: false, cerrar: false },
+};
+
+function renderCajaFeaturedCard(cash, role) {
+    const card  = document.getElementById("caja-featured");
+    const title = document.getElementById("caja-featured-title");
+    const sub   = document.getElementById("caja-featured-sub");
+    const btn   = document.getElementById("caja-featured-btn");
+    if (!card || !cash) return;
+
+    const perms = CAJA_PERMISSIONS_BY_ROLE[role] || { abrir: false, cerrar: false };
+    const abierta = !!cash.has_open_register;
+
+    card.style.display = "flex";
+
+    if (!abierta) {
+        card.classList.add("cf-alert");
+        title.textContent = "La caja no está abierta";
+        sub.textContent = "Abre la caja para empezar a cobrar comandas hoy.";
+
+        if (perms.abrir) {
+            // Un solo clic: abre la caja directo (opening_amount fijo en 0),
+            // sin modal ni navegar a otra página. La tarjeta se refresca sola.
+            btn.textContent = "Abrir caja";
+            btn.className = "cf-btn";
+            btn.style.display = "inline-flex";
+            btn.removeAttribute("href");
+            btn.onclick = function (e) {
+                e.preventDefault();
+                abrirCajaDirecto(role);
+            };
+        } else {
+            btn.style.display = "none";
+        }
+    } else {
+        card.classList.remove("cf-alert");
+        title.textContent = "Caja abierta";
+        sub.textContent = cash.opened_at
+            ? `Desde las ${fmtHora(cash.opened_at)}`
+            : "";
+
+        _cajaFeaturedRegisterId = cash.open_register_id || null;
+
+        if (perms.cerrar) {
+            // Mini modal ahí mismo (sin navegar), mismo endpoint que ya usa
+            // el módulo Caja para cerrar.
+            btn.textContent = "Cerrar caja";
+            btn.className = "cf-btn cf-btn-secondary";
+            btn.style.display = "inline-flex";
+            btn.removeAttribute("href");
+            btn.onclick = function (e) {
+                e.preventDefault();
+                abrirModalCerrarCajaDashboard();
+            };
+        } else {
+            btn.style.display = "none";
+        }
+    }
+
+    lucide.createIcons();
+}
+
+// ── CERRAR CAJA (mini modal, sin salir del Dashboard) ──────────────────────────
+let _cajaFeaturedRegisterId = null;
+
+function abrirModalCerrarCajaDashboard() {
+    document.getElementById("cc-closing-amount").value = "";
+    document.getElementById("cc-notes").value = "";
+    setText("cc-error", "");
+    setCcConfirmState(false, "Cerrar caja");
+    document.getElementById("modal-cerrar-caja").classList.add("visible");
+}
+
+function cerrarModalCerrarCajaDashboard() {
+    document.getElementById("modal-cerrar-caja").classList.remove("visible");
+}
+
+function setCcConfirmState(disabled, label) {
+    const btn = document.getElementById("cc-btn-confirm");
+    if (btn) { btn.disabled = disabled; btn.textContent = label; }
+}
+
+async function confirmarCerrarCajaDashboard() {
+    const amountRaw = document.getElementById("cc-closing-amount").value;
+    const notes = document.getElementById("cc-notes").value.trim() || null;
+    const amount = parseFloat(amountRaw);
+
+    if (amountRaw === "" || isNaN(amount) || amount < 0) {
+        setText("cc-error", "Ingresa el efectivo contado en caja (0 o más).");
+        return;
+    }
+    if (!_cajaFeaturedRegisterId) {
+        setText("cc-error", "No se encontró la caja abierta. Cierra este modal y vuelve a intentar.");
+        return;
+    }
+
+    setCcConfirmState(true, "Cerrando...");
+    setText("cc-error", "");
+
+    try {
+        // Mismo endpoint que Caja.js (confirmarCerrar): PATCH /api/cash-registers/{id}/close
+        await window.api.apiRequest(`/api/cash-registers/${_cajaFeaturedRegisterId}/close`, {
+            method: "PATCH",
+            body: { closing_amount: amount, notes }
+        });
+
+        cerrarModalCerrarCajaDashboard();
+        await loadSummary();
+    } catch (err) {
+        const detail = (err.responseData && err.responseData.detail) || err.message;
+        setText("cc-error", typeof detail === "string" ? detail : "No se pudo cerrar la caja.");
+        setCcConfirmState(false, "Cerrar caja");
+    }
+}
+
+async function abrirCajaDirecto(role) {
+    const btn = document.getElementById("caja-featured-btn");
+    if (btn) {
+        btn.onclick = function (e) { e.preventDefault(); };
+        btn.style.opacity = ".6";
+        btn.textContent = "Abriendo...";
+    }
+
+    try {
+        await window.api.apiRequest("/api/cash-registers/open", {
+            method: "POST",
+            body: { opening_amount: 0 }
+        });
+
+        if (role === "Barbero") {
+            await loadCajaFeaturedForBarbero();
+        } else {
+            await loadSummary();
+        }
+    } catch (err) {
+        const detail = (err.responseData && err.responseData.detail) || err.message;
+        alert("No se pudo abrir la caja: " + (typeof detail === "string" ? detail : "Error desconocido"));
+        if (btn) {
+            btn.style.opacity = "";
+            btn.textContent = "Abrir caja";
+            btn.onclick = function (e) {
+                e.preventDefault();
+                abrirCajaDirecto(role);
+            };
+        }
+    }
+}
+
+function fmtHora(iso) {
+    try {
+        return new Date(iso).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
+    } catch (e) {
+        return "";
+    }
+}
+
+async function loadCajaFeaturedForBarbero() {
+    try {
+        const d = await window.api.apiRequest("/api/dashboard/summary");
+        renderCajaFeaturedCard(d.cash, "Barbero");
+    } catch (err) {
+        console.error("Error cargando estado de caja:", err.message);
+    }
+}
 
 async function loadSummary() {
 
@@ -84,6 +258,8 @@ async function loadSummary() {
         const inv   = d.inventory         || {};
         const ar    = d.accounts_receivable || {};
         const alerts = d.alerts           || {};
+
+        renderCajaFeaturedCard(cash, (window.api.getAuthUser() || {}).role);
 
         setText("kpi-total",   money(today.received_total));
         setText("kpi-closed",  fmt(today.orders_closed));
