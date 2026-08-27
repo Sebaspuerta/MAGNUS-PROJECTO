@@ -18,8 +18,10 @@ permissions, role_permissions, system_config, master_code_config) tiene una
 columna FK que apunte a ninguna de las tablas listadas en TABLES_TO_TRUNCATE.
 Todas las FKs que sí apuntan hacia esas tablas nacen desde otra tabla que
 también está en la lista (ej. order_items.order_id -> orders.id, ambas se
-truncan juntas). Por lo tanto TRUNCATE ... CASCADE no puede alcanzar ninguna
-tabla protegida.
+borran juntas, en ese orden: primero la hija, luego la padre). SQLite no
+tiene TRUNCATE ... CASCADE, así que el borrado es un DELETE FROM tabla por
+tabla en ese mismo orden de dependencias — nunca podría alcanzar una tabla
+protegida porque ninguna FK entra hacia ellas.
 
 Corre desde la carpeta backend/:
     python reset_full_data.py
@@ -151,12 +153,28 @@ def main():
             print("\nCancelado. No se modificó absolutamente nada.")
             return
 
-        # ── FASE 3: TRUNCATE en una sola transacción ─────────────────────
-        print("\nEjecutando TRUNCATE dentro de una transacción...")
-        table_list = ", ".join(TABLES_TO_TRUNCATE)
-        db.execute(text(f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE"))
+        # ── FASE 3: DELETE en una sola transacción ───────────────────────
+        # SQLite no tiene TRUNCATE ... RESTART IDENTITY CASCADE. Se borra
+        # tabla por tabla en el MISMO orden de dependencias por foreign key
+        # que ya tenía la lista (de hijos a padres), y luego se resetean los
+        # contadores de autoincremento en sqlite_sequence — equivalente al
+        # RESTART IDENTITY de Postgres.
+        print("\nEjecutando DELETE dentro de una transacción...")
+        for t in TABLES_TO_TRUNCATE:
+            db.execute(text(f"DELETE FROM {t}"))
+
+        # sqlite_sequence solo existe si alguna tabla del esquema usa
+        # AUTOINCREMENT; si no existe, un DELETE simple ya deja el próximo
+        # rowid en 1 (no hace falta resetear nada aparte).
+        seq_table_exists = db.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='sqlite_sequence'")
+        ).first()
+        if seq_table_exists:
+            placeholders = ", ".join(f"'{t}'" for t in TABLES_TO_TRUNCATE)
+            db.execute(text(f"DELETE FROM sqlite_sequence WHERE name IN ({placeholders})"))
+
         db.commit()
-        print("TRUNCATE aplicado y confirmado (COMMIT).")
+        print("DELETE aplicado y confirmado (COMMIT).")
 
     except Exception as exc:
         db.rollback()

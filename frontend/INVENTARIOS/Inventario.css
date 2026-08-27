@@ -183,37 +183,42 @@ body {
   color: var(--muted);
 }
 
-.category-delete-btn {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: rgba(225,29,46,.13);
-  color: var(--red-2);
-  border: 1px solid rgba(225,29,46,.28);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+/* ── GRID DE PRODUCTOS (dentro de una categoría) ──────
+   minmax con techo (no solo piso) para que una sola tarjeta
+   no se estire a lo ancho de toda la pantalla, y que con
+   muchos productos se acomoden en columnas compactas. ── */
+
+.products-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
+  gap: 16px;
 }
 
-.category-delete-btn:hover { background: rgba(225,29,46,.24); border-color: rgba(225,29,46,.55); }
-.category-delete-btn i { width: 15px; height: 15px; }
+/* ── TARJETA DE PRODUCTO (estilo e-commerce) ─────────── */
 
-/* ── FOTO DE PRODUCTO (tarjeta) ────────────────────── */
+.product-card {
+  padding: 14px 14px 16px;
+  position: relative;
+}
 
-.product-card { padding-top: 16px; }
+.product-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(43,91,255,.35);
+}
+
+.product-card.inactive { opacity: .55; }
+
+/* ── FOTO DE PRODUCTO (cuadrada real, la foto guardada ya
+   viene recortada a 200×200 — object-fit:cover solo debe
+   rellenar el marco, no zoom feo por un marco ancho/bajo) */
 
 .product-photo-frame {
   width: 100%;
-  height: 130px;
+  aspect-ratio: 1 / 1;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: rgba(255,255,255,.04);
   overflow: hidden;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,6 +229,7 @@ body {
   height: 100%;
   border: none;
   border-radius: 0;
+  object-fit: cover;
 }
 
 .product-photo-frame .thumb-placeholder {
@@ -232,6 +238,102 @@ body {
   border: none;
   border-radius: 0;
 }
+
+/* ── MENÚ DE ACCIONES (⋮) — overlay sobre la foto ────── */
+
+.product-menu-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(6,9,15,.55);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  color: var(--white);
+  border: 1px solid rgba(255,255,255,.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.product-menu-btn:hover { background: rgba(6,9,15,.8); border-color: rgba(255,255,255,.35); }
+.product-menu-btn i { width: 15px; height: 15px; }
+
+/* El dropdown es un único nodo compartido, reposicionado por JS y
+   anclado con position:fixed — así escapa del overflow:hidden de
+   .card sin importar en qué tarjeta de la cuadrícula se abra. */
+.product-menu-dropdown {
+  display: none;
+  position: fixed;
+  min-width: 178px;
+  background: linear-gradient(160deg, var(--panel), #080C1A);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.45);
+  padding: 6px;
+  z-index: 999;
+}
+
+.product-menu-dropdown.open { display: block; }
+
+.product-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.product-menu-item:hover { background: rgba(255,255,255,.08); }
+.product-menu-item i { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); }
+
+.product-menu-item.accion-stock  { color: #81c784; }
+.product-menu-item.accion-stock i  { color: #81c784; }
+.product-menu-item.accion-danger { color: var(--red-2); }
+.product-menu-item.accion-danger i { color: var(--red-2); }
+
+/* ── NOMBRE / PRECIO (jerarquía tipo e-commerce) ─────── */
+
+.product-card .title {
+  font-size: 13.5px;
+  line-height: 1.32;
+  margin-bottom: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.64em;
+}
+
+.product-price {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--gold);
+  margin-top: 5px;
+}
+
+.product-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  margin-top: 8px;
+}
+
+.product-meta-row .badge { margin-top: 0; }
+.product-stock { font-size: 12px; color: var(--muted); }
 
 .thumb {
   width: 48px;
@@ -538,6 +640,75 @@ select option { background: #0d1222; }
 
 .save { width: 100%; margin-top: 14px; padding: 12px; font-size: 14px; }
 
+/* ── MODAL GESTIONAR CATEGORÍAS ───────────────────── */
+
+.cat-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.cat-opcion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  font-size: 14.5px;
+  justify-content: flex-start;
+}
+
+.cat-opcion i { width: 20px; height: 20px; flex-shrink: 0; }
+
+.cat-opcion small {
+  display: block;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 11.5px;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.cat-opcion-danger {
+  background: rgba(225,29,46,.08);
+  color: var(--red-2);
+  border-color: rgba(225,29,46,.28);
+}
+.cat-opcion-danger:hover { background: rgba(225,29,46,.16); border-color: rgba(225,29,46,.5); }
+.cat-opcion-danger small { color: rgba(255,59,73,.75); }
+
+.cat-eliminar-modo-texto {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.cat-eliminar-modo-texto strong { color: var(--white); }
+
+#cat-eliminar-lista {
+  max-height: 340px;
+  overflow-y: auto;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cat-eliminar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.02);
+}
+
+.cat-eliminar-nombre { font-size: 14px; font-weight: 600; color: var(--white); }
+.cat-eliminar-count  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.cat-eliminar-item .danger { flex-shrink: 0; padding: 8px 14px; }
+
 /* ── RESPONSIVE ───────────────────────────────────── */
 
 @media (max-width: 768px) {
@@ -612,10 +783,39 @@ body.light-mode .foto-preview-box {
   border-color: rgba(0,0,0,.10);
 }
 
+body.light-mode .product-menu-btn {
+  background: rgba(255,255,255,.78);
+  border-color: rgba(0,0,0,.14);
+  color: #1C1F2E;
+}
+body.light-mode .product-menu-btn:hover { background: rgba(255,255,255,.96); }
+
+body.light-mode .product-menu-dropdown {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.12);
+  box-shadow: 0 12px 32px rgba(0,0,0,.14);
+}
+body.light-mode .product-menu-item { color: #1C1F2E; }
+body.light-mode .product-menu-item:hover { background: rgba(0,0,0,.05); }
+
 body.light-mode .foto-picker {
   background: #F7F8FC;
   border-color: rgba(0,0,0,.08);
 }
+
+body.light-mode .cat-eliminar-item {
+  background: #F7F8FC;
+  border-color: rgba(0,0,0,.08);
+}
+body.light-mode .cat-eliminar-nombre { color: #1C1F2E; }
+
+body.light-mode .cat-opcion-danger {
+  background: rgba(225,29,46,.08);
+  color: var(--red-2);
+  border-color: rgba(225,29,46,.3);
+}
+body.light-mode .cat-opcion-danger:hover { background: rgba(225,29,46,.16); border-color: rgba(225,29,46,.5); }
+body.light-mode .cat-opcion-danger small { color: rgba(225,29,46,.8); }
 
 body.light-mode .foto-picker-btn {
   background: rgba(0,0,0,.05);

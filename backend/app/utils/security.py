@@ -13,9 +13,15 @@ from app.models.security import Permission, Role, RolePermission, User
 ALGORITHM = "HS256"
 security = HTTPBearer()
 
-# Username del dueño del negocio. Solo él puede eliminar (borrado lógico)
-# productos, servicios y barberos.
+# Username del dueño del negocio (usado por is_owner_barber en barber_service.py
+# para identificar la fila del barbero Mateo — no confundir con OWNER_USERNAMES).
 OWNER_USERNAME = "mateo"
+
+# Usernames con poder total de dueño. "mateo" y "admin" se consideran la misma
+# autoridad para toda acción exclusiva del dueño (crear/eliminar categorías,
+# eliminar productos/servicios/barberos). No usar este set en is_owner_barber:
+# esa función protege una fila específica de la tabla barbers, no un login.
+OWNER_USERNAMES = {"mateo", "admin"}
 
 
 def hash_password(password: str) -> str:
@@ -105,7 +111,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 
 
 def require_owner(current_user: User = Depends(require_admin)) -> User:
-    if (current_user.username or "").lower() != OWNER_USERNAME:
+    if (current_user.username or "").lower() not in OWNER_USERNAMES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo el dueño puede realizar esta acción."

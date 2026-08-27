@@ -36,10 +36,11 @@ router = APIRouter(
 def get_products(
     include_inactive: bool = False,
     category_id: int | None = None,
+    uncategorized: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("inventario.ver"))
 ):
-    return list_products(db, include_inactive=include_inactive, category_id=category_id)
+    return list_products(db, include_inactive=include_inactive, category_id=category_id, uncategorized=uncategorized)
 
 
 @router.post("", response_model=ProductResponse)

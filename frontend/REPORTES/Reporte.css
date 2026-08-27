@@ -253,6 +253,87 @@ tbody td {
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover td { background: rgba(14,19,34,.9); }
 
+/* ── MODAL EXPORTAR / IMPRIMIR ──
+   Mismo patrón visual (.modal-overlay/.modal-box) que los demás modales
+   de la app (ver frontend/DASHBOARD/Dashboard.css). */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 20px;
+}
+
+.modal-overlay.visible { display: flex; }
+
+.modal-box {
+  width: 440px;
+  max-width: 100%;
+  background: rgba(10,14,26,.97);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  padding: 28px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 32px 80px rgba(0,0,0,.75);
+}
+
+.modal-box::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--grad);
+}
+
+.modal-box h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 18px;
+}
+
+.modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  color: var(--white);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .18s;
+}
+
+.modal-option-btn i { width: 19px; height: 19px; color: var(--blue-2); flex-shrink: 0; }
+
+.modal-option-btn:hover {
+  background: rgba(255,255,255,.09);
+  border-color: var(--blue);
+}
+
+.modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 /* ── RESPONSIVE ───────────────────────────────────── */
 
 @media (max-width: 900px) {
@@ -317,3 +398,20 @@ body.light-mode .secondary {
   border-color: rgba(0,0,0,.12);
 }
 body.light-mode .secondary:hover { background: rgba(0,0,0,.09); color: #1C1F2E; }
+
+body.light-mode .modal-box {
+  background: #FFFFFF;
+  border-color: rgba(0,0,0,.08);
+  box-shadow: 0 24px 60px rgba(0,0,0,.18);
+}
+body.light-mode .modal-box h3 { color: #1C1F2E; }
+
+body.light-mode .modal-option-btn {
+  background: #F7F8FC;
+  border-color: rgba(0,0,0,.10);
+  color: #1C1F2E;
+}
+body.light-mode .modal-option-btn:hover {
+  background: #EFF2FB;
+  border-color: var(--blue);
+}

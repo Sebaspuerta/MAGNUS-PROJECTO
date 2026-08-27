@@ -38,7 +38,7 @@ function renderStats(lista) {
 function renderCards(lista) {
     const grid = document.getElementById("barberos-grid");
     const activos = lista.filter(b => b.is_active);
-    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
+    const isOwner = ["mateo", "admin"].includes(((window.api.getAuthUser() || {}).username || "").toLowerCase());
 
     if (!activos.length) {
         grid.innerHTML = '<div style="color:#9aa4b2;padding:20px 0;">No hay barberos activos.</div>';

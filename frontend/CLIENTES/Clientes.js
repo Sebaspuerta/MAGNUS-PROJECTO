@@ -138,7 +138,7 @@ async function mostrarModalEditar(id) {
 
 function cerrarModal() { modal.classList.remove("active"); }
 
-async function guardarCliente() {
+async function guardarCliente(forceCreate = false) {
     const id      = document.getElementById("f-id").value;
     const nombre  = document.getElementById("f-nombre").value.trim();
     const phone   = document.getElementById("f-telefono").value.trim()  || null;
@@ -150,6 +150,7 @@ async function guardarCliente() {
     if (!nombre) { setError("error-modal", "El nombre es obligatorio."); return; }
 
     const body = { full_name: nombre, phone, email, document_number: doc, birth_date: nac, notes: notas };
+    if (!id && forceCreate) body.force_create = true;
 
     btnGuardar.disabled    = true;
     btnGuardar.textContent = "Guardando...";
@@ -164,10 +165,35 @@ async function guardarCliente() {
         cerrarModal();
         await cargarClientes();
     } catch (err) {
-        setError("error-modal", err.message);
+        const detail = err.responseData && err.responseData.detail;
+        if (!id && detail && typeof detail === "object" && detail.code === "duplicate_client") {
+            mostrarErrorDuplicado("error-modal", detail.message, () => guardarCliente(true));
+        } else {
+            setError("error-modal", err.message);
+        }
         btnGuardar.disabled    = false;
         btnGuardar.textContent = id ? "Guardar Cambios" : "Guardar Cliente";
     }
+}
+
+// Muestra un mensaje de conflicto (409) con un botón para forzar la creación.
+function mostrarErrorDuplicado(containerId, mensaje, onForzar) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = "";
+
+    const texto = document.createElement("span");
+    texto.textContent = mensaje;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-secondary";
+    btn.style.marginLeft = "10px";
+    btn.textContent = "Crear de todas formas";
+    btn.onclick = onForzar;
+
+    el.appendChild(texto);
+    el.appendChild(btn);
 }
 
 // ── DESACTIVAR ────────────────────────────────────────────────────────────────

@@ -2,24 +2,42 @@
 
 var _cache = null; /* { range, barbers } — evita llamadas API al filtrar por barbero */
 
+/* Formatea una fecha en el calendario de America/Bogota (YYYY-MM-DD), NO en
+   UTC. d.toISOString() se desfasa un día completo entre las 7pm y medianoche
+   hora Colombia (UTC-5), porque en ese rango el UTC ya cruzó al día
+   siguiente — eso hacía que "Día" buscara fechas sin datos en el backend. */
+var _bogotaFmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit'
+});
+
 function toISO(d) {
-    return d.toISOString().slice(0, 10);
+    return _bogotaFmt.format(d);
+}
+
+/* Suma `deltaDays` días (puede ser negativo) a una fecha ISO por componentes
+   Y/M/D, no por aritmética de milisegundos — usa UTC solo como ancla neutral
+   de cálculo, no representa una zona horaria real aquí. */
+function isoAddDays(isoDate, deltaDays) {
+    var parts  = isoDate.split('-').map(Number);
+    var anchor = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    anchor.setUTCDate(anchor.getUTCDate() + deltaDays);
+    var y  = anchor.getUTCFullYear();
+    var m  = String(anchor.getUTCMonth() + 1).padStart(2, '0');
+    var dd = String(anchor.getUTCDate()).padStart(2, '0');
+    return y + '-' + m + '-' + dd;
 }
 
 /* Convierte el selector "day/week/month" a fechas ISO que el backend entiende */
 function getDateRange() {
-    var today = new Date();
     var range = document.getElementById('range').value;
-    var end   = toISO(today);
+    var end   = toISO(new Date());
     var start;
     if (range === 'day') {
         start = end;
     } else if (range === 'week') {
-        var w = new Date(today); w.setDate(w.getDate() - 6);
-        start = toISO(w);
+        start = isoAddDays(end, -6);
     } else { /* month */
-        var m = new Date(today); m.setDate(m.getDate() - 29);
-        start = toISO(m);
+        start = isoAddDays(end, -29);
     }
     return { range: range, start_date: start, end_date: end };
 }
@@ -131,6 +149,15 @@ async function render() {
     }
 }
 
+/* MODAL EXPORTAR / IMPRIMIR — elige entre Excel o impresión */
+function abrirModalExportar() {
+    document.getElementById('modal-exportar').classList.add('visible');
+}
+
+function cerrarModalExportar() {
+    document.getElementById('modal-exportar').classList.remove('visible');
+}
+
 /* EXPORT / PRINT — sin tocar */
 function printReport() {
     window.print();
@@ -162,7 +189,7 @@ async function exportExcel() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `magnus_reporte_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.download = `magnus_reporte_${toISO(new Date())}.xlsx`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -177,7 +204,5 @@ async function exportExcel() {
         }
     }
 }
-
-document.addEventListener('DOMContentLoaded', render);
 
 document.addEventListener('DOMContentLoaded', render);

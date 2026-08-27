@@ -18,7 +18,7 @@ def get_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.ver"))
 ):
-    summary = get_dashboard_summary(db)
+    summary = get_dashboard_summary(db, current_user)
 
     # Un Barbero no debe recibir cifras de dinero/fiados/inventario, ni
     # siquiera en crudo vía API (usa /mis-cortes-hoy para su panel de

@@ -22,8 +22,7 @@
 
     <div class="header">
         <h1><i data-lucide="bar-chart-3"></i> Reportes</h1>
-        <button class="btn primary" onclick="printReport()">Exportar / Imprimir</button>
-        <button class="btn secondary" onclick="exportExcel()"><i data-lucide="file-spreadsheet"></i> Exportar a Excel</button>
+        <button class="btn primary" onclick="abrirModalExportar()">Exportar / Imprimir</button>
     </div>
 
     <!-- FILTROS -->
@@ -100,6 +99,26 @@
         <tbody id="table"></tbody>
     </table>
 
+</div>
+
+<!-- ── MODAL: EXPORTAR / IMPRIMIR ── -->
+<div id="modal-exportar" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Exportar / Imprimir</h3>
+        <div class="modal-options">
+            <button class="modal-option-btn" onclick="cerrarModalExportar(); exportExcel();">
+                <i data-lucide="file-spreadsheet"></i>
+                <span>Descargar Excel</span>
+            </button>
+            <button class="modal-option-btn" onclick="cerrarModalExportar(); printReport();">
+                <i data-lucide="printer"></i>
+                <span>Imprimir</span>
+            </button>
+        </div>
+        <div class="modal-btns">
+            <button class="secondary" onclick="cerrarModalExportar()">Cancelar</button>
+        </div>
+    </div>
 </div>
 
 <script src="/js/api.js"></script>

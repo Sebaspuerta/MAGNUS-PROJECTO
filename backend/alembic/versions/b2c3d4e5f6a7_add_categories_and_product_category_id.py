@@ -44,16 +44,25 @@ def upgrade() -> None:
             sa.Column("id", sa.Integer(), primary_key=True, index=True),
             sa.Column("name", sa.String(length=80), nullable=False, unique=True),
             sa.Column("is_deleted", sa.Boolean(), nullable=False, server_default=sa.text("false")),
-            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("now()")),
+            sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
             sa.Column("updated_at", sa.DateTime(), nullable=True),
         )
         inspector = sa.inspect(conn)
 
     if _has_table(inspector, "products") and not _has_column(inspector, "products", "category_id"):
-        op.add_column(
-            "products",
-            sa.Column("category_id", sa.Integer(), sa.ForeignKey("categories.id"), nullable=True),
-        )
+        # batch_alter_table: agregar una columna con FK es una operación de
+        # "add constraint" para Alembic, y SQLite no soporta ALTER de
+        # constraints fuera de batch mode (en Postgres, recreate="auto" emite
+        # el mismo ALTER TABLE ADD COLUMN de siempre, sin reconstruir nada).
+        with op.batch_alter_table("products") as batch_op:
+            batch_op.add_column(
+                sa.Column(
+                    "category_id",
+                    sa.Integer(),
+                    sa.ForeignKey("categories.id", name="fk_products_category_id_categories"),
+                    nullable=True,
+                ),
+            )
         inspector = sa.inspect(conn)
 
     if not _has_table(inspector, "products"):
@@ -64,7 +73,7 @@ def upgrade() -> None:
         row[0] for row in conn.execute(
             sa.text(
                 "SELECT DISTINCT category FROM products "
-                "WHERE category IS NOT NULL AND btrim(category) <> ''"
+                "WHERE category IS NOT NULL AND trim(category) <> ''"
             )
         ).fetchall()
     ]
@@ -81,7 +90,7 @@ def upgrade() -> None:
             existing_id = conn.execute(
                 sa.text(
                     "INSERT INTO categories (name, is_deleted, created_at) "
-                    "VALUES (:name, false, now()) RETURNING id"
+                    "VALUES (:name, false, CURRENT_TIMESTAMP) RETURNING id"
                 ),
                 {"name": clean_name},
             ).scalar()

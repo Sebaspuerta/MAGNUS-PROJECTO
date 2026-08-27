@@ -36,7 +36,6 @@ async function cargarCatalogos() {
         catalogos.productos   = productos.filter(p => p.is_active);
         catalogos.cajaAbierta = cajas.find(c => !c.is_closed) || null;
 
-        poblarSelect("nueva-cliente",  catalogos.clientes,  "Sin cliente",    c => ({ v: c.id, t: c.full_name }));
         poblarSelect("nueva-barbero",  catalogos.barberos,  "Sin asignar",    b => ({ v: b.id, t: b.full_name }));
         poblarSelect("cobrar-barbero", catalogos.barberos,  "— seleccionar —",b => ({ v: b.id, t: b.full_name }));
         actualizarSelectItem();
@@ -232,8 +231,23 @@ async function mostrarModalNueva() {
     await cargarCatalogos();
     if (btnNueva) { btnNueva.disabled = false; btnNueva.textContent = "+ Nueva Comanda"; }
 
-    el("nueva-cliente").value = "";
-    el("nueva-barbero").value = "";
+    el("nueva-cliente-id").value = "";
+    el("nueva-cliente-buscar").value = "";
+    ocultarResultadosClienteNueva();
+
+    let user = window.api.getAuthUser();
+    if (user.role === "Barbero" && !user.barber_id) {
+        // Sesiones iniciadas antes de que el login empezara a guardar barber_id:
+        // se refresca una vez desde /me para no forzar un nuevo login.
+        try {
+            const me = await window.api.apiRequest("/api/security/me");
+            window.api.setAuthUser({ username: me.username, full_name: me.full_name, role: me.role, id: me.id, barber_id: me.barber_id });
+            user = window.api.getAuthUser();
+        } catch (e) { /* si falla, el campo simplemente arranca vacío */ }
+    }
+    const propioBarberoId = user.role === "Barbero" && user.barber_id ? String(user.barber_id) : "";
+    el("nueva-barbero").value = propioBarberoId;
+
     el("nueva-fiado").checked  = false;
     el("nueva-notas").value    = "";
     setError("error-nueva", "");
@@ -242,7 +256,7 @@ async function mostrarModalNueva() {
 }
 
 async function confirmarNueva() {
-    const clienteId = parseInt(document.getElementById("nueva-cliente").value) || null;
+    const clienteId = parseInt(document.getElementById("nueva-cliente-id").value) || null;
     const barberoId = parseInt(document.getElementById("nueva-barbero").value) || null;
     const esFiado   = document.getElementById("nueva-fiado").checked;
     const notas     = document.getElementById("nueva-notas").value.trim() || null;
@@ -389,7 +403,52 @@ document.addEventListener("click", (e) => {
     if (campo && !campo.contains(e.target)) {
         ocultarResultadosProductoRapido();
     }
+    const campoCliente = document.getElementById("nueva-campo-cliente");
+    if (campoCliente && !campoCliente.contains(e.target)) {
+        ocultarResultadosClienteNueva();
+    }
 });
+
+// ── PICKER DE CLIENTE (nueva comanda) — mismo patrón tipo-y-filtra ────────────
+function filtrarClientesNueva() {
+    const q = document.getElementById("nueva-cliente-buscar").value.trim().toLowerCase();
+    const contenedor = document.getElementById("nueva-cliente-resultados");
+
+    const clienteActualId = parseInt(document.getElementById("nueva-cliente-id").value);
+    const coincidencias = catalogos.clientes
+        .filter(c => c.full_name.toLowerCase().includes(q))
+        .slice(0, 30);
+
+    if (!coincidencias.length) {
+        contenedor.innerHTML = '<div class="rapido-producto-vacio">Sin clientes que coincidan.</div>';
+    } else {
+        contenedor.innerHTML = coincidencias.map(c => {
+            const seleccionado = c.id === clienteActualId ? " selected" : "";
+            return `<div class="rapido-producto-item${seleccionado}" onmousedown="event.preventDefault(); seleccionarClienteNueva(${c.id})">
+                <div class="rapido-producto-info">
+                    <div class="rapido-producto-nombre">${escHtml(c.full_name)}</div>
+                    ${c.phone ? `<div class="rapido-producto-precio">${escHtml(c.phone)}</div>` : ""}
+                </div>
+            </div>`;
+        }).join("");
+    }
+
+    contenedor.classList.add("visible");
+}
+
+function seleccionarClienteNueva(id) {
+    const cliente = catalogos.clientes.find(c => c.id === id);
+    if (!cliente) return;
+
+    document.getElementById("nueva-cliente-id").value = String(cliente.id);
+    document.getElementById("nueva-cliente-buscar").value = cliente.full_name;
+    ocultarResultadosClienteNueva();
+}
+
+function ocultarResultadosClienteNueva() {
+    const contenedor = document.getElementById("nueva-cliente-resultados");
+    if (contenedor) contenedor.classList.remove("visible");
+}
 
 async function confirmarRapido() {
     setError("error-rapido", "");

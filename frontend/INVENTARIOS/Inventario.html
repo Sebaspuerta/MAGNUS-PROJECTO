@@ -24,8 +24,8 @@
     <div id="vista-home">
         <div class="header">
             <h1><i data-lucide="layers"></i> Categorías de Productos</h1>
-            <button class="primary" id="btn-nueva-categoria" style="display:none;" onclick="abrirModalCategoria()">
-                <i data-lucide="plus"></i> Categoría
+            <button class="primary" id="btn-categorias" style="display:none;" onclick="abrirModalCategorias()">
+                <i data-lucide="plus"></i> Categorías
             </button>
         </div>
 
@@ -47,7 +47,7 @@
         <div id="error-global" class="err"></div>
         <div id="msg-carga">Cargando inventario...</div>
 
-        <div class="grid" id="grid"></div>
+        <div class="grid products-grid" id="grid"></div>
 
         <div class="history" style="margin-top:30px;">
             <h2><i data-lucide="history"></i> Movimientos — <span id="history-title">selecciona "Ver movimientos" en un producto</span>
@@ -70,6 +70,10 @@
     </div>
 
 </div>
+
+<!-- Menú de acciones (⋮) de las tarjetas de producto: nodo único,
+     reposicionado por JS junto al botón que lo abrió. -->
+<div class="product-menu-dropdown" id="product-menu-dropdown"></div>
 
 <!-- MODAL CREAR / EDITAR PRODUCTO -->
 <div class="modal" id="modal-producto">
@@ -155,18 +159,64 @@
     </div>
 </div>
 
-<!-- MODAL CREAR CATEGORÍA -->
-<div class="modal" id="modal-categoria">
+<!-- MODAL GESTIONAR CATEGORÍAS (crear / eliminar, punto único de entrada) -->
+<div class="modal" id="modal-categorias">
     <div class="modal-box">
-        <h2>Nueva Categoría</h2>
+        <h2>Categorías</h2>
 
-        <span class="lbl">Nombre *</span>
-        <input id="cat-name" placeholder="Ej. Cuidado masculino">
+        <!-- Paso 1: elegir acción -->
+        <div id="cat-paso-elegir">
+            <div class="cat-opciones">
+                <button class="secondary cat-opcion" onclick="mostrarPasoCrearCategoria()">
+                    <i data-lucide="plus"></i> Crear categoría nueva
+                </button>
+                <button class="secondary cat-opcion" onclick="mostrarPasoEliminarCategoria()">
+                    <i data-lucide="trash-2"></i> Eliminar categoría existente
+                </button>
+            </div>
+            <button class="secondary save" onclick="cerrarModal('modal-categorias')">Cerrar</button>
+        </div>
 
-        <div id="error-categoria" class="err"></div>
+        <!-- Paso 2a: crear categoría -->
+        <div id="cat-paso-crear" style="display:none;">
+            <span class="lbl">Nombre *</span>
+            <input id="cat-name" placeholder="Ej. Cuidado masculino">
 
-        <button class="primary save" id="btn-guardar-categoria" onclick="guardarCategoria()">Guardar</button>
-        <button class="secondary save" onclick="cerrarModal('modal-categoria')">Cancelar</button>
+            <div id="error-categoria" class="err"></div>
+
+            <button class="primary save" id="btn-guardar-categoria" onclick="guardarCategoria()">Guardar</button>
+            <button class="secondary save" onclick="mostrarPasoElegirCategoria()">← Volver</button>
+        </div>
+
+        <!-- Paso 2b: eliminar categoría existente (lista) -->
+        <div id="cat-paso-eliminar" style="display:none;">
+            <div id="cat-eliminar-lista"></div>
+
+            <div id="error-categoria-eliminar" class="err"></div>
+
+            <button class="secondary save" onclick="mostrarPasoElegirCategoria()">← Volver</button>
+        </div>
+
+        <!-- Paso 2c: elegir qué pasa con los productos de la categoría a eliminar -->
+        <div id="cat-paso-eliminar-modo" style="display:none;">
+            <p class="cat-eliminar-modo-texto">
+                Vas a eliminar <strong id="cat-eliminar-modo-nombre"></strong>. ¿Qué hacemos con sus productos?
+            </p>
+            <div class="cat-opciones">
+                <button class="secondary cat-opcion" onclick="confirmarEliminarCategoria(false)">
+                    <i data-lucide="folder"></i>
+                    <span>Eliminar solo la categoría<br><small>Los productos quedan activos en "Sin categoría"</small></span>
+                </button>
+                <button class="secondary cat-opcion cat-opcion-danger" onclick="confirmarEliminarCategoria(true)">
+                    <i data-lucide="trash-2"></i>
+                    <span>Eliminar categoría y sus productos<br><small>También se eliminan lógicamente sus productos</small></span>
+                </button>
+            </div>
+
+            <div id="error-categoria-eliminar-modo" class="err"></div>
+
+            <button class="secondary save" onclick="mostrarPasoEliminarCategoria()">← Volver</button>
+        </div>
     </div>
 </div>
 

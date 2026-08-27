@@ -4,10 +4,11 @@ de la base de datos de MAGNUS BARBER, con una portada tipo dashboard
 (KPIs + gráficos nativos) que replica la identidad visual de la marca.
 """
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from io import BytesIO
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.drawing.line import LineProperties
 from openpyxl import Workbook
@@ -20,6 +21,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from openpyxl.chart.layout import Layout, ManualLayout
+from app.config import settings
 from app.models.security import Role, Permission, User, AuditLog
 from app.models.barber import Barber
 from app.models.client import Client
@@ -37,6 +39,7 @@ from app.utils.deleted_labels import DELETED_BARBER_SUFFIX, DELETED_PRODUCT_SUFF
 
 
 SENSITIVE_FIELDS = {"password_hash", "quick_pin_hash", "code_hash"}
+_BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
 TABLES: list[tuple[type, str]] = [
     (Role, "Roles"),
@@ -260,16 +263,23 @@ def _fetch_sales_by_month(db: Session, months: int = 12) -> list[tuple[str, floa
     # Mismo criterio que _fetch_sales_by_barber: Order.total ya refleja el
     # valor total de la venta (incluidas fiadas), así que sumar los abonos de
     # AR aquí duplicaría esa venta.
-    month_col = func.date_trunc("month", Order.closed_at).label("mes")
+    # closed_at está en UTC naivo; agrupamos por mes en Python usando la fecha
+    # ya convertida a hora Colombia (mismo patrón que reports_service.sales_by_period),
+    # en vez de func.date_trunc, que no existe en SQLite.
     rows = (
-        db.query(month_col, func.sum(Order.total))
+        db.query(Order.closed_at, Order.total)
         .filter(Order.status == "cerrada")
-        .group_by(month_col)
-        .order_by(month_col)
         .all()
     )
-    rows = rows[-months:]
-    return [(mes.strftime("%b %Y"), float(total or 0)) for mes, total in rows]
+
+    by_month: dict[date, float] = {}
+    for closed_at, total in rows:
+        local_dt = closed_at.replace(tzinfo=timezone.utc).astimezone(_BUSINESS_TZ)
+        month_key = date(local_dt.year, local_dt.month, 1)
+        by_month[month_key] = by_month.get(month_key, 0.0) + float(total or 0)
+
+    ordered = sorted(by_month.items())[-months:]
+    return [(mes.strftime("%b %Y"), total) for mes, total in ordered]
 
 
 def _fetch_payment_methods(db: Session) -> list[tuple[str, float]]:

@@ -1,6 +1,7 @@
 ﻿from app.database import Base, engine
 from app.models.security import AuditLog, Permission, Role, RolePermission, User
 from app.models.barber import Barber
+from app.models.category import Category
 from app.models.client import Client
 from app.models.service import Service
 from app.models.order import Order, OrderItem
@@ -17,7 +18,7 @@ from app.models.master_code import MasterCodeConfig
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
-    print("Tablas creadas correctamente en PostgreSQL.")
+    print("Tablas creadas correctamente.")
 
 
 if __name__ == "__main__":

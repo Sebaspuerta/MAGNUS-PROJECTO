@@ -26,39 +26,42 @@ import sqlalchemy as sa
 
 
 def upgrade() -> None:
-    # 1. Renombrar "name" -> "full_name" (conserva los datos existentes)
-    op.alter_column(
-        "clients",
-        "name",
-        new_column_name="full_name",
-        existing_type=sa.String(length=120),
-        existing_nullable=False,
-    )
+    # batch_alter_table: en Postgres/MySQL emite los mismos ALTER TABLE de
+    # siempre (recreate="auto" no reconstruye la tabla si el dialecto soporta
+    # ALTER nativo); en SQLite, que no soporta renombrar columnas ni quitar un
+    # server_default fuera de batch mode, hace la reconstrucción necesaria.
+    with op.batch_alter_table("clients") as batch_op:
+        # 1. Renombrar "name" -> "full_name" (conserva los datos existentes)
+        batch_op.alter_column(
+            "name",
+            new_column_name="full_name",
+            existing_type=sa.String(length=120),
+            existing_nullable=False,
+        )
 
-    # 2. Agregar columnas que el modelo espera y faltan en la BD real
-    op.add_column("clients", sa.Column("document_number", sa.String(length=30), nullable=True))
-    op.add_column("clients", sa.Column("birth_date", sa.Date(), nullable=True))
-    op.add_column(
-        "clients",
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
-    )
+        # 2. Agregar columnas que el modelo espera y faltan en la BD real
+        batch_op.add_column(sa.Column("document_number", sa.String(length=30), nullable=True))
+        batch_op.add_column(sa.Column("birth_date", sa.Date(), nullable=True))
+        batch_op.add_column(
+            sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
+        )
 
-    # Quitamos el server_default una vez poblado: el default real lo maneja el ORM
-    op.alter_column("clients", "is_active", server_default=None)
+        # Quitamos el server_default una vez poblado: el default real lo maneja el ORM
+        batch_op.alter_column("is_active", server_default=None)
 
     # NOTA: la columna "address" se deja intacta a propósito (no está en el modelo,
     # pero borrarla eliminaría datos si alguna vez se usó).
 
 
 def downgrade() -> None:
-    op.drop_column("clients", "is_active")
-    op.drop_column("clients", "birth_date")
-    op.drop_column("clients", "document_number")
+    with op.batch_alter_table("clients") as batch_op:
+        batch_op.drop_column("is_active")
+        batch_op.drop_column("birth_date")
+        batch_op.drop_column("document_number")
 
-    op.alter_column(
-        "clients",
-        "full_name",
-        new_column_name="name",
-        existing_type=sa.String(length=120),
-        existing_nullable=False,
-    )
+        batch_op.alter_column(
+            "full_name",
+            new_column_name="name",
+            existing_type=sa.String(length=120),
+            existing_nullable=False,
+        )

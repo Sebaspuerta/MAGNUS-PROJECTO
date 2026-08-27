@@ -11,6 +11,8 @@ from app.models.inventory import Product
 from app.models.accounts_receivable import AccountsReceivable, AccountsReceivablePayment
 from app.models.alerts import Alert
 from app.models.barber import Barber
+from app.models.security import User
+from app.services.alert_service import generate_system_alerts
 
 _BUSINESS_TZ = ZoneInfo(settings.business_tz)
 
@@ -25,9 +27,13 @@ def _today_bounds():
     return start, end
 
 
-def get_dashboard_summary(db: Session):
+def get_dashboard_summary(db: Session, current_user: User):
     """Agrega en un solo objeto las cifras del día para el panel principal.
-    Solo lee datos existentes; no modifica nada."""
+    Antes de contar las alertas no leídas, dispara el mismo escaneo idempotente
+    de inventario/deudas que usa el módulo Alertas, para que el contador no
+    dependa de que alguien haya abierto ese módulo antes."""
+    generate_system_alerts(db, current_user)
+
     start, end = _today_bounds()
 
     # --- Ventas / comandas del día ---

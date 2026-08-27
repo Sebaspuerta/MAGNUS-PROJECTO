@@ -25,13 +25,19 @@ function clearAuthToken() {
   localStorage.removeItem("magnus_username");
   localStorage.removeItem("magnus_full_name");
   localStorage.removeItem("magnus_role");
+  localStorage.removeItem("magnus_user_id");
+  localStorage.removeItem("magnus_barber_id");
 }
 
 function getAuthUser() {
+  const barberId = localStorage.getItem("magnus_barber_id");
+  const userId = localStorage.getItem("magnus_user_id");
   return {
     username: localStorage.getItem("magnus_username") || "",
     full_name: localStorage.getItem("magnus_full_name") || "",
-    role: localStorage.getItem("magnus_role") || ""
+    role: localStorage.getItem("magnus_role") || "",
+    id: userId ? parseInt(userId) : null,
+    barber_id: barberId ? parseInt(barberId) : null
   };
 }
 
@@ -45,6 +51,14 @@ function setAuthUser(user) {
   }
   if (user.role) {
     localStorage.setItem("magnus_role", user.role);
+  }
+  if (user.id) {
+    localStorage.setItem("magnus_user_id", user.id);
+  }
+  if (user.barber_id) {
+    localStorage.setItem("magnus_barber_id", user.barber_id);
+  } else {
+    localStorage.removeItem("magnus_barber_id");
   }
 }
 
@@ -64,11 +78,16 @@ async function apiRequest(endpoint, options = {}) {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(buildUrl(endpoint), {
-    credentials: "same-origin",
-    ...options,
-    headers
-  });
+  let response;
+  try {
+    response = await fetch(buildUrl(endpoint), {
+      credentials: "same-origin",
+      ...options,
+      headers
+    });
+  } catch (networkErr) {
+    throw new Error("No se pudo conectar con el servidor. Verifica tu conexión a internet o que el sistema esté encendido.");
+  }
 
   const contentType = response.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");

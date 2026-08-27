@@ -1,1721 +1,215 @@
-# MAGNUS BARBER SYSTEM — ESTADO COMPLETO DEL PROYECTO
+# MAGNUS BARBER SYSTEM — ESTADO ACTUAL DEL PROYECTO
 
 ## 0. Propósito de este archivo
 
-Este archivo documenta absolutamente todo lo realizado en el proyecto MAGNUS BARBER SYSTEM desde el punto inicial, cuando solo existía una maqueta visual en HTML, hasta el estado actual del sistema con backend, base de datos, módulos funcionales, frontend conectado parcialmente y lógica inicial de inventario.
+Este archivo documenta el estado real del proyecto MAGNUS BARBER SYSTEM a la fecha. Reemplaza la versión anterior, que quedó congelada en una etapa muy temprana (antes de comandas reales, caja, fiados, categorías, soft-delete, dashboard real y la migración a SQLite).
 
-La intención es que cualquier persona que entre al repositorio, especialmente el socio/desarrollador frontend, pueda entender:
-
-- Qué se recibió inicialmente.
-- Qué se construyó después.
-- Qué módulos existen.
-- Qué archivos se crearon.
-- Qué rutas API existen.
-- Qué datos de prueba se crearon.
-- Qué funciona.
-- Qué falta.
-- Qué módulos están incompletos.
-- Cómo se ejecuta el proyecto.
-- Qué se debe y qué no se debe tocar.
-- Cuál es la lógica de avance recomendada.
-
-El documento principal de referencia del proyecto es:
-
-MAGNUS_BARBER_SYSTEM_MVP_v1.0.docx
-
-Ese documento define el alcance oficial de la versión 1.0.  
-No se debe inventar funcionalidad fuera de ese documento sin validarla primero.
+La intención sigue siendo la misma: que cualquier persona que entre al repositorio pueda entender qué existe, cómo está construido, qué reglas de negocio no son obvias leyendo el código superficialmente, y qué falta para cerrar la v1.0.
 
 ---
 
-# 1. Contexto general del proyecto
+# 1. Contexto general
 
-MAGNUS BARBER SYSTEM es un software local de gestión integral para una barbería llamada MAGNUS Barber Shop, ubicada en Cartagena, Colombia.
+MAGNUS BARBER SYSTEM es un software de gestión integral para una barbería, pensado para correr **localmente en un solo PC físico**, sin depender de un servidor de base de datos externo ni de conexión a Internet.
 
-El objetivo del sistema es reemplazar el manejo manual en cuadernos y permitir que el negocio controle:
+Módulos: usuarios y roles, barberos, clientes, categorías, servicios, comandas, inventario, cuentas por cobrar, alertas, caja, reportes y dashboard.
 
-1. Usuarios y roles.
-2. Barberos.
-3. Clientes.
-4. Servicios.
-5. Comandas.
-6. Inventario.
-7. Cuentas por cobrar.
-8. Alertas.
-9. Caja.
-10. Reportes.
-11. Dashboard principal.
-
-La versión actual del proyecto corresponde al MVP v1.0.
-
-El MVP v1.0 está pensado como un sistema local que funcione sin depender de Internet.  
-La idea final es que el cliente no tenga que abrir terminales ni instalar herramientas técnicas.  
-El cliente final debería poder usar el sistema así:
-
-1. Encender el computador.
-2. Dar doble clic al ícono del programa.
-3. Iniciar sesión.
-4. Usar el sistema.
-
-Más adelante se empacará como aplicación de escritorio usando PyWebView, PyInstaller e instalador para Windows.
+El objetivo final es que el negocio lo use como una aplicación de escritorio normal: doble clic al ícono, iniciar sesión, usar el sistema — sin terminales ni configuración técnica.
 
 ---
 
-# 2. Estado inicial del proyecto
-
-El proyecto comenzó con una maqueta visual entregada por el socio.
-
-Esa maqueta estaba en:
-
-frontend/index.html
-
-Incluía:
-
-- Diseño visual del dashboard.
-- Logo de MAGNUS.
-- Imagen estilo vikingo/barbería masculina.
-- Sidebar con módulos.
-- Tarjetas visuales de:
-  - Ventas del día.
-  - Cortes realizados.
-  - Caja actual.
-  - Deudas pendientes.
-  - Barbero líder.
-  - Comandas abiertas.
-  - Alertas.
-  - Resumen de caja.
-- Botón visual de "+ Nueva comanda".
-- Menú lateral con los módulos de la v1.
-- Estética oscura, roja y dorada.
-
-Pero inicialmente era solo maqueta visual.
-
-No tenía:
-
-- Backend.
-- Base de datos.
-- Login real.
-- Usuarios reales.
-- JWT.
-- PostgreSQL.
-- API.
-- Inventario real.
-- Clientes reales.
-- Barberos reales.
-- Servicios reales.
-- Comandas reales.
-- Conexión frontend-backend.
-
-Los datos eran quemados, por ejemplo:
-
-- Ventas del día: $320.000
-- Caja actual: $190.000
-- Deudas pendientes: $85.000
-- Barbero líder: Andrés Medina
-- Comanda abierta: Nicolás Giraldo
-- Stock bajo: 5 productos
-
----
-
-# 3. Decisión técnica de arquitectura
-
-Se decidió trabajar con una arquitectura profesional local:
+# 2. Stack técnico
 
 Backend:
-- Python
-- FastAPI
-- SQLAlchemy 2.0
-- PostgreSQL
-- JWT
-- bcrypt
-- Swagger automático
-
-Base de datos:
-- PostgreSQL local
-- Base de datos: magnus_barberia
+- Python + FastAPI
+- SQLAlchemy 2.0 (estilo `Mapped`/`mapped_column`)
+- **SQLite** como motor de base de datos (migrado desde PostgreSQL — ver sección 3)
+- Alembic para migraciones de esquema
+- JWT (python-jose) + bcrypt para autenticación
+- Swagger/Redoc automáticos en `/api/docs` y `/api/redoc`
 
 Frontend:
-- HTML5
-- CSS3
-- JavaScript
-- Por ahora servido directamente por FastAPI mediante StaticFiles
+- HTML5 + CSS3 + JavaScript vanilla (sin framework, sin build step)
+- Servido directamente por FastAPI vía `StaticFiles`
+- Un módulo = una carpeta en `frontend/` con su `.html`, `.css` y `.js` (ej. `frontend/INVENTARIOS/Inventario.js`)
 
-Futuro escritorio:
-- PyWebView
-- PyInstaller
-- Inno Setup
+Futuro empaquetado (pendiente, ver sección 9):
+- PyInstaller para generar el ejecutable
+- Inno Setup para el instalador de Windows
 
-Estructura backend:
-- models
-- schemas
-- services
-- routes
-- utils
-
-Esta estructura se mantiene para que cada módulo tenga separación clara:
-
-models:
-Define tablas de base de datos.
-
-schemas:
-Define estructuras de entrada y salida usando Pydantic.
-
-services:
-Contiene la lógica de negocio.
-
-routes:
-Define endpoints FastAPI.
-
-utils:
-Contiene funciones reutilizables, especialmente seguridad.
+Estructura de `backend/app/`: `models/`, `schemas/`, `services/`, `routes/`, `utils/` — cada módulo respeta esa separación (modelo → schema Pydantic → lógica de negocio en el service → endpoints en routes).
 
 ---
 
-# 4. Estructura actual del proyecto
+# 3. Motor de base de datos: SQLite (migrado desde PostgreSQL)
 
-La estructura actual del proyecto es aproximadamente:
+El proyecto usaba PostgreSQL. Se migró a **SQLite** para poder empaquetar el sistema como instalador de Windows sin depender de un servidor de base de datos externo (uso confirmado: un solo PC físico, sin acceso concurrente por red).
 
-Magnus PROJECTO/
-    backend/
-        app/
-            models/
-                security.py
-                barber.py
-                client.py
-                service.py
-                order.py
-                inventory.py
+Puntos clave de la migración (`backend/app/database.py`, `backend/app/config.py`):
 
-            schemas/
-                security.py
-                barber.py
-                client.py
-                service.py
-                order.py
-                inventory.py
-
-            services/
-                security_service.py
-                barber_service.py
-                client_service.py
-                service_service.py
-                order_service.py
-                inventory_service.py
-
-            routes/
-                security_routes.py
-                barber_routes.py
-                client_routes.py
-                service_routes.py
-                order_routes.py
-                inventory_routes.py
-
-            utils/
-                security.py
-
-            config.py
-            database.py
-            create_tables.py
-            main.py
-
-        requirements.txt
-        run_dev.py
-
-    frontend/
-        index.html
-        logo.jpg
-        icono.png
-        font.webp
-        js/
-            api.js
-            auth.js
-            inventory.js
-            clients.js
-            barbers.js
-            services.js
-            orders.js
-
-    backups/
-    data/
-    logs/
-    scripts/
-    .env
-    .gitignore
-    PROJECT_STATUS.md
+- `DATABASE_URL` por defecto apunta a `sqlite:///./magnus_barberia.db` (ruta relativa a donde se ejecuta el proceso). Sigue siendo posible usar PostgreSQL en desarrollo definiendo `DATABASE_URL` distinto en `.env` — la detección del dialecto en `database.py` es condicional, no un reemplazo hardcodeado.
+- SQLite trae las foreign keys **desactivadas por defecto**. `database.py` registra un listener en el evento `connect` del engine que ejecuta `PRAGMA foreign_keys=ON` en cada conexión nueva — sin esto, la integridad referencial (órdenes, productos, categorías, etc.) dejaría de protegerse silenciosamente.
+- También se activa `PRAGMA journal_mode=WAL` por conexión, para mejor concurrencia si hay varias pestañas del navegador abiertas sobre el mismo archivo.
+- Todas las migraciones de Alembic fueron revisadas y corregidas para ser compatibles con SQLite (no solo con Postgres): `date_trunc()`, `btrim()`, `now()`, índices parciales (`postgresql_where`) y operaciones de `ALTER TABLE`/constraints que SQLite no soporta fuera de *batch mode* (renombrar columnas, agregar FK, quitar `UNIQUE`) ahora usan `op.batch_alter_table(...)`, que en Postgres sigue emitiendo los mismos `ALTER TABLE` de siempre.
+- `reset_full_data.py` (script de mantenimiento de un solo uso, no expuesto como endpoint) usa `DELETE FROM` tabla por tabla en vez de `TRUNCATE ... RESTART IDENTITY CASCADE`, y resetea `sqlite_sequence` como equivalente de `RESTART IDENTITY`.
+- El paquete final debe arrancar con una base de datos **vacía**: no se migran datos reales de la instancia de PostgreSQL anterior. `backend/app/create_tables.py` (`python -m app.create_tables`) crea el esquema completo desde los modelos vía `Base.metadata.create_all()`.
 
 ---
 
-# 5. Base de datos
+# 4. Autenticación, roles y permisos
 
-Se está usando PostgreSQL.
+## Roles oficiales (4, definidos en `security_service.py`)
 
-Base de datos creada:
+- Administrador — acceso total.
+- Barbero — atención, clientes y comandas operativas.
+- Cajero — pagos, caja, cierres y cuentas por cobrar.
+- Consultor — solo consulta (dashboard, reportes, históricos).
 
-magnus_barberia
+Permisos granulares por módulo/acción (`Permission.code`, ej. `"inventario.eliminar"`), verificados con `require_permission("modulo.accion")` en cada ruta protegida.
 
-El backend se conecta a PostgreSQL usando SQLAlchemy.
+## Permisos de "dueño" — `mateo` y `admin` tienen el mismo poder
 
-Archivo principal de conexión:
+Ciertas acciones son exclusivas del dueño del negocio: crear/eliminar categorías, eliminar (soft-delete) productos, servicios y barberos. Se verifican con `require_owner()` en `app/utils/security.py`.
 
-backend/app/database.py
+`mateo` y `admin` se consideran **la misma autoridad** para esas acciones — ambos usernames están en `OWNER_USERNAMES = {"mateo", "admin"}`, y `require_owner` acepta cualquiera de los dos (comparación case-insensitive). En el frontend, los botones exclusivos de dueño (`+ Categorías`, eliminar producto/servicio/barbero) se muestran a ambos usuarios con el mismo chequeo.
 
-Funciones principales:
+Aun así, el audit log sigue registrando `user_id`, así que **cada acción queda diferenciada**: se puede saber si la hizo `mateo` o `admin`, aunque tengan el mismo poder.
 
-- engine
-- SessionLocal
-- Base
-- get_db
-
-Importante:
-
-No subir el archivo .env real al repositorio porque puede contener credenciales.
-
-Se recomienda subir un .env.example con datos de ejemplo, nunca con contraseña real.
-
-Ejemplo recomendado:
-
-APP_NAME=MAGNUS BARBER SYSTEM
-APP_VERSION=1.0.0
-APP_MODE=development
-DATABASE_URL=postgresql+psycopg2://postgres:TU_PASSWORD@localhost:5432/magnus_barberia
-SECRET_KEY=change-this-secret-key
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
+**No confundir con `is_owner_barber()`** (en `barber_service.py`): esa función identifica una fila específica de la tabla `barbers` (el barbero Mateo, para que nunca se pueda eliminar como barbero operativo) usando la constante singular `OWNER_USERNAME = "mateo"`. Es una lógica completamente distinta — no incluye a "admin" porque no existe un "barbero admin" que proteger.
 
 ---
 
-# 6. Ejecución actual del proyecto
+# 5. Regla de negocio central: soft-delete, nunca se borra historial
 
-El sistema se ejecuta desde la carpeta backend.
+Ningún registro operativo importante se borra físicamente. "Eliminar" un producto, servicio, barbero o categoría marca `is_deleted=True` (y normalmente `is_active=False`), pero la fila permanece en la base de datos.
 
-Comando:
+Por qué: el historial de ventas, comandas cerradas y movimientos de inventario referencian esos registros por ID. Si se borraran físicamente, ese historial quedaría roto o con referencias huérfanas.
 
-cd "C:\Users\Sebastian\Desktop\Magnus PROJECTO\backend"
-python run_dev.py
-
-Frontend:
-
-http://127.0.0.1:8000
-
-Swagger/API:
-
-http://127.0.0.1:8000/api/docs
-
-Health check:
-
-http://127.0.0.1:8000/api/health
-
-El frontend no se ejecuta con python run_dev.py dentro de la carpeta frontend.
-
-Actualmente el frontend es servido por FastAPI desde backend/app/main.py con StaticFiles.
-
-Solo se necesitarían dos terminales si más adelante el frontend se convierte a React, Vite u otra tecnología con package.json y npm run dev.
+Cómo se ve reflejado:
+- Los registros eliminados nunca vuelven en listados normales (`get_live_*` / filtros por `is_deleted`), pero siguen existiendo para joins de historial.
+- En reportes y Excel, un nombre que pertenece a un registro eliminado se muestra con un sufijo como `(producto eliminado del sistema)` (ver `app/utils/deleted_labels.py`).
+- `categories.name` tiene un **índice único parcial** (`WHERE is_deleted = false` / `= 0` en SQLite) en vez de un `UNIQUE` de tabla completa: permite reutilizar el nombre de una categoría eliminada en una categoría nueva, sin perder el nombre original en el historial.
+- El barbero Mateo (identificado por `is_owner_barber()`) nunca se puede eliminar como barbero, sin importar quién esté logueado.
 
 ---
 
-# 7. Archivos principales del backend
+# 6. Módulos — estado actual
 
-## 7.1 backend/app/main.py
+Todos los módulos base tienen backend y frontend conectados y en uso real (no maquetas con datos quemados).
 
-Archivo principal de FastAPI.
+## Seguridad y Control de Acceso
+Login JWT, bloqueo temporal tras intentos fallidos, roles + permisos granulares, auditoría de acciones críticas.
 
-Responsabilidades actuales:
+## Barberos
+CRUD completo, vínculo opcional con usuario del sistema, PIN rápido, comisión (porcentaje o fijo), soft-delete, protección especial del barbero Mateo.
 
-- Crear la app FastAPI.
-- Configurar título, versión, docs, redoc y openapi.
-- Incluir routers de módulos.
-- Servir el frontend desde la carpeta frontend.
-- Exponer /api/health.
+## Clientes
+CRUD, búsqueda/selección rápida desde Comandas, historial de fiados.
 
-Debe incluir routers como:
+## Categorías
+Módulo nuevo desde la migración anterior: CRUD de categorías de producto, exclusivo del dueño (ver sección 4), con soft-delete + nombre reutilizable tras eliminar.
 
-- security_router
-- barber_router
-- client_router
-- service_router
-- order_router
-- inventory_router
+## Catálogo de Servicios
+CRUD, consumibles internos asociados (`service_consumables`), soft-delete.
 
-Debe mantener:
+## Comandas
+Flujo completo: crear (cliente y barbero opcionales, con auto-selección de barbero y buscador de cliente en la UI), agregar/editar/quitar ítems, cerrar (transacción atómica: descuenta inventario, registra pago o fiado, mueve caja, marca comisión), cancelar. Incluye aviso de comandas potencialmente duplicadas y flujo de "comanda rápida".
 
-docs_url="/api/docs"
-redoc_url="/api/redoc"
-openapi_url="/api/openapi.json"
+## Inventario
+Productos con foto (subida a `backend/static/product_photos`, servida en `/media`), entradas/ajustes de stock, movimientos con motivo y usuario responsable, alertas de stock bajo, categorías.
 
-Debe montar frontend al final:
+## Cuentas por Cobrar (fiados)
+Se crean automáticamente al cerrar una comanda como fiado. Abonos parciales, saldo, estado. La lógica de "efectivo esperado en caja" y "abonos visibles como ingreso" fue corregida recientemente para que un abono a un fiado sí impacte caja e ingresos del día correctamente.
 
-app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+## Alertas
+Stock bajo, productos agotados, próximos a vencer — consumidas por Dashboard.
 
-## 7.2 backend/app/create_tables.py
+## Caja
+Apertura, movimientos (ingreso/egreso), cierre — incluye poder cerrar la caja **desde el Dashboard** sin salir del módulo.
 
-Archivo usado para crear las tablas en PostgreSQL.
+## Reportes
+Ventas por período (día/semana/quincena/mes vía selector), ventas por barbero, top productos, cuentas por cobrar, cierres de caja. Todos con la conversión de zona horaria Colombia aplicada correctamente (los timestamps se guardan en UTC naive; agrupar "por día" o "por mes" se hace convirtiendo a `America/Bogota` antes de agrupar, nunca agrupando la fecha UTC cruda).
 
-Debe importar todos los modelos creados:
+Exportación a Excel: existe un generador (`excel_report_service.py`) que hoy vuelca el contenido completo de la base de datos tabla por tabla. **Pendiente:** reemplazarlo por la plantilla de reporte reforzada de 7 hojas (Panorama General, Inventario, Ventas, Comisiones, Cuentas por Cobrar, Movimientos de Inventario, Cierres de Caja) con marca Magnus y fórmulas reales de Excel — quedó fuera de esta ronda de trabajo, a hacer aparte.
 
-- Modelos de seguridad.
-- Barber.
-- Client.
-- Service.
-- Order.
-- OrderItem.
-- Product.
-- InventoryMovement.
-
-Comando para crear tablas:
-
-python -m app.create_tables
-
-Salida esperada:
-
-Tablas creadas correctamente en PostgreSQL.
-
-## 7.3 backend/run_dev.py
-
-Archivo usado para levantar el backend en desarrollo.
-
-Comando:
-
-python run_dev.py
-
-Levanta Uvicorn en:
-
-http://127.0.0.1:8000
+## Dashboard
+KPIs reales conectados a base de datos: ventas del día, caja actual, comandas abiertas, deudas pendientes, alertas, barbero líder, producto más vendido, stock bajo.
 
 ---
 
-# 8. Módulos oficiales de la versión 1.0
+# 7. La raíz del sitio ("/")
 
-El documento MVP v1.0 define 11 módulos:
+`http://127.0.0.1:8000/` responde con un `RedirectResponse` (307) a `/LOGIN/login.html` (`app/main.py`). No existe ya un `frontend/index.html` suelto — se eliminó el archivo de la raíz de `frontend/` que antes hacía esto con un `<meta http-equiv="refresh">`, para no depender de un truco client-side.
 
-1. Seguridad y Control de Acceso
-2. Gestión de Barberos
-3. Gestión de Clientes
-4. Catálogo de Servicios
-5. Comanda Digital por Cliente
-6. Inventario de Productos
-7. Cuentas por Cobrar
-8. Recordatorios y Alertas
-9. Caja y Métodos de Pago
-10. Reportes de Operación
-11. Dashboard Principal
-
-Estado actual:
-
-Módulo 01 — Seguridad y Control de Acceso: implementado base funcional.
-Módulo 02 — Gestión de Barberos: implementado base funcional.
-Módulo 03 — Gestión de Clientes: implementado base funcional.
-Módulo 04 — Catálogo de Servicios: implementado base funcional.
-Módulo 05 — Comanda Digital por Cliente: implementado completo — cierre atómico funcional (barbero + inventario + caja + CxC) y UI de comanda construida.
-Módulo 06 — Inventario de Productos: implementado base funcional y probado.
-Módulo 07 — Cuentas por Cobrar: pendiente.
-Módulo 08 — Recordatorios y Alertas: pendiente.
-Módulo 09 — Caja y Métodos de Pago: pendiente.
-Módulo 10 — Reportes de Operación: pendiente.
-Módulo 11 — Dashboard Principal real: pendiente.
+`app/main.py` monta, en este orden:
+1. Rutas de la API (`/api/...`).
+2. La ruta explícita `GET /` (el redirect) — se resuelve antes que los mounts de archivos estáticos.
+3. `/media` → `backend/static` (fotos de producto).
+4. `/` → `StaticFiles(directory=frontend/, html=True)` — catch-all para servir cada módulo (`/DASHBOARD/Dashboard.html`, `/INVENTARIOS/Inventario.html`, etc.).
 
 ---
 
-# 9. Módulo 01 — Seguridad y Control de Acceso
+# 8. Archivos eliminados en esta limpieza
 
-## Estado
+Sin uso real en el sistema, confirmado por búsqueda en todo el código vivo antes de borrar:
 
-Implementado como base funcional.
-
-## Archivos
-
-backend/app/models/security.py
-backend/app/schemas/security.py
-backend/app/services/security_service.py
-backend/app/routes/security_routes.py
-backend/app/utils/security.py
-
-## Funcionalidades implementadas
-
-- Login con usuario y contraseña.
-- Contraseñas cifradas.
-- JWT.
-- Roles base.
-- Usuarios.
-- Endpoint para usuario actual.
-- Listado de roles.
-- Listado de usuarios.
-- Creación de usuarios.
-- Desactivación lógica de usuarios.
-- Auditoría base.
-- Protección de rutas.
-- Protección de rutas administrativas.
-
-## Roles creados
-
-- Administrador
-- Barbero
-- Cajero
-- Consultor
-
-## Endpoints
-
-POST /api/security/login
-GET /api/security/me
-GET /api/security/roles
-GET /api/security/users
-POST /api/security/users
-PATCH /api/security/users/{user_id}/deactivate
-
-## Usuarios de desarrollo
-
-Usuario administrador inicial:
-
-username: admin
-password: admin123
-role: Administrador
-
-Usuario del negocio:
-
-username: mateo
-password: mateo123
-role: Administrador
-
-Importante:
-
-Mateo es administrador del sistema y también barbero operativo.
-
-No se creó un rol BARBERO_ADMINISTRADOR porque el documento v1.0 define cuatro roles oficiales.  
-La solución aplicada fue separar usuario del sistema y perfil operativo:
-
-Usuario del sistema:
-mateo -> Administrador
-
-Perfil operativo:
-Mateo -> Barbero activo
-
-## Pendiente en seguridad
-
-- Bloqueo real tras 5 intentos fallidos.
-- Permisos granulares por módulo y acción.
-- Pantalla frontend completa para usuarios.
-- Cambio de contraseña.
-- Recuperación o reseteo controlado de contraseña.
-- Mejor manejo visual de sesión expirada.
-- Validar si Cajero y Barbero tendrán permisos combinados en ciertas acciones.
+- `reporte_prueba.xlsx` — export de ejemplo del volcado completo de tablas (no la plantilla aprobada de 7 hojas).
+- `backend/tmp_schema_check.py` — script suelto de inspección manual de esquema.
+- `backend/SECURITY_AND_ERD_PLAN.md` — plan de seguridad ya implementado, documentado ahora en este mismo archivo (sección 4).
+- `frontend/login_luxury.html` — versión de login descartada, sin referencias.
+- `frontend/magnus_dashboard_viking.html` — maqueta de dashboard descartada, sin referencias.
+- `frontend/index.html` — ver sección 7.
 
 ---
 
-# 10. Módulo 02 — Gestión de Barberos
-
-## Estado
-
-Implementado como base funcional.
-
-## Archivos
-
-backend/app/models/barber.py
-backend/app/schemas/barber.py
-backend/app/services/barber_service.py
-backend/app/routes/barber_routes.py
-
-## Funcionalidades implementadas
-
-- Crear barbero.
-- Listar barberos.
-- Consultar barbero por ID.
-- Editar barbero.
-- Desactivar barbero.
-- Vincular barbero con usuario del sistema.
-- PIN rápido cifrado.
-- Comisión base.
-- Estado activo/inactivo.
-- Auditoría al crear, editar y desactivar.
-
-## Endpoints
-
-GET /api/barbers
-POST /api/barbers
-GET /api/barbers/{barber_id}
-PATCH /api/barbers/{barber_id}
-PATCH /api/barbers/{barber_id}/deactivate
-
-## Dato creado
-
-Barbero:
-
-full_name: Mateo
-alias: mateo
-user_username: mateo
-commission_type: porcentaje
-commission_value: 0
-is_active: True
-quick_pin: 1234
-
-## Pendiente
-
-- Cálculo real de comisiones.
-- Rendimiento individual por período.
-- Cortes realizados por barbero.
-- Ventas por barbero.
-- Comisiones por corte, producto o porcentaje.
-- Historial completo.
-- Vista frontend completa de barberos.
-- Formularios para crear/editar barbero desde frontend.
-
----
-
-# 11. Módulo 03 — Gestión de Clientes
-
-## Estado
-
-Implementado como base funcional.
-
-## Archivos
-
-backend/app/models/client.py
-backend/app/schemas/client.py
-backend/app/services/client_service.py
-backend/app/routes/client_routes.py
-
-## Funcionalidades implementadas
-
-- Crear cliente.
-- Listar clientes.
-- Consultar cliente por ID.
-- Editar cliente.
-- Desactivar cliente.
-- Soft delete con is_active.
-- Auditoría al crear, editar y desactivar.
-
-## Endpoints
-
-GET /api/clients
-POST /api/clients
-GET /api/clients/{client_id}
-PATCH /api/clients/{client_id}
-PATCH /api/clients/{client_id}/deactivate
-
-## Cliente de prueba creado
-
-full_name: Cliente de Prueba
-phone: 3000000000
-is_active: True
-
-## Pendiente según documento v1.0
-
-El documento pide más información de cliente:
-
-- Cliente rápido.
-- Cliente registrado.
-- Nombre.
-- Apodo.
-- Celular.
-- Cumpleaños.
-- Barbero preferido.
-- Estilo de corte.
-- Observaciones.
-- Estado:
-  - Nuevo
-  - Frecuente
-  - VIP
-  - Deudor
-  - Inactivo
-- Historial de visitas.
-- Historial de servicios.
-- Historial de productos comprados.
-- Historial de deudas.
-- Alerta al abrir comanda si tiene deuda.
-
-La base CRUD está, pero falta enriquecer el modelo y conectarlo con Comanda y Cuentas por Cobrar.
-
----
-
-# 12. Módulo 04 — Catálogo de Servicios
-
-## Estado
-
-Implementado como base funcional.
-
-## Archivos
-
-backend/app/models/service.py
-backend/app/schemas/service.py
-backend/app/services/service_service.py
-backend/app/routes/service_routes.py
-
-## Funcionalidades implementadas
-
-- Crear servicio.
-- Listar servicios.
-- Consultar servicio por ID.
-- Editar servicio.
-- Desactivar servicio.
-- Precio.
-- Categoría.
-- Descripción.
-- Duración aproximada.
-- Campo uses_internal_consumables.
-- Auditoría.
-
-## Endpoints
-
-GET /api/services
-POST /api/services
-GET /api/services/{service_id}
-PATCH /api/services/{service_id}
-PATCH /api/services/{service_id}/deactivate
-
-## Servicio de prueba sugerido
-
-name: Corte clasico
-category: Cortes
-description: Servicio basico de corte masculino.
-price: 25000
-estimated_duration_minutes: 30
-uses_internal_consumables: false
-
-## Pendiente
-
-Este módulo requiere validación directa con el barbero administrador para definir:
-
-- Lista real de servicios.
-- Nombres reales.
-- Precios reales.
-- Duración real.
-- Categorías.
-- Si habrá combos en v1 o se dejan para v2.
-- Consumibles asociados a servicios.
-- Si todos los barberos cobran igual.
-- Si ciertos servicios tienen comisión diferente.
-
-Todavía no se debe cerrar la lógica completa de servicios sin esa información.
-
----
-
-# 13. Módulo 05 — Comanda Digital por Cliente
-
-## Estado
-
-Implementado completo. El cierre close_order es una transacción atómica real.
-La UI de comanda en el frontend también está construida y conectada a los endpoints.
-
-## Archivos
-
-backend/app/models/order.py
-backend/app/schemas/order.py
-backend/app/services/order_service.py
-backend/app/routes/order_routes.py
-frontend/js/orders.js
-
-## Modelos creados
-
-orders:
-
-- id
-- client_id
-- barber_id
-- payment_status   ← pendiente / pagado / parcial / fiado
-- amount_paid
-- is_fiado
-- status           ← abierta / pendiente / cerrada / cancelada
-- subtotal
-- discount
-- total
-- notes
-- created_by_user_id
-- created_at
-- updated_at
-- closed_at
-
-order_items:
-
-- id
-- order_id
-- item_type
-- service_id
-- product_id
-- description
-- quantity
-- unit_price
-- total_price
-
-## Funcionalidades implementadas
-
-- Crear comanda (cliente opcional, barbero opcional, toggle fiado, notas).
-- Listar comandas.
-- Consultar comanda por ID.
-- Agregar ítems (servicio o producto).
-- Editar cantidad de ítems.
-- Eliminar ítems antes del cierre.
-- Calcular subtotal, descuento y total en tiempo real.
-- Marcar comanda como pendiente.
-- Cancelar comanda.
-- Cerrar comanda — transacción atómica completa:
-  1. Valida que exista, no esté cancelada/cerrada y tenga ítems.
-  2. Barbero obligatorio: valida activo y lo asigna si viene en el payload.
-  3. Descuenta inventario (salida_venta por producto; salida_servicio por consumibles).
-  4. Si NO es fiado y hay saldo: exige payment_method, crea Payment y CashMovement
-     tipo ingreso_venta en la caja abierta, actualiza amount_paid.
-  5. Marca status="cerrada" y payment_status: pagado / parcial / fiado.
-  6. Si es fiado con saldo: crea o actualiza AccountsReceivable.
-  7. Auditoría del cierre. Un solo db.commit().
-- Auditoría en todas las mutaciones.
-
-## Endpoints
-
-GET    /api/orders
-POST   /api/orders
-GET    /api/orders/{order_id}
-POST   /api/orders/{order_id}/items
-PATCH  /api/orders/{order_id}/items/{item_id}
-DELETE /api/orders/{order_id}/items/{item_id}
-PATCH  /api/orders/{order_id}/pending
-PATCH  /api/orders/{order_id}/cancel
-PATCH  /api/orders/{order_id}/close   ← OrderCloseRequest { barber_id?, cash_register_id?, payment_amount?, payment_method?, note? }
-
-## Pendiente
-
-- Pago dividido (un método por cierre en esta versión).
-- Descuento autorizado por rol (campo discount existe pero no hay restricción de permiso).
-- Actualización de rendimiento/comisión del barbero al cerrar.
-- Actualización del historial del cliente al cerrar.
-- Recibo o comprobante imprimible.
-
----
-
-# 14. Módulo 06 — Inventario de Productos
-
-## Estado
-
-Implementado como base funcional y probado.
-
-## Archivos
-
-backend/app/models/inventory.py
-backend/app/schemas/inventory.py
-backend/app/services/inventory_service.py
-backend/app/routes/inventory_routes.py
-
-## Modelos creados
-
-products:
-
-- id
-- name
-- category
-- product_type
-- description
-- purchase_cost
-- sale_price
-- current_stock
-- minimum_stock
-- expiration_date
-- supplier
-- is_active
-- created_at
-- updated_at
-
-inventory_movements:
-
-- id
-- product_id
-- movement_type
-- quantity
-- previous_stock
-- new_stock
-- reason
-- reference_type
-- reference_id
-- created_by_user_id
-- created_at
-
-## Tipos de producto
-
-- venta
-- consumible_interno
-- perecedero
-
-## Tipos de movimiento
-
-- entrada
-- salida
-- ajuste
-
-## Funcionalidades implementadas
-
-- Crear producto.
-- Listar productos.
-- Consultar producto por ID.
-- Editar producto.
-- Desactivar producto.
-- Registrar entrada de inventario.
-- Registrar ajuste manual.
-- Consultar movimientos por producto.
-- Validar que no haya stock negativo.
-- Registrar stock anterior y nuevo.
-- Registrar motivo.
-- Registrar usuario responsable.
-- Auditoría.
-
-## Endpoints
-
-GET /api/inventory/products
-POST /api/inventory/products
-GET /api/inventory/products/{product_id}
-PATCH /api/inventory/products/{product_id}
-PATCH /api/inventory/products/{product_id}/deactivate
-POST /api/inventory/products/{product_id}/entry
-POST /api/inventory/products/{product_id}/adjustment
-GET /api/inventory/products/{product_id}/movements
-
-## Producto probado
-
-Producto: Corona
-Categoría: Bebidas
-Tipo: venta
-Descripción: Cerveza Corona
-Costo compra: 3500
-Precio venta: 7000
-Stock inicial: 60
-Entrada registrada: +24
-Stock actual: 84
-Stock mínimo: 10
-Estado: Activo
-
-## Pruebas realizadas
-
-Se creó Corona con stock 60.
-
-Luego se registró una entrada de 24 unidades.
-
-El stock pasó correctamente de 60 a 84.
-
-Esto confirma:
-
-- Login funcionando.
-- Token funcionando.
-- Inventario conectado a PostgreSQL.
-- Producto creado.
-- Entrada de inventario funcionando.
-- Stock actualizado.
-
-## Pendiente
-
-- Salida automática por venta al cerrar comanda.
-- Salida automática por consumo interno en servicios.
-- Alertas por stock bajo.
-- Alertas por stock agotado.
-- Alertas por vencimiento.
-- Reporte de inventario.
-- Vista frontend completa para crear productos.
-- Vista frontend para entradas.
-- Vista frontend para ajustes.
-- Integración con Comanda.
-
----
-
-# 15. Frontend actual
-
-## Estado
-
-La maqueta visual original ya comenzó a conectarse con el backend.
-
-## Archivos principales
-
-frontend/index.html
-frontend/js/api.js
-frontend/js/auth.js
-frontend/js/inventory.js
-frontend/js/clients.js
-frontend/js/barbers.js
-frontend/js/services.js
-frontend/js/orders.js
-
-## Cambios realizados
-
-Se agregaron scripts JavaScript para conexión con backend.
-
-## api.js
-
-Responsabilidades:
-
-- Función global window.apiRequest.
-- Resolver URL base.
-- Hacer fetch a la API.
-- Agregar Authorization: Bearer token.
-- Manejar JSON.
-- Manejar errores.
-
-## auth.js
-
-Responsabilidades:
-
-- Modal de login.
-- Login contra POST /api/security/login.
-- Guardar token en localStorage.
-- Guardar usuario, nombre y rol.
-- Mostrar nombre real del usuario.
-- Manejar sesión.
-- Manejar clics del sidebar.
-- Mostrar placeholders para módulos aún no conectados.
-
-## inventory.js
-
-Responsabilidades:
-
-- Consumir GET /api/inventory/products.
-- Mostrar productos reales en pantalla.
-- Debe mostrar Corona con stock 84.
-
-## clients.js
-
-Responsabilidades:
-
-- Consumir GET /api/clients.
-- Renderizar tabla simple de clientes.
-
-## barbers.js
-
-Responsabilidades:
-
-- Consumir GET /api/barbers.
-- Renderizar tabla simple de barberos.
-
-## services.js
-
-Responsabilidades:
-
-- Consumir GET /api/services.
-- Renderizar tabla simple de servicios.
-
-## orders.js
-
-Responsabilidades:
-
-- Lista de comandas con botón "+ Nueva Comanda".
-- Modal nueva comanda: cliente (opcional), barbero (opcional), toggle fiado, notas.
-- Vista detalle inline: info grid, tabla de ítems, formulario agregar servicio/producto,
-  botones Cerrar y Cancelar.
-- Modal de cierre: resumen financiero, barbero obligatorio, método de pago + monto
-  (ocultos si es fiado), llama PATCH /api/orders/{id}/close.
-- Estado del módulo en variable _currentOrder para evitar serialización en onclick.
-- Carga catálogos (clientes, barberos, servicios, productos) al entrar al módulo.
-
-## Cambios en index.html
-
-Se agregaron:
-
-- data-module en ítems del sidebar.
-- Contenedor dinámico.
-- Modal de login.
-- Scripts JS al final del body usando rutas absolutas:
-  - /js/api.js
-  - /js/auth.js
-  - /js/inventory.js
-  - /js/clients.js
-  - /js/barbers.js
-  - /js/services.js
-  - /js/orders.js
-
-## Estado del login frontend
-
-El modal de login ya aparece.
-
-Credenciales probadas:
-
-usuario: admin
-contraseña: admin123
-
-## Pendiente frontend
-
-- Validar que después del login el botón Inventario cargue Corona.
-- Validar Clientes, Barberos, Servicios.
-- Crear formularios CRUD para Clientes, Barberos, Servicios, Inventario.
-- Reemplazar datos quemados del dashboard.
-- Conectar tarjetas del dashboard con datos reales.
-- UI de Caja (abrir, cerrar, movimientos).
-- UI de Cuentas por Cobrar.
-- UI de Alertas.
-- UI de Reportes.
-
-Hecho:
-- Comandas: lista + detalle + agregar ítems + cerrar + cancelar (orders.js).
-
----
-
-# 16. Módulo 07 — Cuentas por Cobrar
-
-## Estado
-
-Pendiente.
-
-## Debe manejar
-
-- Registro de deuda.
-- Concepto.
-- Valor total.
-- Fecha prometida de pago.
-- Abonos parciales.
-- Saldo.
-- Estado:
-  - pendiente
-  - abonada parcialmente
-  - pagada
-  - vencida
-- Historial de abonos.
-- Alerta al abrir comanda de cliente deudor.
-- Alerta en dashboard.
-- Reporte de cuentas por cobrar.
-
-## Relación con Comanda
-
-Cuando una comanda se cierre como fiado, debe crear una deuda automáticamente.
-
-Cuando el cliente abone, debe registrar el abono.
-
-Cuando el saldo llegue a cero, la deuda debe pasar a pagada.
-
----
-
-# 17. Módulo 08 — Recordatorios y Alertas
-
-## Estado
-
-Pendiente.
-
-## Debe manejar
-
-- Deudas vencidas.
-- Deudas que vencen hoy.
-- Stock bajo.
-- Productos agotados.
-- Productos próximos a vencer.
-- Comandas abiertas sin cerrar.
-- Cierre de caja pendiente.
-- Redirección al módulo correspondiente.
-
-## Relación con otros módulos
-
-Inventario genera alertas de stock.
-
-Cuentas por cobrar genera alertas de deuda.
-
-Comanda genera alerta de comandas abiertas.
-
-Caja genera alerta de cierre pendiente.
-
-Dashboard muestra resumen.
-
----
-
-# 18. Módulo 09 — Caja y Métodos de Pago
-
-## Estado
-
-Pendiente.
-
-## Debe manejar
-
-- Apertura de caja.
-- Monto inicial.
-- Ingresos.
-- Egresos.
-- Gastos.
-- Métodos de pago:
-  - efectivo
-  - Nequi
-  - Daviplata
-  - transferencia
-  - tarjeta
-  - cortesía
-  - fiado
-  - combinado
-- Cierre de caja.
-- Arqueo.
-- Diferencias.
-- Historial de cierres.
-- Cierre inmutable.
-- Auditoría.
-
-## Relación con Comanda
-
-Al cerrar una comanda pagada, el pago debe registrarse en caja.
-
-Si el pago es mixto, deben registrarse varios métodos.
-
-Si el pago es fiado, debe ir a cuentas por cobrar.
-
----
-
-# 19. Módulo 10 — Reportes de Operación
-
-## Estado
-
-Pendiente.
-
-## Debe manejar
-
-- Reporte de ventas por día.
-- Reporte semanal.
-- Reporte quincenal.
-- Reporte mensual.
-- Reporte por rango personalizado.
-- Reporte por barbero.
-- Reporte de productos vendidos.
-- Reporte de inventario.
-- Reporte de comisiones.
-- Reporte de cuentas por cobrar.
-- Reporte de caja.
-- Exportación a PDF.
-- Exportación a Excel.
-- Impresión.
-
-## Requerimiento adicional definido durante el desarrollo
-
-El negocio necesita poder descargar un Excel semanal, quincenal o mensual con absolutamente todo lo vendido:
-
-- Desde el primer dulce.
-- Hasta el último corte.
-- Servicios.
-- Productos.
-- Cantidad.
-- Valor.
-- Barbero asignado.
-- Cliente si aplica.
-- Método de pago.
-- Fecha y hora.
-- Estado.
-
-Nombre sugerido:
-
-Reporte General de Ventas Detallado
-
-Columnas sugeridas:
-
-- Fecha
-- Hora
-- Número de comanda
-- Cliente
-- Barbero
-- Tipo de ítem
-- Producto o servicio
-- Categoría
-- Cantidad
-- Precio unitario
-- Descuento
-- Total
-- Método de pago
-- Estado
-- Usuario que registró
-
-Este reporte debe pertenecer al Módulo 10 — Reportes de Operación.
-
-No debe ser un módulo nuevo.
-
----
-
-# 20. Módulo 11 — Dashboard Principal
-
-## Estado
-
-Existe maqueta visual, pero no dashboard real.
-
-## Actualmente muestra datos quemados
-
-- Ventas del día.
-- Cortes realizados.
-- Caja actual.
-- Deudas pendientes.
-- Barbero líder.
-- Comandas abiertas.
-- Alertas.
-- Resumen de caja.
-
-## Debe conectarse en el futuro a datos reales
-
-- Ventas del día reales.
-- Caja actual real.
-- Comandas abiertas reales.
-- Deudas reales.
-- Alertas reales.
-- Barbero líder real.
-- Producto más vendido real.
-- Stock bajo real.
-- Datos según rol.
-
-## Pendiente
-
-Crear endpoint o endpoints de resumen dashboard, por ejemplo:
-
-GET /api/dashboard/summary
-
-Debe consolidar:
-
-- Ventas del día.
-- Total en caja.
-- Comandas abiertas.
-- Deudas pendientes.
-- Alertas.
-- Barbero líder.
-- Producto más vendido.
-- Stock bajo.
-
----
-
-# 21. Datos de prueba actuales
-
-Usuarios:
-
-admin
-Rol: Administrador
-Contraseña desarrollo: admin123
-
-mateo
-Rol: Administrador
-Contraseña desarrollo: mateo123
-
-Barbero:
-
-Mateo
-Usuario vinculado: mateo
-PIN: 1234
-Activo: True
-
-Cliente:
-
-Cliente de Prueba
-Teléfono: 3000000000
-Activo: True
-
-Producto:
-
-Corona
-Categoría: Bebidas
-Tipo: venta
-Stock actual: 84
-Precio venta: 7000
-Stock mínimo: 10
-Activo: True
-
----
-
-# 22. Pruebas realizadas correctamente
-
-Se han probado con PowerShell y Swagger:
-
-POST /api/security/login
-GET /api/security/me
-GET /api/security/roles
-GET /api/security/users
-POST /api/security/users
-GET /api/barbers
-POST /api/barbers
-GET /api/clients
-POST /api/clients
-GET /api/services
-GET /api/orders
-GET /api/inventory/products
-POST /api/inventory/products
-POST /api/inventory/products/1/entry
-
-También se verificó:
-
-python -c "import app.main; print('Backend OK')"
-
-Resultado:
-
-Backend OK
-
-También se verificó:
-
-python -m app.create_tables
-
-Resultado:
-
-Tablas creadas correctamente en PostgreSQL.
-
----
-
-# 23. Comandos útiles
-
-## Activar entorno virtual desde raíz
-
-cd "C:\Users\Sebastian\Desktop\Magnus PROJECTO"
-.\.venv\Scripts\Activate.ps1
-
-## Entrar al backend
-
-cd "C:\Users\Sebastian\Desktop\Magnus PROJECTO\backend"
-
-## Crear tablas
-
-python -m app.create_tables
-
-## Levantar sistema
-
-python run_dev.py
-
-## Abrir frontend
-
-http://127.0.0.1:8000
-
-## Abrir Swagger
-
-http://127.0.0.1:8000/api/docs
-
-## Probar backend
-
-python -c "import app.main; print('Backend OK')"
-
----
-
-# 24. Reglas importantes para continuar
-
-## No meter lógica pesada en main.py
-
-main.py solo debe:
-
-- Crear app FastAPI.
-- Incluir routers.
-- Servir frontend.
-- Exponer health check.
-
-La lógica debe ir en services.
-
-## No mezclar lógica de módulos
-
-Cada módulo debe respetar:
-
-models
-schemas
-services
-routes
-
-## No borrar físicamente registros importantes
-
-Usar desactivación lógica con is_active.
-
-Aplica a:
-
-- Usuarios.
-- Barberos.
-- Clientes.
-- Servicios.
-- Productos.
-
-## No completar Comanda sin Caja
-
-La comanda no debe cerrarse completamente hasta tener:
-
-- Caja.
-- Métodos de pago.
-- Cuentas por cobrar.
-- Inventario conectado.
-- Descuentos controlados.
-- Transacción atómica.
-
-## No hacer Dashboard real antes de los módulos base
-
-El dashboard real depende de:
-
-- Caja.
-- Comandas.
-- Inventario.
-- Cuentas por cobrar.
-- Alertas.
-- Reportes.
-
-## No subir secretos al repositorio
-
-No subir:
-
-- .env real
-- .venv
-- backups
-- data
-- logs
-- __pycache__
-- archivos .pyc
-
----
-
-# 25. GitHub y archivos que deben subirse
-
-Sí subir:
-
-- backend/
-- frontend/
-- requirements.txt
-- .gitignore
-- README.md
-- PROJECT_STATUS.md
-- Documentación del proyecto si se decide incluirla
-
-No subir:
-
-- .env
-- .venv/
-- __pycache__/
-- *.pyc
-- logs/
-- backups/
-- data/
-- archivos temporales
-
-.gitignore recomendado:
-
-.venv/
-.env
-__pycache__/
-*.pyc
-logs/
-backups/
-data/
-*.log
-.DS_Store
-Thumbs.db
-
----
-
-# 26. README recomendado
-
-Además de este archivo largo, se recomienda crear un README.md más corto para GitHub.
-
-El README debe contener:
-
-- Nombre del proyecto.
-- Descripción corta.
-- Tecnologías.
-- Cómo instalar.
-- Cómo ejecutar.
-- Estado actual.
-- Enlace a PROJECT_STATUS.md.
-
-PROJECT_STATUS.md es el documento largo de contexto para desarrolladores.
-
----
-
-# 27. Estado actual resumido
-
-El proyecto ya pasó de maqueta visual a sistema con backend real.
-
-Estado actual:
-
-- Backend FastAPI funcionando con 13 routers cableados.
-- PostgreSQL conectado.
-- Swagger funcionando.
-- Frontend servido desde FastAPI.
-- Login frontend funcional.
-- Módulos 01 al 06 con backend base funcional.
-- Módulo 05 — Comanda: cierre atómico completo (barbero + inventario + caja + CxC).
-- Módulo 05 — Frontend de comanda: UI completa (lista, detalle, ítems, cerrar, cancelar).
-- Inventario funcional base. Producto Corona con stock 84 probado.
-- Esqueletos de backend para Módulos 07, 08, 09 (rutas y modelos creados).
-
-Pendiente principal inmediato:
-
-1. Crear vistas CRUD reales en frontend (Clientes, Barberos, Servicios, Inventario).
-2. UI de Caja: abrir caja, ver movimientos, cerrar caja.
-3. UI de Cuentas por Cobrar: listar, abonar.
-4. Módulo 08 — Alertas automáticas (stock bajo, CxC vencida, comandas abiertas).
-5. Módulo 10 — Reportes (incluyendo Excel de ventas).
-6. Módulo 11 — Dashboard real con datos de BD.
-7. Empaquetado (PyWebView + PyInstaller + instalador).
-
----
-
-# 28. Orden recomendado para continuar
-
-Orden sugerido:
-
-COMPLETADO:
-- Login frontend.
-- Módulo 05 — Comanda Digital: backend completo (close_order atómico) + UI completa.
-
-PRÓXIMOS PASOS:
-
-1. UI de Caja (frontend/js/cash.js):
-   - Abrir caja (POST /api/cash-registers/open).
-   - Ver caja activa y movimientos.
-   - Cerrar caja (PATCH /api/cash-registers/{id}/close).
-   Sin UI de caja no se puede cerrar una comanda de pago desde el frontend.
-
-2. UI de Cuentas por Cobrar (frontend/js/accounts.js):
-   - Listar deudas.
-   - Registrar abono.
-
-3. Formularios CRUD frontend para:
-   - Clientes (crear, editar, desactivar).
-   - Barberos (crear, editar).
-   - Servicios (crear, editar).
-   - Inventario (agregar producto, registrar entrada).
-
-4. Módulo 08 — Alertas automáticas (stock bajo, CxC vencida, comandas abiertas).
-
-5. Módulo 10 — Reportes (reporte general de ventas, Excel semanal/mensual/quincenal).
-
-6. Módulo 11 — Dashboard real (endpoint /api/dashboard/summary + conectar tarjetas).
-
-7. Empaquetado:
-   - PyWebView.
-   - PyInstaller.
-   - Instalador Inno Setup.
+# 9. Pendiente
+
+1. **Excel reforzado**: reemplazar `excel_report_service.py` por la plantilla aprobada de 7 hojas (Panorama General, Inventario, Ventas, Comisiones por Barbero, Cuentas por Cobrar, Movimientos de Inventario, Cierres de Caja) con logo Magnus, colores de marca, créditos AvanzaTech y fórmulas reales de Excel conectadas a datos reales — a hacer en una sesión aparte.
+2. **Empaquetado como instalador de Windows**:
+   - Generar el ejecutable con PyInstaller.
+   - Instalador con Inno Setup.
    - Acceso directo con ícono.
-   - Backup automático.
+   - Confirmar que el ejecutable arranca con `magnus_barberia.db` vacío (ya soportado por SQLite + `create_tables.py`, falta el empaquetado en sí).
 
 ---
 
-# 29. Notas de negocio importantes
+# 10. Ejecución en desarrollo
 
-Se definió que el sistema debe permitir controlar productos disponibles.
+```
+cd backend
+python run_dev.py
+```
 
-Ejemplo real:
+Frontend: `http://127.0.0.1:8000` (redirige a login)
+Swagger: `http://127.0.0.1:8000/api/docs`
+Health check: `http://127.0.0.1:8000/api/health`
 
-Si hay 60 Coronas, el sistema registra 60.
+Crear/actualizar esquema desde los modelos:
+```
+python -m app.create_tables
+```
 
-Si se venden 2 Coronas, al cerrar la comanda deberían quedar 58.
+Migraciones Alembic (recomendado sobre `create_tables.py` cuando ya existe un `.db` con datos):
+```
+alembic upgrade head
+```
 
-Si se compran 24 Coronas más, el sistema debe subir a 84.
+Seed inicial (usuario admin + roles):
+```
+python -m app.seed
+```
 
-Esto ya fue probado parcialmente con entrada de inventario:
+## Suite de pruebas E2E
 
-Corona:
-60 + 24 = 84
-
-Falta conectar la salida automática por venta.
-
-También se definió que se quiere descargar un Excel por período con todas las ventas, incluyendo productos y servicios.
-
-Ese Excel pertenece al Módulo 10 — Reportes de Operación.
-
----
-
-# 30. Notas sobre Mateo
-
-Mateo es el primer usuario real del negocio.
-
-Mateo debe quedar como:
-
-Usuario del sistema:
-mateo
-
-Rol:
-Administrador
-
-Perfil operativo:
-Barbero activo
-
-Esto permite que Mateo pueda administrar el sistema y también aparecer como barbero responsable de servicios, ventas y comisiones.
-
-No crear un quinto rol llamado BARBERO_ADMINISTRADOR por ahora, porque la v1 define cuatro roles oficiales.
+`backend/tests/test_e2e.py` es un script (no pytest) que golpea un servidor real corriendo en `http://127.0.0.1:8000` vía HTTP. **Nunca correrlo contra la base de datos de producción** (`magnus_barberia.db` real): apunta `DATABASE_URL` a un archivo SQLite temporal antes de levantar el servidor, corre la suite, y borra el archivo temporal al terminar. Cubre autenticación, CRUD base, el flujo completo de comanda (incluida caja y fiado), casos de borde y una prueba de volumen (2000 productos).
 
 ---
 
-# 31. Estado del frontend en detalle
+# 11. Reglas importantes para continuar
 
-El frontend ya mostró modal de login.
-
-Esto significa que los scripts JS comenzaron a funcionar.
-
-La prueba visual pendiente es:
-
-1. Abrir http://127.0.0.1:8000
-2. Si hay token guardado, limpiar localStorage:
-   localStorage.clear()
-   location.reload()
-3. Iniciar sesión:
-   usuario: admin
-   contraseña: admin123
-4. Clic en Inventario.
-5. Confirmar que aparece Corona con stock 84.
-
-Si no aparece:
-
-- Revisar consola del navegador con F12.
-- Revisar si cargan:
-  - http://127.0.0.1:8000/js/api.js
-  - http://127.0.0.1:8000/js/auth.js
-  - http://127.0.0.1:8000/js/inventory.js
-- Verificar errores rojos en Console.
-- Verificar que backend sigue corriendo.
-
----
-
-# 32. Advertencia sobre comandos
-
-No pegar documentos largos en la terminal.
-
-Para crear archivos de documentación:
-
-1. Crear archivo:
-   New-Item -ItemType File -Name PROJECT_STATUS.md -Force
-
-2. Abrir:
-   code PROJECT_STATUS.md
-
-3. Pegar el contenido dentro del editor.
-
-4. Guardar con Ctrl + S.
-
-No pegar markdown directamente en PowerShell porque PowerShell intentará interpretarlo como comandos.
-
----
-
-# 33. Resumen final para el socio
-
-El proyecto comenzó como una maqueta HTML estática.
-
-Después se construyó:
-
-- Backend FastAPI.
-- Conexión PostgreSQL.
-- Sistema de autenticación.
-- Roles.
-- Usuarios.
-- Auditoría base.
-- Barberos.
-- Clientes.
-- Servicios.
-- Comandas base.
-- Inventario.
-- Frontend parcialmente conectado.
-
-Ya existen datos reales en PostgreSQL:
-
-- admin.
-- mateo.
-- Mateo como barbero.
-- Cliente de prueba.
-- Corona con stock 84.
-
-La prioridad del socio frontend debe ser:
-
-1. No dañar el diseño visual.
-2. Terminar conexión de sidebar.
-3. Hacer vistas reales para cada módulo.
-4. Consumir endpoints existentes.
-5. No crear lógica de negocio en frontend.
-6. No inventar rutas nuevas si ya existen.
-7. Coordinar antes de cambiar estructura del backend.
-
-La prioridad backend pendiente es:
-
-1. Caja.
-2. Cuentas por cobrar.
-3. Cierre completo de comanda.
-4. Alertas.
-5. Reportes.
-6. Dashboard real.
-7. Empaquetado final.
-
----
-
-# 34. Cierre
-
-Este archivo representa el estado del proyecto hasta el momento actual.
-
-Todo desarrollo futuro debe respetar:
-
-- Documento MVP v1.0.
-- Arquitectura models/schemas/services/routes.
-- PostgreSQL como base oficial.
-- FastAPI como backend local.
-- Frontend servido desde FastAPI por ahora.
-- No subir secretos.
-- No romper módulos ya probados.
-
-MAGNUS BARBER SYSTEM v1.0 sigue en desarrollo, pero ya cuenta con una base funcional real sobre la cual continuar.
+- No meter lógica de negocio en `main.py` — solo arma la app, incluye routers y sirve el frontend.
+- Cada módulo respeta `models` → `schemas` → `services` → `routes`.
+- Nunca borrar físicamente registros operativos: usar `is_deleted`/`is_active` (ver sección 5).
+- No mezclar `OWNER_USERNAME` (singular, protege al barbero Mateo) con `OWNER_USERNAMES` (plural, permisos de dueño para mateo/admin) — son lógicas distintas, ver sección 4.
+- No correr `test_e2e.py` contra la base de datos real.
+- No subir `.env` real al repositorio (ya está en `.gitignore`).

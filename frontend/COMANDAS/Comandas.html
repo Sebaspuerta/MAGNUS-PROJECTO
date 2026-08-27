@@ -113,7 +113,12 @@
     <div class="modal-box">
         <h3>Nueva Comanda</h3>
         <label>Cliente (opcional)</label>
-        <select id="nueva-cliente"><option value="">Sin cliente</option></select>
+        <div id="nueva-campo-cliente">
+            <input type="hidden" id="nueva-cliente-id">
+            <input type="text" id="nueva-cliente-buscar" placeholder="Buscar cliente por nombre..."
+                autocomplete="off" onkeyup="filtrarClientesNueva()" onfocus="filtrarClientesNueva()">
+            <div id="nueva-cliente-resultados" class="rapido-producto-lista"></div>
+        </div>
         <label>Barbero (opcional)</label>
         <select id="nueva-barbero"><option value="">Sin asignar</option></select>
         <label class="fiado-label">

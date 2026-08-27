@@ -31,7 +31,7 @@ function filtrar() {
 // ── RENDER GRID ────────────────────────────────────────────────────────────────
 function renderGrid(lista) {
     const grid    = document.getElementById("grid");
-    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
+    const isOwner = ["mateo", "admin"].includes(((window.api.getAuthUser() || {}).username || "").toLowerCase());
 
     if (!lista.length) {
         grid.innerHTML = '<div style="color:var(--muted);">No se encontraron servicios.</div>';

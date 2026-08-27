@@ -5,8 +5,8 @@ let fotoSeleccionadaFile = null;
 
 // ── INIT ───────────────────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
-    const btnCat = document.getElementById("btn-nueva-categoria");
+    const isOwner = ["mateo", "admin"].includes(((window.api.getAuthUser() || {}).username || "").toLowerCase());
+    const btnCat = document.getElementById("btn-categorias");
     if (btnCat) btnCat.style.display = isOwner ? "inline-flex" : "none";
 
     cargarCategorias();
@@ -32,26 +32,18 @@ async function cargarCategorias() {
 }
 
 function renderCategorias(lista) {
-    const grid    = document.getElementById("grid-categorias");
-    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
+    const grid = document.getElementById("grid-categorias");
 
     if (!lista.length) {
-        grid.innerHTML = '<div style="color:var(--muted);padding:8px 0;">Sin categorías. Crea la primera con + Categoría.</div>';
+        grid.innerHTML = '<div style="color:var(--muted);padding:8px 0;">Sin categorías. Crea la primera con el botón Categorías.</div>';
         return;
     }
 
-    grid.innerHTML = lista.map(c => {
-        const btnEliminar = isOwner
-            ? `<button class="category-delete-btn" onclick="event.stopPropagation(); eliminarCategoria(${c.id}, '${escAttr(c.name)}')" title="Eliminar categoría"><i data-lucide="trash-2"></i></button>`
-            : "";
-
-        return `<div class="card category-card" onclick="abrirCategoria(${c.id}, '${escAttr(c.name)}')">
-            ${btnEliminar}
+    grid.innerHTML = lista.map(c => `<div class="card category-card" onclick="abrirCategoria(${c.id}, '${escAttr(c.name)}')">
             <div class="category-icon"><i data-lucide="folder"></i></div>
             <div class="category-name">${escHtml(c.name)}</div>
             <div class="category-count">${c.product_count} producto${c.product_count === 1 ? "" : "s"}</div>
-        </div>`;
-    }).join("");
+        </div>`).join("");
 
     lucide.createIcons();
 }
@@ -71,11 +63,31 @@ function volverAHome() {
     cargarCategorias();
 }
 
-function abrirModalCategoria() {
+// ── MODAL GESTIONAR CATEGORÍAS (crear / eliminar, punto único de entrada) ──────
+let categoriaAEliminar = null; // { id, name } mientras se elige qué pasa con sus productos
+
+function abrirModalCategorias() {
+    mostrarPasoElegirCategoria();
+    abrirModal("modal-categorias");
+}
+
+function mostrarPasoElegirCategoria() {
+    categoriaAEliminar = null;
+    document.getElementById("cat-paso-elegir").style.display        = "block";
+    document.getElementById("cat-paso-crear").style.display         = "none";
+    document.getElementById("cat-paso-eliminar").style.display      = "none";
+    document.getElementById("cat-paso-eliminar-modo").style.display = "none";
+}
+
+function mostrarPasoCrearCategoria() {
     document.getElementById("cat-name").value = "";
     setError("error-categoria", "");
     setDisabled("btn-guardar-categoria", false, "Guardar");
-    abrirModal("modal-categoria");
+
+    document.getElementById("cat-paso-elegir").style.display        = "none";
+    document.getElementById("cat-paso-crear").style.display         = "block";
+    document.getElementById("cat-paso-eliminar").style.display      = "none";
+    document.getElementById("cat-paso-eliminar-modo").style.display = "none";
 }
 
 async function guardarCategoria() {
@@ -87,7 +99,7 @@ async function guardarCategoria() {
 
     try {
         await window.api.apiRequest("/api/categories", { method: "POST", body: { name: nombre } });
-        cerrarModal("modal-categoria");
+        cerrarModal("modal-categorias");
         await cargarCategorias();
     } catch (err) {
         setError("error-categoria", err.message);
@@ -95,15 +107,70 @@ async function guardarCategoria() {
     }
 }
 
-async function eliminarCategoria(id, nombre) {
-    if (!confirm(`¿Eliminar la categoría "${nombre}"? Solo se puede borrar si ya no tiene productos activos.`)) return;
-    setError("error-home", "");
+function mostrarPasoEliminarCategoria() {
+    categoriaAEliminar = null;
+    setError("error-categoria-eliminar", "");
+    renderListaEliminarCategorias();
+
+    document.getElementById("cat-paso-elegir").style.display        = "none";
+    document.getElementById("cat-paso-crear").style.display         = "none";
+    document.getElementById("cat-paso-eliminar").style.display      = "block";
+    document.getElementById("cat-paso-eliminar-modo").style.display = "none";
+}
+
+function renderListaEliminarCategorias() {
+    const cont   = document.getElementById("cat-eliminar-lista");
+    const reales = categorias.filter(c => c.id != null); // nunca "Sin categoría": no es real, no se borra
+
+    if (!reales.length) {
+        cont.innerHTML = '<div style="color:var(--muted);padding:8px 0;">No hay categorías para eliminar.</div>';
+        return;
+    }
+
+    cont.innerHTML = reales.map(c => `
+        <div class="cat-eliminar-item">
+            <div>
+                <div class="cat-eliminar-nombre">${escHtml(c.name)}</div>
+                <div class="cat-eliminar-count">${c.product_count} producto${c.product_count === 1 ? "" : "s"}</div>
+            </div>
+            <button class="danger" onclick="prepararEliminarCategoria(${c.id}, '${escAttr(c.name)}')">Eliminar</button>
+        </div>
+    `).join("");
+}
+
+// Paso intermedio: preguntar qué pasa con los productos antes de ejecutar nada.
+function prepararEliminarCategoria(id, nombre) {
+    categoriaAEliminar = { id, name: nombre };
+    setText("cat-eliminar-modo-nombre", `"${nombre}"`);
+    setError("error-categoria-eliminar-modo", "");
+
+    document.getElementById("cat-paso-elegir").style.display        = "none";
+    document.getElementById("cat-paso-crear").style.display         = "none";
+    document.getElementById("cat-paso-eliminar").style.display      = "none";
+    document.getElementById("cat-paso-eliminar-modo").style.display = "block";
+}
+
+async function confirmarEliminarCategoria(conProductos) {
+    if (!categoriaAEliminar) return;
+    const { id, name } = categoriaAEliminar;
+
+    const msg = conProductos
+        ? `¿Eliminar la categoría "${name}" Y TODOS sus productos? Los productos se marcarán como ` +
+          `eliminados (su historial de ventas y movimientos ya registrado se conserva intacto). ` +
+          `Esta acción no se puede deshacer.`
+        : `¿Eliminar la categoría "${name}"? Sus productos pasarán automáticamente a "Sin categoría" — ` +
+          `no se eliminan ni pierden datos (ventas, stock, movimientos). Esta acción no se puede deshacer.`;
+    if (!confirm(msg)) return;
+
+    setError("error-categoria-eliminar-modo", "");
     try {
-        await window.api.apiRequest(`/api/categories/${id}`, { method: "DELETE" });
+        await window.api.apiRequest(`/api/categories/${id}?delete_products=${conProductos}`, { method: "DELETE" });
+        categoriaAEliminar = null;
         await cargarCategorias();
+        mostrarPasoEliminarCategoria();
     } catch (err) {
         const detail = err.responseData && err.responseData.detail;
-        setError("error-home", (typeof detail === "string" ? detail : null) || err.message);
+        setError("error-categoria-eliminar-modo", (typeof detail === "string" ? detail : null) || err.message);
     }
 }
 
@@ -118,8 +185,11 @@ async function cargarProductos() {
     if (msg) { msg.textContent = "Cargando inventario..."; msg.style.display = "block"; }
 
     try {
+        const filtroCategoria = categoriaActual.id == null
+            ? "uncategorized=true"
+            : `category_id=${categoriaActual.id}`;
         todosLosProductos = await window.api.apiRequest(
-            `/api/inventory/products?include_inactive=true&category_id=${categoriaActual.id}`
+            `/api/inventory/products?include_inactive=true&${filtroCategoria}`
         );
         if (msg) msg.style.display = "none";
         renderGrid(todosLosProductos);
@@ -131,11 +201,10 @@ async function cargarProductos() {
 
 // ── RENDER GRID ────────────────────────────────────────────────────────────────
 function renderGrid(lista) {
-    const grid    = document.getElementById("grid");
-    const isOwner = ((window.api.getAuthUser() || {}).username || "").toLowerCase() === "mateo";
+    const grid = document.getElementById("grid");
 
     if (!lista.length) {
-        grid.innerHTML = '<div style="color:var(--muted);padding:8px 0;">Sin productos en esta categoría. Crea el primero con + Producto.</div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);padding:8px 0;">Sin productos en esta categoría. Crea el primero con + Producto.</div>';
         return;
     }
 
@@ -143,48 +212,105 @@ function renderGrid(lista) {
         const { badgeClass, badgeLabel } = stockBadge(p);
         const precioVenta = money(p.sale_price);
         const tipo = tipoLabel(p.product_type);
+        const stockColor = p.current_stock === 0 ? 'var(--red)' : p.current_stock <= (p.minimum_stock || 0) ? 'var(--orange)' : 'var(--green)';
 
         const expAlert = vencimientoAlert(p);
-
-        const btnEliminar = isOwner
-            ? `<button class="danger" onclick="eliminarProducto(${p.id}, '${escAttr(p.name)}')" title="Eliminar del sistema" style="flex:1;"><i data-lucide="trash-2"></i> Eliminar</button>`
-            : "";
-
-        const botonesActivo = p.is_active ? `
-            <button class="secondary" onclick="abrirModalEditar(${p.id})" style="flex:1;">Editar</button>
-            <button class="secondary" onclick="mostrarModalEntrada(${p.id}, '${escAttr(p.name)}')" style="flex:1;background:#1b3a2f;color:#81c784;">+ Stock</button>
-            <button class="secondary" onclick="verMovimientos(${p.id}, '${escAttr(p.name)}')" style="flex:1;background:#1a2a45;">Movs.</button>
-            <button class="danger" onclick="desactivar(${p.id}, '${escAttr(p.name)}')" style="flex:1;">Baja</button>
-            ${btnEliminar}
-        ` : `
-            <button class="secondary" onclick="verMovimientos(${p.id}, '${escAttr(p.name)}')" style="width:100%;background:#1a2a45;">Ver movimientos</button>
-            ${btnEliminar}
-        `;
 
         const thumbHtml = p.photo_url
             ? `<img class="thumb" src="${escAttr(p.photo_url)}" alt="">`
             : `<div class="thumb-placeholder"><i data-lucide="package"></i></div>`;
 
-        return `<div class="card product-card" style="${!p.is_active ? 'opacity:.55;' : ''}">
+        return `<div class="card product-card${p.is_active ? '' : ' inactive'}">
+            <button class="product-menu-btn" onclick="event.stopPropagation(); toggleProductMenu(${p.id}, this)" title="Acciones" aria-label="Acciones del producto">
+                <i data-lucide="more-vertical"></i>
+            </button>
+
             <div class="product-photo-frame">${thumbHtml}</div>
-            <div class="title">${escHtml(p.name)}</div>
-            <div class="meta" style="color:var(--gold);font-size:.72rem;">${escHtml(tipo)}</div>
-            <div class="meta">💰 Venta: ${precioVenta}</div>
-            <div class="meta">📦 Stock: <strong style="color:${p.current_stock === 0 ? 'var(--red)' : p.current_stock <= (p.minimum_stock || 0) ? 'var(--orange)' : 'var(--green)'}">${p.current_stock}</strong>${p.minimum_stock != null ? ` / mín ${p.minimum_stock}` : ''}</div>
-            ${p.expiration_date ? `<div class="meta">📅 Vence: ${p.expiration_date}</div>` : ''}
-            ${!p.is_active ? '<div class="meta" style="color:var(--red);">Inactivo</div>' : ''}
 
-            <span class="badge ${badgeClass}">${badgeLabel}</span>
-            ${expAlert}
+            <div class="title" title="${escAttr(p.name)}">${escHtml(p.name)}</div>
+            <div class="product-price">${precioVenta}</div>
 
-            <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;">
-                ${botonesActivo}
+            <div class="product-meta-row">
+                <span class="badge ${badgeClass}">${badgeLabel}</span>
+                <span class="product-stock">Stock: <strong style="color:${stockColor}">${p.current_stock}</strong>${p.minimum_stock != null ? ` / ${p.minimum_stock}` : ''}</span>
             </div>
+
+            <div class="meta" style="color:var(--gold);font-size:.7rem;">${escHtml(tipo)}</div>
+            ${p.expiration_date ? `<div class="meta">📅 Vence: ${p.expiration_date}</div>` : ''}
+            ${expAlert}
+            ${!p.is_active ? '<div class="meta" style="color:var(--red);">Inactivo</div>' : ''}
         </div>`;
     }).join("");
 
     lucide.createIcons();
 }
+
+// ── MENÚ DE ACCIONES (⋮) ──────────────────────────────────────────────────────
+let menuAbiertoProductoId = null;
+
+function accionesDelProducto(id) {
+    const p = todosLosProductos.find(x => x.id === id);
+    if (!p) return [];
+
+    const isOwner = ["mateo", "admin"].includes(((window.api.getAuthUser() || {}).username || "").toLowerCase());
+    const nombre = escAttr(p.name);
+
+    const acciones = p.is_active ? [
+        { label: "Editar",          icon: "pencil",            onclick: `abrirModalEditar(${p.id})` },
+        { label: "Agregar stock",   icon: "plus-circle",       onclick: `mostrarModalEntrada(${p.id}, '${nombre}')`, className: "accion-stock" },
+        { label: "Ver movimientos", icon: "history",           onclick: `verMovimientos(${p.id}, '${nombre}')` },
+        { label: "Dar de baja",     icon: "arrow-down-circle", onclick: `desactivar(${p.id}, '${nombre}')`, className: "accion-danger" },
+    ] : [
+        { label: "Ver movimientos", icon: "history", onclick: `verMovimientos(${p.id}, '${nombre}')` },
+    ];
+
+    if (isOwner) {
+        acciones.push({ label: "Eliminar", icon: "trash-2", onclick: `eliminarProducto(${p.id}, '${nombre}')`, className: "accion-danger" });
+    }
+
+    return acciones;
+}
+
+function toggleProductMenu(id, btnEl) {
+    if (menuAbiertoProductoId === id) {
+        cerrarProductMenu();
+        return;
+    }
+
+    const dropdown = document.getElementById("product-menu-dropdown");
+    const acciones = accionesDelProducto(id);
+
+    dropdown.innerHTML = acciones.map(a =>
+        `<button class="product-menu-item ${a.className || ''}" onclick="cerrarProductMenu(); ${a.onclick}">
+            <i data-lucide="${a.icon}"></i> ${a.label}
+        </button>`
+    ).join("");
+
+    const rect = btnEl.getBoundingClientRect();
+    dropdown.style.top  = `${rect.bottom + 6}px`;
+    dropdown.style.left = `${Math.max(8, rect.right - 178)}px`;
+    dropdown.classList.add("open");
+    menuAbiertoProductoId = id;
+
+    lucide.createIcons();
+}
+
+function cerrarProductMenu() {
+    const dropdown = document.getElementById("product-menu-dropdown");
+    if (!dropdown) return;
+    dropdown.classList.remove("open");
+    dropdown.innerHTML = "";
+    menuAbiertoProductoId = null;
+}
+
+document.addEventListener("click", (e) => {
+    if (menuAbiertoProductoId === null) return;
+    const dropdown = document.getElementById("product-menu-dropdown");
+    if (dropdown.contains(e.target)) return;
+    cerrarProductMenu();
+});
+
+window.addEventListener("scroll", () => cerrarProductMenu(), true);
 
 function stockBadge(p) {
     if (!p.is_active)                                      return { badgeClass: "low",  badgeLabel: "INACTIVO" };
@@ -265,7 +391,7 @@ async function subirFotoProducto(id) {
 function poblarSelectCategorias(selectedId) {
     const sel = document.getElementById("f-category");
     sel.innerHTML = '<option value="">Sin categoría</option>' +
-        categorias.map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join("");
+        categorias.filter(c => c.id != null).map(c => `<option value="${c.id}">${escHtml(c.name)}</option>`).join("");
     sel.value = selectedId != null ? String(selectedId) : "";
 }
 

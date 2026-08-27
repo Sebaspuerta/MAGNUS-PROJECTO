@@ -81,7 +81,12 @@ def get_live_product(db: Session, product_id: int) -> Product | None:
     )
 
 
-def list_products(db: Session, include_inactive: bool = False, category_id: int | None = None):
+def list_products(
+    db: Session,
+    include_inactive: bool = False,
+    category_id: int | None = None,
+    uncategorized: bool = False
+):
     query = (
         db.query(Product)
         .filter(Product.is_deleted == False)  # noqa: E712
@@ -91,7 +96,9 @@ def list_products(db: Session, include_inactive: bool = False, category_id: int 
     if not include_inactive:
         query = query.filter(Product.is_active == True)
 
-    if category_id is not None:
+    if uncategorized:
+        query = query.filter(Product.category_id.is_(None))
+    elif category_id is not None:
         query = query.filter(Product.category_id == category_id)
 
     return [serialize_product(product) for product in query.all()]

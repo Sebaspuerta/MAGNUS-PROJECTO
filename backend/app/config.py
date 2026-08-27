@@ -14,7 +14,10 @@ class Settings:
     app_version: str = os.getenv("APP_VERSION", "1.0.0")
     app_mode: str = os.getenv("APP_MODE", "local")
 
-    database_url: str = os.getenv("DATABASE_URL", "")
+    # Por defecto SQLite: ruta relativa a la carpeta desde la que se arranca el
+    # ejecutable empaquetado (no una ruta absoluta de desarrollo). Para seguir
+    # usando PostgreSQL en desarrollo, basta con definir DATABASE_URL en .env.
+    database_url: str = os.getenv("DATABASE_URL", "sqlite:///./magnus_barberia.db")
     secret_key: str = os.getenv("SECRET_KEY", "CLAVE_LOCAL_MAGNUS")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "480"))
 

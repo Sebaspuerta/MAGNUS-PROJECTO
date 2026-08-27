@@ -39,10 +39,11 @@ def post_category(
 @router.delete("/{category_id}")
 def delete_category_endpoint(
     category_id: int,
+    delete_products: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_owner)
 ):
-    result, error = delete_category(db, category_id, current_user)
+    result, error = delete_category(db, category_id, current_user, delete_products=delete_products)
 
     if error:
         raise HTTPException(status_code=404, detail=error)

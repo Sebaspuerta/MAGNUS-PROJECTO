@@ -127,6 +127,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 role: data.role
             });
 
+            try {
+                const me = await window.api.apiRequest("/api/security/me");
+                window.api.setAuthUser({
+                    username: me.username,
+                    full_name: me.full_name,
+                    role: me.role,
+                    id: me.id,
+                    barber_id: me.barber_id
+                });
+            } catch (meErr) {
+                // No es crítico: si falla, seguimos con los datos básicos del login.
+            }
+
             window.location.href = "/DASHBOARD/Dashboard.html";
 
         } catch (err) {

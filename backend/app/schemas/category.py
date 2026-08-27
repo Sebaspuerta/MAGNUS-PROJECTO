@@ -6,7 +6,7 @@ class CategoryCreate(BaseModel):
 
 
 class CategoryResponse(BaseModel):
-    id: int
+    id: int | None
     name: str
     is_deleted: bool = False
     product_count: int = 0

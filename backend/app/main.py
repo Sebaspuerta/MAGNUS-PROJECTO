@@ -1,4 +1,5 @@
 ﻿from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
@@ -64,6 +65,11 @@ app.include_router(system_config_router)
 app.include_router(service_consumable_router)
 app.include_router(dashboard_router)
 app.include_router(reports_router)
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/LOGIN/login.html")
 
 
 # IMPORTANTE: este mount debe registrarse ANTES que el de "/" — FastAPI/Starlette

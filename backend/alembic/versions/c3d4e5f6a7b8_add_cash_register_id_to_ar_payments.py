@@ -33,15 +33,22 @@ def upgrade() -> None:
     if _has_column(inspector, "accounts_receivable_payments", "cash_register_id"):
         return
 
-    op.add_column(
-        "accounts_receivable_payments",
-        sa.Column(
-            "cash_register_id",
-            sa.Integer(),
-            sa.ForeignKey("cash_registers.id"),
-            nullable=True,
-        ),
-    )
+    # batch_alter_table: agregar una columna con FK es una operación de "add
+    # constraint" para Alembic, y SQLite no soporta ALTER de constraints
+    # fuera de batch mode (en Postgres, recreate="auto" emite el mismo
+    # ALTER TABLE ADD COLUMN de siempre, sin reconstruir nada).
+    with op.batch_alter_table("accounts_receivable_payments") as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "cash_register_id",
+                sa.Integer(),
+                sa.ForeignKey(
+                    "cash_registers.id",
+                    name="fk_ar_payments_cash_register_id_cash_registers",
+                ),
+                nullable=True,
+            ),
+        )
 
 
 def downgrade() -> None:
@@ -51,4 +58,5 @@ def downgrade() -> None:
     if not _has_column(inspector, "accounts_receivable_payments", "cash_register_id"):
         return
 
-    op.drop_column("accounts_receivable_payments", "cash_register_id")
+    with op.batch_alter_table("accounts_receivable_payments") as batch_op:
+        batch_op.drop_column("cash_register_id")
