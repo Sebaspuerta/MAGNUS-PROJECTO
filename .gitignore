@@ -9,3 +9,9 @@ data/
 .DS_Store
 Thumbs.db
 backend/static/
+*.sql
+!scripts/create_database.sql
+*.db
+*.sqlite
+*.sqlite3
+respaldo_*

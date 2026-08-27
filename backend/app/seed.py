@@ -9,10 +9,7 @@ def run_seed():
         seed_initial_security(db)
         print("Seed inicial ejecutado correctamente.")
         print(f"Usuario inicial: {settings.admin_username}")
-        if settings.admin_password:
-            print("Contraseña inicial: definida en ADMIN_PASSWORD")
-        else:
-            print("Contraseña inicial: admin123 (uso de fallback local)")
+        print("Contraseña inicial: definida en ADMIN_PASSWORD")
     finally:
         db.close()
 

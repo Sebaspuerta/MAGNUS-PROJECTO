@@ -142,15 +142,20 @@ def seed_initial_security(db: Session):
                 db.add(RolePermission(role_id=role.id, permission_id=permission.id))
 
     admin_username = settings.admin_username or "admin"
-    admin_password = settings.admin_password or "admin123"
     admin_full_name = settings.admin_full_name or "Administrador MAGNUS"
 
     admin_user = db.query(User).filter(User.username == admin_username).first()
     if not admin_user:
+        if not settings.admin_password:
+            raise RuntimeError(
+                "No se encontró ADMIN_PASSWORD en el archivo .env. Configura una "
+                "contraseña real para el usuario administrador inicial antes de "
+                "correr el seed — no se usa una contraseña por defecto adivinable."
+            )
         admin_user = User(
             username=admin_username,
             full_name=admin_full_name,
-            password_hash=hash_password(admin_password),
+            password_hash=hash_password(settings.admin_password),
             role_id=administrador.id,
             is_active=True,
             must_change_password=True
