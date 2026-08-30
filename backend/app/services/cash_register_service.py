@@ -36,6 +36,21 @@ def get_cash_register_by_id(db: Session, register_id: int):
 
 
 def open_cash_register(db: Session, payload: CashRegisterOpenRequest, current_user: User):
+    # Nunca debe haber más de una caja abierta a la vez: si se permite, cada
+    # pantalla que pregunta "¿cuál caja está abierta?" puede quedar mirando
+    # una fila distinta (Dashboard toma la más reciente, otras vistas podrían
+    # tomar la primera de una lista), y cerrar una deja a las demás pensando
+    # que la caja sigue abierta. Se bloquea aquí, en el único punto de
+    # entrada real para abrir caja, sin importar desde qué pantalla se llame.
+    existing_open = (
+        db.query(CashRegister)
+        .filter(CashRegister.is_closed.is_(False))
+        .order_by(CashRegister.id.desc())
+        .first()
+    )
+    if existing_open:
+        return None, f"Ya hay una caja abierta (#{existing_open.id}). Ciérrala antes de abrir una nueva."
+
     register = CashRegister(
         opened_by_user_id=current_user.id,
         opening_amount=payload.opening_amount,

@@ -173,8 +173,10 @@ async function exportExcel() {
             button.innerHTML = "Generando...";
         }
 
+        const dr = getDateRange();
+        const qs = "?start_date=" + dr.start_date + "&end_date=" + dr.end_date;
         const token = window.api.getAuthToken();
-        const response = await fetch(window.api.buildUrl("/api/reports/export-excel"), {
+        const response = await fetch(window.api.buildUrl("/api/reports/export-excel" + qs), {
             method: "GET",
             headers: {
                 Authorization: `Bearer ${token}`

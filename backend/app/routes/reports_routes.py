@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from fastapi.responses import StreamingResponse
 
 from app.config import settings
-from app.services.excel_report_service import generate_full_database_excel
+from app.services.excel_report_service import generate_business_report_excel
 from app.database import get_db
 from app.models.security import User
 from app.services.reports_service import (
@@ -76,10 +76,12 @@ def get_cash_closings(
 
 @router.get("/export-excel")
 def export_excel_report(
+    start_date: date | None = None,
+    end_date: date | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("reportes.exportar"))
 ):
-    buffer = generate_full_database_excel(db, generated_by=current_user.full_name)
+    buffer = generate_business_report_excel(db, start_date, end_date, generated_by=current_user.full_name)
     filename = f"magnus_reporte_{datetime.now(_BUSINESS_TZ).date().isoformat()}.xlsx"
     return StreamingResponse(
         buffer,

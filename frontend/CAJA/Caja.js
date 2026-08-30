@@ -10,7 +10,14 @@ async function cargarCaja() {
     setError("error-caja", "");
     try {
         const registros = await window.api.apiRequest("/api/cash-registers");
-        cajaActual = registros.find(r => !r.is_closed) || null;
+        // Mismo criterio que el Dashboard (dashboard_service.get_dashboard_summary):
+        // la caja abierta MÁS RECIENTE, no la primera que aparezca en la lista.
+        // El backend ya no permite dos cajas abiertas a la vez, pero si algo
+        // raro dejara más de una, las dos pantallas deben coincidir en cuál es.
+        const abiertas = registros.filter(r => !r.is_closed);
+        cajaActual = abiertas.length
+            ? abiertas.reduce((latest, r) => (r.id > latest.id ? r : latest))
+            : null;
         renderEstado();
         if (cajaActual) {
             await cargarMovimientos();
